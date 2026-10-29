@@ -108,7 +108,7 @@ function mount(main: HTMLElement, code: string) {
       )
       .join('');
     return `<section class="stage">${questionHead(s)}<div class="answers" role="group" aria-label="Respostas">${buttons}</div>
-      <p class="hint" role="status">${chosen != null ? (s.me.choice != null ? 'Resposta enviada. Espere a revelação.' : 'Enviando…') : 'Toque na sua resposta. Quanto mais rápido, mais pontos.'}</p></section>`;
+      <p class="hint" role="status">${chosen != null ? (s.me.choice != null ? 'Resposta enviada. Espere a revelação.' : 'Enviando…') : s.scoring === 'fixed' ? 'Toque na sua resposta. Sem pressa: acertou, ganhou 1.000.' : 'Toque na sua resposta. Quanto mais rápido, mais pontos.'}</p></section>`;
   }
 
   function reveal(s: PlayerState) {

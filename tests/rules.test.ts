@@ -11,6 +11,10 @@ describe('pontos', () => {
     expect(points(5_000, 10)).toBe(750);
     expect(points(3_200, 20)).toBe(920);
   });
+  it('no modo "Sem pressa" acerto vale 1000 em qualquer tempo', () => {
+    expect(points(0, 10, 'fixed')).toBe(1000);
+    expect(points(9_900, 10, 'fixed')).toBe(1000);
+  });
   it('nunca passa dos limites', () => {
     expect(points(99_000, 10)).toBe(500);
     expect(points(-50, 10)).toBe(1000);
@@ -40,6 +44,7 @@ describe('perguntas', () => {
   it('valida o pedido de abrir sala', () => {
     const r = validateCreate({ theme: 'x', questions: [{ t: ' Oi ', o: ['1', '2'], c: 1, tl: 7 }], brand: { name: 'A', color: 'red' }, logo: '' });
     expect(r.theme).toBe('corp');
+    expect(r.scoring).toBe('speed');
     expect(r.questions[0]).toEqual({ t: 'Oi', o: ['1', '2'], c: 1, tl: 20 });
     expect(r.brand.color).toBe('');
     expect(() => validateCreate({ questions: [] })).toThrow();

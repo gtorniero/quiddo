@@ -1,5 +1,5 @@
 // "Meus quizzes": guardados no navegador do anfitrião. Importar e exportar em JSON.
-import type { Brand, Question, Theme } from '../../shared/protocol';
+import type { Brand, Question, Scoring, Theme } from '../../shared/protocol';
 import { LIMITS, cleanText } from '../../shared/rules';
 import { pacote } from '../data/pacotes';
 import { store, uid } from './storage';
@@ -8,6 +8,7 @@ export interface Quiz {
   id: string;
   titulo: string;
   tema: Theme;
+  pontuacao?: Scoring; // ausente = 'speed' (quizzes salvos antes da opção)
   nomes: [string, string];
   marca: Brand & { ultima?: string };
   logo: string;
@@ -20,6 +21,7 @@ export function novoQuiz(tema: Theme = 'corp'): Quiz {
     id: uid(),
     titulo: tema === 'corp' ? 'Quiz da equipe' : 'Quiz da turma',
     tema,
+    pontuacao: 'speed',
     nomes: ['', ''],
     marca: { name: '', color: '' },
     logo: '',
@@ -73,6 +75,7 @@ export function importar(texto: string): Quiz {
   if (!d || !Array.isArray(d.perguntas)) throw new Error('Esse arquivo não é um quiz da Sua Rodada.');
   const q = novoQuiz(d.tema === 'festa' ? 'festa' : 'corp');
   q.titulo = cleanText(d.titulo, 60) || 'Quiz importado';
+  q.pontuacao = d.pontuacao === 'fixed' ? 'fixed' : 'speed';
   q.nomes = [cleanText(d.nomes?.[0], LIMITS.nick), cleanText(d.nomes?.[1], LIMITS.nick)];
   q.marca = { name: cleanText(d.marca?.name, LIMITS.brandName), color: /^#[0-9a-f]{6}$/i.test(d.marca?.color || '') ? d.marca!.color : '' };
   q.logo = typeof d.logo === 'string' && /^data:image\/(png|jpeg|webp);base64,/.test(d.logo) && d.logo.length <= LIMITS.logoBytes ? d.logo : '';

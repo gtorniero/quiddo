@@ -73,6 +73,16 @@ describe('respostas e pontos', () => {
     expect(room.counts).toEqual([1, 0, 1, 0]);
   });
 
+  it('no modo "Sem pressa" todo acerto vale 1000', () => {
+    room.scoring = 'fixed';
+    G.start(room, T0);
+    G.answer(room, 'p1', 0, 0, T0 + 19_000);
+    G.answer(room, 'p2', 0, 1, T0 + 100);
+    G.reveal(room);
+    expect(room.players.p1.delta).toBe(1000);
+    expect(room.players.p2.delta).toBe(0);
+  });
+
   it('não deixa mudar a resposta, responder fora de hora ou de outra pergunta', () => {
     G.start(room, T0);
     expect(G.answer(room, 'p1', 0, 1, T0 + 10)).toBe(true);

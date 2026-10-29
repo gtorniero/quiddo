@@ -4,6 +4,8 @@
 export type Theme = 'corp' | 'festa';
 export type Phase = 'lobby' | 'question' | 'reveal' | 'ranking' | 'final';
 export type DrawMode = 'all' | 'scored';
+/** speed: de 500 a 1000, quanto mais rápido mais pontos. fixed: "Sem pressa", acertou vale 1000. */
+export type Scoring = 'speed' | 'fixed';
 
 export interface Question {
   t: string; // texto
@@ -20,6 +22,7 @@ export interface Brand {
 export interface CreateRoomBody {
   questions: Question[];
   theme: Theme;
+  scoring: Scoring;
   brand: Brand;
   logo: string; // data URL (PNG/JPEG/WebP) ou ''
 }
@@ -69,6 +72,7 @@ export interface BaseState {
   type: 'state';
   code: string;
   theme: Theme;
+  scoring: Scoring;
   brand: Brand & { logo: number }; // logo: versão (0 = sem logo)
   phase: Phase;
   qIndex: number;

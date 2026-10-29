@@ -1,6 +1,6 @@
 // /criar: editor do quiz e configuração do anfitrião (tema, nomes, marca, perguntas) e abertura da sala.
 import type { Page } from '../main';
-import type { CreateRoomBody, CreateRoomResult, Theme } from '../../shared/protocol';
+import type { CreateRoomBody, CreateRoomResult, Scoring, Theme } from '../../shared/protocol';
 import { LIMITS, compactQuestion, isReady } from '../../shared/rules';
 import { CORES_MARCA, TEMAS, pacote } from '../data/pacotes';
 import { LETRAS, esc } from '../lib/dom';
@@ -113,7 +113,13 @@ function mount(main: HTMLElement) {
 
   function secPerguntas() {
     const n = q.perguntas.length;
+    const pts = q.pontuacao || 'speed';
     return `<section class="panel" aria-labelledby="h-perg"><div class="tag" id="h-perg">3 · Perguntas · ${prontas()} de ${n} prontas</div>
+      <div class="cmode" role="group" aria-label="Como contam os pontos">
+        <button data-act="pontos" data-v="speed" aria-pressed="${pts === 'speed'}">Rapidez vale ponto<br>de 500 a 1.000</button>
+        <button data-act="pontos" data-v="fixed" aria-pressed="${pts === 'fixed'}">Sem pressa<br>acertou, 1.000</button>
+      </div>
+      <p class="small">${pts === 'speed' ? 'Quem acerta ganha 500 pontos, mais até 500 pela rapidez. Bom para festas e eventos.' : 'Quem acerta ganha 1.000, não importa o tempo. Bom para sala de aula e treinamento.'}</p>
       <div class="qlist">${q.perguntas.map((_, i) => editorPergunta(i, n)).join('')}</div>
       <div class="btnrow"><button class="btn sec" data-act="add"${n >= LIMITS.maxQuestions ? ' disabled' : ''}>Adicionar pergunta</button><button class="btn sec" data-act="pacote">Carregar o pacote do tema</button></div>
     </section>`;
@@ -157,7 +163,7 @@ function mount(main: HTMLElement) {
       .filter(isReady)
       .map((p) => compactQuestion({ ...p, t: preencher(q, p.t), o: p.o.map((o) => preencher(q, o)) }))
       .filter((p): p is NonNullable<typeof p> => !!p);
-    const body: CreateRoomBody = { questions, theme: q.tema, brand: { name: q.marca.name, color: q.marca.color }, logo: q.logo };
+    const body: CreateRoomBody = { questions, theme: q.tema, scoring: q.pontuacao || 'speed', brand: { name: q.marca.name, color: q.marca.color }, logo: q.logo };
     abrindo = true;
     erro = '';
     render();
@@ -274,6 +280,10 @@ function mount(main: HTMLElement) {
         persist();
         return render(`input[data-i="${i}"][data-f="o"][data-k="${Math.min(k, p.o.length - 1)}"]`);
       }
+      case 'pontos':
+        q.pontuacao = v as Scoring;
+        persist();
+        return render(`[data-act="pontos"][data-v="${v}"]`);
       case 'tl':
         p.tl = Number(v);
         persist();

@@ -34,7 +34,7 @@ export class Room extends DurableObject<Env> {
   async create(code: string, hostKey: string, body: CreateRoomBody): Promise<boolean> {
     if (this.room) return false;
     const now = Date.now();
-    this.room = G.newRoom({ code, hostKey, theme: body.theme, brand: body.brand, questions: body.questions, hasLogo: !!body.logo, now });
+    this.room = G.newRoom({ code, hostKey, theme: body.theme, scoring: body.scoring, brand: body.brand, questions: body.questions, hasLogo: !!body.logo, now });
     if (body.logo) await this.ctx.storage.put('logo', body.logo);
     await this.save();
     await this.scheduleAlarm();

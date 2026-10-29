@@ -38,15 +38,34 @@ Na tela do anfitrião, a seta para a direita, Page Down ou espaço avançam o jo
 - **Regras do jogo**: `shared/game.ts` (fases, pontos, ranking, sorteio) e `shared/rules.ts` (limites, códigos, validação). São usadas pelo servidor e testadas em `tests/`.
 - **Protocolo**: `shared/protocol.ts`. Mensagens JSON com `type`. O servidor manda sempre o estado completo, e o jogador nunca recebe a resposta certa antes da revelação.
 
-Pontos: errou ou não respondeu, 0. Acertou: `round(500 + 500 × max(0, 1 − tempo / limite))`, de 500 a 1000. O tempo é medido no servidor.
+Pontos: errou ou não respondeu, 0. Acertou: `round(500 + 500 × max(0, 1 − tempo / limite))`, de 500 a 1000. O tempo é medido no servidor e o anfitrião escolhe 10, 15, 20 ou 30 segundos por pergunta (padrão 20). No modo "Sem pressa", escolhido no editor, todo acerto vale 1000; serve para sala de aula e treinamento.
 
 Limites: até 200 jogadores por sala, 50 perguntas por quiz, apelido de até 18 letras.
 
-## Publicar no Cloudflare
+## Publicar no Cloudflare (plano gratuito)
 
-1. Crie uma conta em cloudflare.com e assine o plano Workers Paid (US$ 5 por mês). As salas usam Durable Objects; o plano gratuito também funciona, mas para tudo quando passa do limite diário.
-2. No terminal: `npx wrangler login` (abre o navegador para autorizar).
-3. `npm run deploy`. No fim aparece o endereço `https://suarodada.<sua-conta>.workers.dev`.
+O plano gratuito do Cloudflare roda tudo, inclusive as salas ao vivo: até 100 mil requisições e 13 mil GB-s de sala aberta por dia, algo como 50 partidas de 200 pessoas. Se passar disso, o site para até o dia seguinte; aí vale assinar o Workers Paid (US$ 5 por mês), sem mudar nada no código.
+
+### Caminho recomendado: publicar direto do GitHub
+
+Cada push na branch principal publica sozinho.
+
+1. Crie a conta grátis em [dash.cloudflare.com](https://dash.cloudflare.com/sign-up).
+2. No painel: **Workers & Pages → Create → Import a repository**.
+3. Conecte o GitHub e escolha o repositório `suarodada`.
+4. Confira os campos:
+   - **Project name**: `suarodada` (tem que ser igual ao `name` do `wrangler.jsonc`)
+   - **Build command**: `npm run build`
+   - **Deploy command**: `npx wrangler deploy`
+   - **Production branch**: a branch principal do repositório
+5. Clique em **Deploy**. Em 1 ou 2 minutos aparece o endereço `https://suarodada.<sua-conta>.workers.dev`.
+
+### Caminho alternativo: publicar do seu computador
+
+```bash
+npx wrangler login   # abre o navegador para autorizar
+npm run deploy
+```
 
 ### Ligar o seu domínio
 

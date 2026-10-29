@@ -1,4 +1,4 @@
-# Sua Rodada
+# Quiddo
 
 Quiz ao vivo para grupos. O anfitrião cria o quiz com as próprias perguntas, abre uma sala com um código de 4 letras, a turma entra pelo celular sem cadastro e todo mundo responde ao mesmo tempo. Quem acerta mais rápido ganha mais pontos, o ranking aparece depois de cada pergunta e no fim tem pódio e sorteio de prêmios.
 
@@ -52,13 +52,13 @@ Cada push na branch principal publica sozinho.
 
 1. Crie a conta grátis em [dash.cloudflare.com](https://dash.cloudflare.com/sign-up).
 2. No painel: **Workers & Pages → Create → Import a repository**.
-3. Conecte o GitHub e escolha o repositório `suarodada`.
+3. Conecte o GitHub e escolha o repositório `quiddo`.
 4. Confira os campos:
-   - **Project name**: `suarodada` (tem que ser igual ao `name` do `wrangler.jsonc`)
+   - **Project name**: `quiddo` (tem que ser igual ao `name` do `wrangler.jsonc`)
    - **Build command**: `npm run build`
    - **Deploy command**: `npx wrangler deploy`
    - **Production branch**: a branch principal do repositório
-5. Clique em **Deploy**. Em 1 ou 2 minutos aparece o endereço `https://suarodada.<sua-conta>.workers.dev`.
+5. Clique em **Deploy**. Em 1 ou 2 minutos aparece o endereço `https://quiddo.<sua-conta>.workers.dev`.
 
 ### Caminho alternativo: publicar do seu computador
 
@@ -69,14 +69,14 @@ npm run deploy
 
 ### Ligar o seu domínio
 
-1. No painel do Cloudflare, em **Add a domain**, adicione o domínio (ex.: `suarodada.com.br`) e troque os servidores DNS no registro.br pelos dois que o Cloudflare mostrar. Leva de minutos a algumas horas.
-2. Em **Workers & Pages → suarodada → Settings → Domains & Routes → Add → Custom domain**, digite `suarodada.com.br` (e, se quiser, `www.suarodada.com.br`).
+1. No painel do Cloudflare, em **Add a domain**, adicione o domínio (ex.: `quiddo.com.br`) e troque os servidores DNS no registro.br pelos dois que o Cloudflare mostrar. Leva de minutos a algumas horas.
+2. Em **Workers & Pages → quiddo → Settings → Domains & Routes → Add → Custom domain**, digite `quiddo.com.br` (e, se quiser, `www.quiddo.com.br`).
 3. O Cloudflare cria o certificado HTTPS sozinho.
 
 ## Referência
 
 - `docs/briefing.md`: o briefing do produto.
-- `docs/referencia/prototipo-quiz.html`: o protótipo que rodava dentro do site da Rodada. Só para consulta, não funciona fora de lá.
+- `docs/referencia/prototipo-quiz.html`: o protótipo "Sua Rodada", que rodava dentro do site da Rodada. Só para consulta, não funciona fora de lá.
 
 ## Fora do MVP, por enquanto
 

@@ -1,11 +1,11 @@
-# Briefing — site de quiz ao vivo (ex-"Sua Rodada")
+# Briefing — Quiddo, site de quiz ao vivo (ex-"Sua Rodada")
 
 > Cole este texto inteiro no Claude Code, dentro de uma pasta vazia que vai virar o repositório no GitHub.
-> Troque `Sua Rodada` pelo nome escolhido antes de colar.
+> Troque `Quiddo` pelo nome escolhido antes de colar.
 
 ---
 
-Você vai construir do zero um site de **quiz ao vivo para grupos**, chamado **Sua Rodada**. É um produto independente, em português do Brasil, simples, rápido e bonito. Leia o briefing inteiro antes de começar, monte um plano curto, depois execute por etapas e me mostre o resultado de cada etapa.
+Você vai construir do zero um site de **quiz ao vivo para grupos**, chamado **Quiddo**. É um produto independente, em português do Brasil, simples, rápido e bonito. Leia o briefing inteiro antes de começar, monte um plano curto, depois execute por etapas e me mostre o resultado de cada etapa.
 
 ## 1. O produto em uma frase
 
@@ -17,7 +17,7 @@ Para quem: empresas (convenção de vendas, apresentação, treinamento, confrat
 
 - É um quiz ao vivo no estilo dos que já existem, mas **nunca** use o nome "Kahoot", nem o logo, as formas (triângulo, losango, círculo, quadrado), as cores ou os sons deles. As respostas são identificadas por **letras A, B, C, D**.
 - Nada de texto em inglês na interface. Tudo em português do Brasil, frases curtas e diretas.
-- Rodapé de todas as páginas: "© 2026 Sua Rodada" à esquerda e "um projeto Beyond the Work" à direita (vou te mandar o SVG da assinatura; até lá, use o texto em Sora 600).
+- Rodapé de todas as páginas: "© 2026 Quiddo" à esquerda e "um projeto Beyond the Work" à direita (vou te mandar o SVG da assinatura; até lá, use o texto em Sora 600).
 
 ## 3. Escopo do MVP
 

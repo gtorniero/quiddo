@@ -1,4 +1,4 @@
-# Sua Rodada
+# Quiddo
 
 Quiz ao vivo para grupos. Vite + TypeScript no site (`src/`), Cloudflare Worker + Durable Object por sala (`worker/`), regras do jogo compartilhadas e testadas (`shared/`, `tests/`). Leia `README.md` e `docs/briefing.md` antes de mudar o produto.
 
@@ -9,7 +9,7 @@ Quiz ao vivo para grupos. Vite + TypeScript no site (`src/`), Cloudflare Worker 
 - O servidor é a fonte da verdade: estado absoluto, tempo medido no servidor, resposta certa só depois da revelação.
 - Lógica de jogo nova entra em `shared/game.ts` com teste em `tests/`.
 - Acessibilidade: contraste 4.5:1 (texto grande 3:1), botões de no mínimo 44–48 px, foco visível, `prefers-reduced-motion`, funcionar em 360 px.
-- Rodapé: "© 2026 Sua Rodada" e "um projeto Beyond the Work".
+- Rodapé: "© 2026 Quiddo" e "um projeto Beyond the Work".
 - Trabalhe numa branch e abra pull request.
 
 ## Antes de abrir pull request

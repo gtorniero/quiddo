@@ -10,7 +10,7 @@ import { codeForm, bindCodeForm } from './entrar';
 
 export function page(): Page {
   return {
-    title: 'Sua Rodada',
+    title: 'Quiddo',
     mount(main) {
       const tema = store.get<Theme>('tema', 'corp');
       const temas = (Object.keys(TEMAS) as Theme[])

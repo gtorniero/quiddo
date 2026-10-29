@@ -58,7 +58,7 @@ function render() {
   const main = document.getElementById('conteudo')!;
   main.className = page.wide ? 'wide' : '';
   header(location.pathname, page.compact);
-  document.title = page.title === 'Sua Rodada' ? 'Sua Rodada · quiz ao vivo para a sua turma' : `${page.title} · Sua Rodada`;
+  document.title = page.title === 'Quiddo' ? 'Quiddo · quiz ao vivo para a sua turma' : `${page.title} · Quiddo`;
   main.innerHTML = '';
   cleanup = page.mount(main);
 }

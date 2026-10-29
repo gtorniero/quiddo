@@ -68,7 +68,7 @@ function mount(main: HTMLElement, code: string) {
   // ---------- telas ----------
 
   function lobby(s: HostState) {
-    const invite = `Bora jogar Sua Rodada? Entra na sala com o código ${code}: ${link}`;
+    const invite = `Bora jogar Quiddo? Entra na sala com o código ${code}: ${link}`;
     const n = s.players.length;
     return `<section class="stage"><div class="joinbox">
         <div style="display:grid;gap:12px">

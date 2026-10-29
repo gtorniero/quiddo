@@ -61,7 +61,7 @@ export function preencher(q: Quiz, s: string): string {
 
 export function exportar(q: Quiz): string {
   const { id: _id, atualizado: _a, ...resto } = q;
-  return JSON.stringify({ formato: 'sua-rodada/1', ...resto }, null, 2);
+  return JSON.stringify({ formato: 'quiddo/1', ...resto }, null, 2);
 }
 
 /** Lê um JSON exportado. Lança Error com mensagem em português se não for um quiz. */
@@ -70,9 +70,9 @@ export function importar(texto: string): Quiz {
   try {
     d = JSON.parse(texto);
   } catch {
-    throw new Error('Esse arquivo não é um quiz da Sua Rodada.');
+    throw new Error('Esse arquivo não é um quiz da Quiddo.');
   }
-  if (!d || !Array.isArray(d.perguntas)) throw new Error('Esse arquivo não é um quiz da Sua Rodada.');
+  if (!d || !Array.isArray(d.perguntas)) throw new Error('Esse arquivo não é um quiz da Quiddo.');
   const q = novoQuiz(d.tema === 'festa' ? 'festa' : 'corp');
   q.titulo = cleanText(d.titulo, 60) || 'Quiz importado';
   q.pontuacao = d.pontuacao === 'fixed' ? 'fixed' : 'speed';

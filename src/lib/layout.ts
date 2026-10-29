@@ -6,7 +6,7 @@ export function header(path: string, compact = false) {
   const el = document.getElementById('topo')!;
   const cur = (p: string) => (path === p || path.startsWith(p + '/') ? ' aria-current="page"' : '');
   el.innerHTML =
-    `<a class="logo" href="/" data-link>${MARCA}<span>sua rodada</span></a>` +
+    `<a class="logo" href="/" data-link>${MARCA}<span>quiddo</span></a>` +
     (compact
       ? ''
       : `<nav class="nav" aria-label="Principal"><a href="/criar" data-link${cur('/criar')}>Criar meu quiz</a><a href="/entrar" data-link${cur('/entrar')}>Entrar com código</a><a href="/guias" data-link${cur('/guias')}>Guias</a></nav>`);

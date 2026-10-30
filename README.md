@@ -50,6 +50,12 @@ Antes de cada pergunta há um "Prepare-se" de 3 segundos: a pergunta aparece, a 
 
 Depois de cada pergunta o ranking mostra as moedinhas entrando, o placar subindo e quem trocou de posição. No fim, o pódio é revelado do 3º para o 1º lugar, com suspense, e o "modo foto" deixa só o pódio na tela.
 
+O pódio muda de cenário: em Amigos & família ele reveza entre a mata à noite (vaga-lumes), a chuva de ipê e a praia no fim de tarde (a cena sai do código da sala, então a TV e os celulares mostram a mesma); a Escola tem o álbum de figurinhas com o carimbo "Nota 10"; o Corporativo mantém o palco sóbrio. Quando o 1º aparece, cada lugar comemora do seu jeito (o 1º gira com coroa, o 2º pula, o 3º balança) e quem ficou fora do pódio aplaude no celular.
+
+Entre as rodadas: a contagem do "Prepare-se" é o olho do tucano; a pergunta que vale o dobro chega com o selo ×2 e a tela treme; a última pergunta cai do alto com os 3 primeiros nervosos na TV; uma cortina de folhas atravessa a TV na troca de pergunta. Na revelação, as erradas afundam, a certa ganha o selo, os bichos de quem acertou entram em fila e aparece o "Mais rápido no gatilho". O ranking da TV alterna entre a pista (cada bicho corre até a pontuação nova) e as colunas, e destaca quem está "pegando fogo" (3 acertos seguidos ou mais).
+
+Os bichos piscam e respiram na sala de espera e no pódio, entram como figurinhas com sombra dura e ganham molduras de conquista: chamas (sequência de 3 acertos), raio (o mais rápido da pergunta) e louros dourados (quem lidera).
+
 Limites: até 200 jogadores por sala, 50 perguntas por quiz, apelido de até 18 letras.
 
 ## Publicar no Cloudflare (plano gratuito)

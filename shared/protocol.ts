@@ -69,6 +69,15 @@ export interface RankRow {
   delta: number; // pontos da última pergunta
   rank: number; // 1 = primeiro
   prevRank: number; // posição antes da última pergunta (0 = não tinha)
+  streak: number; // acertos seguidos
+}
+
+/** Quem acertou a pergunta, com o tempo de resposta. Vai só para a TV, depois da revelação. */
+export interface Acerto {
+  id: string;
+  nick: string;
+  avatar: string;
+  ms: number;
 }
 
 export interface Drawn {
@@ -101,6 +110,7 @@ export interface HostState extends BaseState {
   role: 'host';
   players: { id: string; nick: string; avatar: string; connected: boolean; answered: boolean }[];
   ranking: RankRow[]; // completo na fase final; top 8 na fase de ranking
+  acertaram: Acerto[]; // depois da revelação: os 12 primeiros que acertaram, do mais rápido ao mais lento
 }
 
 export interface PlayerState extends BaseState {
@@ -113,6 +123,7 @@ export interface PlayerState extends BaseState {
     delta: number;
     rank: number;
     prevRank: number; // posição antes da última pergunta (0 = não tinha)
+    streak: number; // acertos seguidos (0 antes da revelação)
     choice: number | null; // o que respondeu nesta pergunta
   };
   ranking: RankRow[]; // top 5

@@ -1,7 +1,9 @@
 // Pedaços de tela usados pelo anfitrião e pelo jogador.
-import type { BaseState, RankRow } from '../../shared/protocol';
+import type { Acerto, BaseState, RankRow } from '../../shared/protocol';
+import { PREP_MS } from '../../shared/game';
 import { LETRAS, esc, fmt } from '../lib/dom';
-import { avatarSvg } from '../lib/avatar-art';
+import { avatarSvg, comMoldura } from '../lib/avatar-art';
+import type { Moldura } from '../lib/avatar-art';
 import { OLHO, simbolo } from '../lib/simbolos';
 
 export function brandBar(s: BaseState) {
@@ -13,13 +15,29 @@ export function brandBar(s: BaseState) {
 /** Ainda está no "Prepare-se"? `now` no relógio do servidor. */
 export const preparando = (s: BaseState, now: number) => s.phase === 'question' && now < s.startsAt;
 
-/** Tela do "Prepare-se": a pergunta aparece e a contagem 3, 2, 1 corre antes das respostas. */
-export function prepare(s: BaseState) {
+/** Olho do tucano grande da contagem do "Prepare-se": o anel amarelo esvazia em 3 s e o número fica na pupila. */
+const OLHO_CONTA = `<div class="olho-conta" aria-hidden="true"><svg viewBox="0 0 300 300" focusable="false"><circle cx="150" cy="150" r="136" fill="#13A07A" stroke="#0E2A22" stroke-width="8"/><circle cx="150" cy="150" r="105" fill="none" stroke="#0E6B50" stroke-width="14"/><circle class="anel" id="anel" cx="150" cy="150" r="105" fill="none" stroke="#FFC83D" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="100 200" transform="rotate(-90 150 150)"/><circle cx="150" cy="150" r="88" fill="#5BC0EB" stroke="#0E2A22" stroke-width="7"/><circle cx="150" cy="150" r="62" fill="#fff" stroke="#0E2A22" stroke-width="4"/></svg><b class="prep-n" id="prep">3</b></div>`;
+
+/** Selo "×2" que cai na tela antes da pergunta que vale o dobro. */
+const CARIMBO_X2 = '<div class="x2" aria-hidden="true"><span>×2</span></div>';
+
+/**
+ * Tela do "Prepare-se": a pergunta aparece e o olho do tucano conta 3, 2, 1 antes das respostas.
+ * Na última pergunta, "Última pergunta!" cai do alto e, na TV, os 3 primeiros aparecem nervosos (`top3`).
+ */
+export function prepare(s: BaseState, top3: RankRow[] = []) {
   const q = s.question!;
+  const ultima = s.total > 1 && s.qIndex === s.total - 1;
   const tipo = q.tipo === 'quem' ? 'Quem é mais provável' : q.tipo === 'opiniao' ? 'Opinião: não tem resposta certa' : '';
-  return `<section class="stage center prep"><span class="pill">Pergunta ${s.qIndex + 1} de ${s.total}</span>${
-    q.dobro ? '<div class="dobro-selo">Esta vale o dobro!</div>' : tipo ? `<div class="tipo-selo">${tipo}</div>` : ''
-  }<div class="qt">${esc(q.t)}</div><div class="prep-n" id="prep" aria-hidden="true">3</div><p class="prep-txt" role="status">Prepare-se!</p></section>`;
+  const titulo = ultima
+    ? `<div class="ultima"><span>Última</span> <span>pergunta!</span></div>${q.dobro ? '<div class="dobro-selo pequeno">Vale o dobro. Tudo pode mudar.</div>' : '<p class="ultima-sub">Tudo pode mudar.</p>'}`
+    : q.dobro
+      ? `<div class="selo-linha">${CARIMBO_X2}<div class="dobro-selo">Essa vale o dobro!</div></div>`
+      : tipo
+        ? `<div class="tipo-selo">${tipo}</div>`
+        : '';
+  const nervosos = ultima && top3.length ? `<div class="nervosos" aria-hidden="true">${top3.map((r) => `<span class="nervoso">${avatarSvg(r.avatar, 72)}<small>${r.rank}º ${esc(r.nick)}</small></span>`).join('')}</div>` : '';
+  return `<section class="stage center prep${q.dobro && !ultima ? ' treme-tela' : ''}${ultima ? ' final-clima' : ''}"><span class="pill">Pergunta ${s.qIndex + 1} de ${s.total}</span>${titulo}<div class="qt">${esc(q.t)}</div>${OLHO_CONTA}<p class="prep-txt" role="status">Prepare-se!</p>${nervosos}</section>`;
 }
 
 /** Cabeçalho da pergunta com cronômetro e barra. Os ids são atualizados pelo relógio da página. */
@@ -36,11 +54,20 @@ export function questionHead(s: BaseState) {
 export function tick(s: BaseState | null, now: number) {
   if (!s || s.phase !== 'question' || !s.question) return;
   if (now < s.startsAt) {
+    const falta = s.startsAt - now;
     const n = document.getElementById('prep');
-    const v = String(Math.max(1, Math.ceil((s.startsAt - now) / 1000)));
+    const v = falta < 350 ? 'Bora!' : String(Math.max(1, Math.ceil(falta / 1000)));
     if (n && n.textContent !== v) {
       n.textContent = v;
-      n.animate?.([{ transform: 'scale(1.4)', opacity: 0.4 }, { transform: 'scale(1)', opacity: 1 }], { duration: 300 });
+      n.classList.toggle('bora', v === 'Bora!');
+      n.animate?.([{ transform: 'scale(1.5)', opacity: 0.3 }, { transform: 'scale(1)', opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.3,1.4,.5,1)' });
+    }
+    // o anel do olho esvazia no tempo do servidor, mesmo se a tela abriu no meio da contagem
+    const anel = document.getElementById('anel');
+    if (anel && !anel.dataset.ok) {
+      anel.dataset.ok = '1';
+      anel.style.animationDelay = `${-Math.max(0, PREP_MS - falta)}ms`;
+      anel.classList.add('corre');
     }
     return;
   }
@@ -96,15 +123,105 @@ function opiniaoResultado(s: BaseState, mine: number | null) {
     .join('')}</div>`;
 }
 
-export function rankList(rows: RankRow[], me = '', animate = false) {
+/** Sequência que já vale a moldura de fogo. */
+export const FOGO = 3;
+
+/** Moldura de conquista de uma linha do ranking: fogo (sequência) > raio (mais rápido da pergunta) > louros (1º lugar). */
+export function molduraDe(r: RankRow, rapido = ''): Moldura | null {
+  if (r.streak >= FOGO) return 'fogo';
+  if (rapido && r.id === rapido) return 'rapido';
+  if (r.rank === 1 && r.score > 0) return 'lider';
+  return null;
+}
+
+const subiu = (r: RankRow) =>
+  r.prevRank && r.prevRank > r.rank ? `<span class="up" aria-label="subiu ${r.prevRank - r.rank}">Subiu ${r.prevRank - r.rank}!</span>` : '';
+
+export function rankList(rows: RankRow[], me = '', animate = false, rapido = '') {
   return `<div class="rank${animate ? ' anim' : ''}">${rows
     .map(
       (r) =>
-        `<div class="${r.id === me ? 'me' : ''}" data-rank="${r.rank}" data-prev="${r.prevRank}"><i>${r.rank}</i><span class="who">${avatarSvg(r.avatar, 36)}${esc(r.nick)}${r.id === me ? ' (você)' : ''}${
-          r.prevRank && r.prevRank > r.rank ? `<span class="up" aria-label="subiu ${r.prevRank - r.rank}">▲${r.prevRank - r.rank}</span>` : ''
-        }</span><em>${r.delta ? `${MOEDA}+${fmt(r.delta)}` : ''}</em><b class="pts" data-from="${r.score - r.delta}" data-to="${r.score}">${fmt(r.score)}</b></div>`,
+        `<div class="${r.id === me ? 'me' : ''}" data-rank="${r.rank}" data-prev="${r.prevRank}"><i>${r.rank}</i><span class="who">${comMoldura(avatarSvg(r.avatar, 36), molduraDe(r, rapido))}${esc(r.nick)}${r.id === me ? ' (você)' : ''}${subiu(r)}</span><em>${r.delta ? `${MOEDA}+${fmt(r.delta)}` : ''}</em><b class="pts" data-from="${r.score - r.delta}" data-to="${r.score}">${fmt(r.score)}</b></div>`,
     )
     .join('')}</div>`;
+}
+
+/** Ranking da TV em forma de pista: cada bicho corre da pontuação antiga até a nova, rumo à bandeira. */
+export function rankPista(rows: RankRow[], rapido = '') {
+  const max = Math.max(1, ...rows.map((r) => r.score));
+  const pct = (n: number) => `${Math.round((Math.max(0, n) / max) * 1000) / 10}%`;
+  return `<div class="rank anim pista">${rows
+    .map(
+      (r) =>
+        `<div data-rank="${r.rank}" data-prev="${r.prevRank}"><i>${r.rank}</i><span class="who">${esc(r.nick)}${subiu(r)}</span><span class="raia" aria-hidden="true"><span class="corredor" style="--de:${pct(r.score - r.delta)};--ate:${pct(r.score)}">${comMoldura(avatarSvg(r.avatar, 52), molduraDe(r, rapido))}</span><svg class="bandeira" viewBox="0 0 40 48" focusable="false"><path d="M4 46 V4" stroke="#0E2A22" stroke-width="5" stroke-linecap="round"/><path d="M6 4 h30 l-6 9 l6 9 h-30Z" fill="#FFC83D" stroke="#0E2A22" stroke-width="3" stroke-linejoin="round"/></svg></span><em>${r.delta ? `${MOEDA}+${fmt(r.delta)}` : ''}</em><b class="pts" data-from="${r.score - r.delta}" data-to="${r.score}">${fmt(r.score)}</b></div>`,
+    )
+    .join('')}</div>`;
+}
+
+/** Ranking da TV em colunas: as 5 primeiras crescem com a pontuação e a figurinha de cada um sobe junto. */
+export function rankColunas(rows: RankRow[], rapido = '') {
+  const top = rows.slice(0, 5);
+  const max = Math.max(1, ...top.map((r) => r.score));
+  const giro = ['-5deg', '5deg', '-4deg', '6deg', '-6deg'];
+  return `<ol class="colunas" aria-label="Os primeiros do ranking">${top
+    .map(
+      (r, i) =>
+        `<li style="--h:${Math.max(14, Math.round((r.score / max) * 100))}%;--i:${i}"><span class="col-fig fig" style="--r:${giro[i]}">${comMoldura(avatarSvg(r.avatar, 76), molduraDe(r, rapido))}</span><span class="col-barra r${r.rank}"><b>${fmt(r.score)}</b></span><span class="col-nome">${r.rank}º ${esc(r.nick)}</span></li>`,
+    )
+    .join('')}</ol>`;
+}
+
+/** Faixa "Fulano está pegando fogo": quem tem a maior sequência de acertos (a partir de 3). */
+export function fogoFaixa(rows: RankRow[]) {
+  const f = rows.filter((r) => r.streak >= FOGO).sort((a, b) => b.streak - a.streak || a.rank - b.rank)[0];
+  if (!f) return '';
+  return `<div class="fogo-faixa" role="status"><span class="fogo-av">${comMoldura(avatarSvg(f.avatar, 64), 'fogo')}</span><span><small>${esc(f.nick)} está</small><b>pegando fogo</b></span><span class="fogo-n"><b>${f.streak}</b><small>acertos seguidos</small></span></div>`;
+}
+
+/** Tempo de resposta em segundos, com vírgula. */
+export const segundos = (ms: number) => (ms / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' s';
+
+/** Depois da revelação, na TV: os bichos de quem acertou entram em fila e o mais rápido ganha o destaque. */
+export function revelacaoTv(acertaram: Acerto[], total: number) {
+  if (!total) return '<div class="acertos"><p class="small">Ninguém acertou essa. Bora para a próxima!</p></div>';
+  const mostra = acertaram.slice(0, 10);
+  const fila = `<div class="fila-acertos"><span class="tag">Acertaram</span><div class="fila">${mostra
+    .map((a, i) => `<span class="fila-av" style="--i:${i}">${avatarSvg(a.avatar, 52)}</span>`)
+    .join('')}${total > mostra.length ? `<span class="fila-mais" style="--i:${mostra.length}">+${total - mostra.length}</span>` : ''}</div></div>`;
+  const r = acertaram[0];
+  const rapido = r
+    ? `<div class="rapido"><span class="rapido-av">${comMoldura(avatarSvg(r.avatar, 92), 'rapido')}</span><div class="rapido-txt"><span class="tag">Mais rápido no gatilho</span><b>${esc(r.nick)}</b><span class="relogio">${segundos(r.ms)}</span></div><ol class="rapido-top">${acertaram
+        .slice(1, 3)
+        .map((a, i) => `<li><b>${i + 2}º</b> ${esc(a.nick)} <span>${segundos(a.ms)}</span></li>`)
+        .join('')}</ol></div>`
+    : '';
+  return `<div class="acertos">${fila}${rapido}</div>`;
+}
+
+/** Cortina de folhas que atravessa a TV na troca de pergunta. */
+export function cortina() {
+  if (calmo()) return;
+  document.querySelector('.cortina')?.remove();
+  const c = document.createElement('div');
+  c.className = 'cortina';
+  c.setAttribute('aria-hidden', 'true');
+  c.innerHTML = `<svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice" focusable="false"><g stroke="#0E2A22" stroke-width="6">
+    <path d="M-80 640 C-110 380 60 120 340 50 C380 330 220 560 -80 640Z" fill="#13A07A"/><path d="M-60 620 C40 430 170 230 330 70" fill="none"/>
+    <path d="M160 680 C90 420 260 150 560 90 C610 360 470 610 160 680Z" fill="#0F8A68"/><path d="M180 660 C280 480 400 300 550 110" fill="none"/>
+    <path d="M440 700 C370 420 560 120 880 60 C930 340 780 620 440 700Z" fill="#13A07A"/><path d="M460 680 C560 500 700 280 870 80" fill="none"/>
+    <path d="M700 660 C650 400 830 100 1100 20 C1150 300 1010 600 700 660Z" fill="#2E8B57"/>
+    <path d="M40 -60 C200 30 290 170 270 290 C130 250 40 120 40 -60Z" fill="#2E8B57"/>
+    <path d="M600 -80 C760 0 830 140 790 260 C650 220 580 80 600 -80Z" fill="#0F8A68"/>
+    <path d="M820 330 C820 330 790 365 790 383 A30 30 0 0 0 850 383 C850 365 820 330 820 330Z" fill="#1E7FD6"/>
+    <circle cx="380" cy="330" r="30" fill="#FF7A1A"/>
+  </g><g stroke="#0E2A22" stroke-width="4" fill="#E5383B"><circle cx="620" cy="400" r="22"/><circle cx="645" cy="418" r="22"/><circle cx="636" cy="447" r="22"/><circle cx="604" cy="447" r="22"/><circle cx="595" cy="418" r="22"/></g><circle cx="620" cy="428" r="13" fill="#FFC83D" stroke="#0E2A22" stroke-width="4"/></svg>`;
+  document.body.appendChild(c);
+  setTimeout(() => c.remove(), 1400);
+}
+
+/** Palmas para quem ficou fora do pódio: o bicho aplaude os três primeiros. */
+export function aplaude(avatar: string) {
+  return `<div class="aplaude" aria-hidden="true">${avatarSvg(avatar, 110, false, { vivo: true })}<span class="palmas"><i></i><i></i></span></div>`;
 }
 
 /** Conta de `from` até `to` no texto do elemento. */

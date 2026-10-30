@@ -234,3 +234,72 @@ describe('perguntas de opinião', () => {
     expect(r.players.p1.score).toBe(0);
   });
 });
+
+describe('sequência e quem acertou mais rápido', () => {
+  const muitas = [
+    { t: 'Um?', o: ['a', 'b'], c: 0, tl: 20 },
+    { t: 'Opinião?', o: ['a', 'b'], c: -1, tl: 20, tipo: 'opiniao' as const },
+    { t: 'Dois?', o: ['a', 'b'], c: 1, tl: 20 },
+    { t: 'Três?', o: ['a', 'b'], c: 0, tl: 20 },
+  ];
+  let r: G.Room;
+  beforeEach(() => {
+    r = G.newRoom({ code: 'ABCD', hostKey: 'k', theme: 'festa', brand: { name: '', color: '' }, questions: muitas, hasLogo: false, now: T0 });
+    G.join(r, 'p1', 'Ana', T0);
+    G.join(r, 'p2', 'Bia', T0 + 1);
+    G.join(r, 'p3', 'Caio', T0 + 2);
+  });
+  const rodada = (escolhas: Record<string, [number, number]>, t: number) => {
+    for (const [id, [c, ms]] of Object.entries(escolhas)) G.answer(r, id, r.qIndex, c, r.startedAt + ms);
+    G.reveal(r);
+    G.showRanking(r);
+    return t;
+  };
+
+  it('conta acertos seguidos, a opinião não quebra e o erro zera', () => {
+    G.start(r, S);
+    rodada({ p1: [0, 1000], p2: [0, 500], p3: [1, 200] }, 0);
+    expect(r.players.p1.streak).toBe(1);
+    expect(r.players.p3.streak).toBe(0);
+    G.next(r, S + 30_000);
+    rodada({ p1: [1, 100], p2: [0, 100] }, 0); // opinião
+    expect(r.players.p1.streak).toBe(1);
+    G.next(r, S + 60_000);
+    rodada({ p1: [1, 100], p2: [0, 100], p3: [1, 300] }, 0);
+    expect(r.players.p1.streak).toBe(2);
+    expect(r.players.p2.streak).toBe(0);
+    expect(r.players.p3.streak).toBe(1);
+    expect(G.ranking(r).find((x) => x.id === 'p1')!.streak).toBe(2);
+    expect(G.playerView(r, 'p1', S + 61_000)!.me.streak).toBe(2);
+  });
+
+  it('lista quem acertou do mais rápido ao mais lento, só para a TV e só depois da revelação', () => {
+    G.start(r, S);
+    G.answer(r, 'p1', 0, 0, r.startedAt + 1500);
+    G.answer(r, 'p2', 0, 0, r.startedAt + 400);
+    G.answer(r, 'p3', 0, 1, r.startedAt + 100);
+    expect(G.hostView(r, T0).acertaram).toEqual([]);
+    G.reveal(r);
+    const v = G.hostView(r, T0 + 2000);
+    expect(v.acertaram.map((a) => [a.nick, a.ms])).toEqual([
+      ['Bia', 400],
+      ['Ana', 1500],
+    ]);
+    expect('acertaram' in G.playerView(r, 'p1', T0 + 2000)!).toBe(false);
+  });
+
+  it('jogar de novo zera a sequência', () => {
+    G.start(r, S);
+    for (let i = 0; i < muitas.length; i++) {
+      if (i) G.next(r, S + i * 30_000);
+      G.answer(r, 'p1', i, muitas[i].c < 0 ? 0 : muitas[i].c, r.startedAt + 100);
+      G.reveal(r);
+      G.showRanking(r);
+    }
+    G.next(r, S + 200_000);
+    expect(r.phase).toBe('final');
+    expect(r.players.p1.streak).toBe(3);
+    G.restart(r, S + 300_000);
+    expect(r.players.p1.streak).toBe(0);
+  });
+});

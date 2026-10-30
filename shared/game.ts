@@ -1,6 +1,6 @@
 // Motor do jogo: estado da sala e transições de fase, sem rede nem relógio próprio.
 // O Durable Object guarda um `Room`, chama estas funções e manda as visões para cada um.
-import type { Brand, Drawn, DrawMode, HostState, Phase, PlayerState, Question, RankRow, Theme } from './protocol';
+import type { Acerto, Brand, Drawn, DrawMode, HostState, Phase, PlayerState, Question, RankRow, Theme } from './protocol';
 import { LIMITS, cleanNick, points } from './rules';
 import { AVATAR_PADRAO, cleanAvatar, uniqueAvatar } from './avatar';
 
@@ -11,6 +11,7 @@ export interface Player {
   score: number;
   delta: number;
   prevRank: number;
+  streak?: number; // acertos seguidos nas perguntas que valem ponto (salas antigas não tinham)
   joinedAt: number;
   connected: boolean;
 }
@@ -163,6 +164,7 @@ function resetScores(room: Room) {
     p.score = 0;
     p.delta = 0;
     p.prevRank = 0;
+    p.streak = 0;
   }
 }
 
@@ -197,8 +199,11 @@ export function reveal(room: Room): boolean {
     p.prevRank = before[p.id] || 0;
     const a = room.answers[p.id];
     // pergunta de opinião não tem certa nem errada: não mexe no placar
-    p.delta = valePonto && a && a.choice === q.c ? points(a.ms, q.tl) * (q.dobro ? 2 : 1) : 0;
+    const acertou = valePonto && !!a && a.choice === q.c;
+    p.delta = acertou ? points(a.ms, q.tl) * (q.dobro ? 2 : 1) : 0;
     p.score += p.delta;
+    // sequência: só as perguntas que valem ponto contam; opinião não quebra nem soma
+    if (valePonto) p.streak = acertou ? (p.streak || 0) + 1 : 0;
     if (a) room.counts[a.choice]++;
   }
   room.phase = 'reveal';
@@ -241,7 +246,18 @@ export function draw(room: Room, mode: DrawMode, rand: () => number = Math.rando
 export function ranking(room: Room): RankRow[] {
   return Object.values(room.players)
     .sort((a, b) => b.score - a.score || a.joinedAt - b.joinedAt)
-    .map((p, i) => ({ id: p.id, nick: p.nick, avatar: avatarOf(p), score: p.score, delta: p.delta, rank: i + 1, prevRank: p.prevRank }));
+    .map((p, i) => ({ id: p.id, nick: p.nick, avatar: avatarOf(p), score: p.score, delta: p.delta, rank: i + 1, prevRank: p.prevRank, streak: p.streak || 0 }));
+}
+
+/** Quem acertou a pergunta atual, do mais rápido para o mais lento. Só existe depois da revelação. */
+export function acertaram(room: Room): Acerto[] {
+  if (room.phase !== 'reveal' && room.phase !== 'ranking') return [];
+  const q = room.questions[room.qIndex];
+  if (q.tipo && q.tipo !== 'quiz') return [];
+  return Object.entries(room.answers)
+    .filter(([id, a]) => a.choice === q.c && room.players[id])
+    .sort((x, y) => x[1].ms - y[1].ms)
+    .map(([id, a]) => ({ id, nick: room.players[id].nick, avatar: avatarOf(room.players[id]), ms: a.ms }));
 }
 
 function rankMap(room: Room): Record<string, number> {
@@ -295,6 +311,7 @@ export function hostView(room: Room, now: number, rk: RankRow[] = ranking(room))
       .sort((a, b) => a.joinedAt - b.joinedAt)
       .map((p) => ({ id: p.id, nick: p.nick, avatar: avatarOf(p), connected: p.connected, answered: !!room.answers[p.id] })),
     ranking: room.phase === 'final' ? rk : room.phase === 'ranking' || room.phase === 'reveal' ? rk.slice(0, 8) : [],
+    acertaram: acertaram(room).slice(0, 12),
   };
 }
 
@@ -308,7 +325,17 @@ export function playerView(room: Room, playerId: string, now: number, rk: RankRo
     ...base(room, now),
     role: 'player',
     podium: room.phase === 'final' ? rk.slice(0, 3) : [],
-    me: { id: p.id, nick: p.nick, avatar: avatarOf(p), score: p.score, delta: p.delta, rank: mine ? mine.rank : 0, prevRank: mine ? mine.prevRank : 0, choice: a ? a.choice : null },
+    me: {
+      id: p.id,
+      nick: p.nick,
+      avatar: avatarOf(p),
+      score: p.score,
+      delta: p.delta,
+      rank: mine ? mine.rank : 0,
+      prevRank: mine ? mine.prevRank : 0,
+      streak: showRank ? p.streak || 0 : 0,
+      choice: a ? a.choice : null,
+    },
     ranking: showRank ? rk.slice(0, 5) : [],
   };
 }

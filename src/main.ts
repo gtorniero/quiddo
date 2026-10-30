@@ -53,12 +53,12 @@ function render() {
   cleanup = undefined;
   banner('');
   // tema padrão do site: o último escolhido no editor
-  applyTheme(store.get<Theme>('tema', 'corp'));
+  applyTheme(store.get<Theme>('tema', 'festa'));
   const page = route(location.pathname);
   const main = document.getElementById('conteudo')!;
   main.className = page.wide ? 'wide' : '';
   header(location.pathname, page.compact);
-  document.title = page.title === 'Quiddo' ? 'Quiddo · quiz ao vivo para a sua turma' : `${page.title} · Quiddo`;
+  document.title = page.title === 'Quiddo' ? 'Quiddo · Quizz do seu jeito' : `${page.title} · Quiddo`;
   main.innerHTML = '';
   cleanup = page.mount(main);
 }

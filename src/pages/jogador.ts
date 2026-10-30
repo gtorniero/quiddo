@@ -11,6 +11,7 @@ import { applyTheme } from '../lib/theme';
 import { BICHOS, CABECA, CORES_N, ROSTO, avatarName, encodeAvatar, parseAvatar, randomAvatar } from '../../shared/avatar';
 import type { Avatar, Bicho, ItemCabeca, ItemRosto } from '../../shared/avatar';
 import { CORES_AVATAR, avatarSvg } from '../lib/avatar-art';
+import { simbolo } from '../lib/simbolos';
 import { answersStatic, brandBar, errorScreen, podium, questionHead, rankList, tick } from './jogo-comum';
 
 interface Seat {
@@ -151,7 +152,7 @@ function mount(main: HTMLElement, code: string) {
         (o, k) =>
           `<button class="ans c${k}${chosen != null && chosen !== k ? ' dim' : ''}${chosen === k ? ' mine' : ''}" data-act="ans" data-v="${k}" data-focus="a${k}"${chosen != null ? ' disabled' : ''}${
             chosen === k ? ' aria-pressed="true"' : ''
-          }><span class="lt">${LETRAS[k]}</span><span>${esc(o)}</span><span></span></button>`,
+          }>${simbolo(k)}<span class="lt">${LETRAS[k]}</span><span>${esc(o)}</span><span></span></button>`,
       )
       .join('');
     return `<section class="stage">${questionHead(s)}<div class="answers" role="group" aria-label="Respostas">${buttons}</div>
@@ -161,7 +162,7 @@ function mount(main: HTMLElement, code: string) {
   function reveal(s: PlayerState) {
     const answered = s.me.choice != null;
     const ok = answered && s.me.choice === s.correct;
-    return `<section class="stage">${questionHead(s)}<div class="verdict ${ok ? 'ok' : 'no'}" role="status">${answered ? (ok ? `Acertou! +${fmt(s.me.delta)}` : 'Errou') : 'Não respondeu'}</div>
+    return `<section class="stage">${questionHead(s)}<div class="verdict ${ok ? 'ok' : 'no'}" role="status">${answered ? (ok ? `Mandou bem! +${fmt(s.me.delta)}` : 'Quase!') : 'Não respondeu'}</div>
       ${answersStatic(s, s.me.choice)}
       <p class="hint" style="font-size:19px">Você está em <b>${s.me.rank}º</b> de ${s.playerCount}, com ${fmt(s.me.score)} pontos.</p></section>`;
   }

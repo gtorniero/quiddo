@@ -4,7 +4,7 @@
 
 > **Neste repositório:** os personagens já estão implementados (`shared/avatar.ts`, `src/lib/avatar-art.ts`, ver `docs/personagens.md`), então o `avatar.js` e a pasta `personagens/` citados abaixo não vêm junto.
 > As regras do `CLAUDE.md` valem por cima deste guia: respostas sempre com as letras A, B, C, D (o símbolo entra ao lado da letra).
-> **Em revisão:** a ordem vermelho, azul, amarelo, verde nas respostas coincide com as cores do Kahoot. Antes de aplicar o visual das respostas, trocar a paleta (por exemplo verde, laranja, azul, vermelho).
+> **Aplicado no site:** as respostas usam **A folha verde, B sol laranja, C gota azul, D flor vermelha** (`src/lib/simbolos.ts` e `--a1` a `--a4` em `src/styles.css`). A tabela de respostas mais abaixo (vermelho, azul, amarelo, verde) ficou antiga: aquela ordem coincide com as cores do Kahoot e não deve ser usada.
 
 Este guia serve para o Claude Code aplicar a marca no site. Arquivos deste kit:
 

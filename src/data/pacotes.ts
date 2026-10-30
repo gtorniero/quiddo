@@ -14,7 +14,7 @@ export const TEMAS: Record<Theme, TemaInfo> = {
   corp: {
     nome: 'Corporativo',
     desc: 'Convenção, apresentação, treinamento, confraternização',
-    cores: ['#18181B', '#44403C', '#71717A', '#A16207'],
+    cores: ['#0E2A22', '#F3F2EF', '#13A07A', '#1E7FD6'],
     chamada: 'Quebra-gelo da equipe',
     pacote: [
       { t: 'Em que ano o Pix foi lançado no Brasil?', o: ['2020', '2018', '2021', '2019'], c: 0, tl: 20 },
@@ -30,7 +30,7 @@ export const TEMAS: Record<Theme, TemaInfo> = {
   festa: {
     nome: 'Amigos & família',
     desc: 'Aniversário, churrasco, viagem, Natal, resenha',
-    cores: ['#FF4F8B', '#D97706', '#12A06A', '#7C5CFF'],
+    cores: ['#13A07A', '#FF7A1A', '#FFC83D', '#E5383B'],
     chamada: 'Quem manja mais da turma',
     pacote: [
       { t: 'Qual é a comida preferida de {A}?', o: ['', '', '', ''], c: 0, tl: 20 },

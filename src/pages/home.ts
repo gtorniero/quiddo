@@ -7,12 +7,13 @@ import { navigate } from '../lib/nav';
 import { store } from '../lib/storage';
 import { applyTheme } from '../lib/theme';
 import { codeForm, bindCodeForm } from './entrar';
+import { avatarSvg } from '../lib/avatar-art';
 
 export function page(): Page {
   return {
     title: 'Quiddo',
     mount(main) {
-      const tema = store.get<Theme>('tema', 'corp');
+      const tema = store.get<Theme>('tema', 'festa');
       const temas = (Object.keys(TEMAS) as Theme[])
         .map((k) => {
           const t = TEMAS[k];
@@ -25,8 +26,10 @@ export function page(): Page {
         .join('');
       main.innerHTML = `
         <section class="hero">
-          <h1>O quiz ao vivo da sua turma</h1>
-          <p>Você escreve as perguntas, abre uma sala e todo mundo joga pelo celular. Quem acerta mais rápido ganha mais pontos, e o ranking aparece depois de cada pergunta.</p>
+          <img class="marca" src="/marca/quiddo-cor-slogan.svg" alt="Quiddo, Quizz do seu jeito" width="440" height="190">
+          <div class="bichos" aria-hidden="true">${['tucano.coroa.-.0', 'capivara.laranja.-.1', 'onca.-.escuros.2', 'perereca.festa.-.7', 'arara.flor.-.4', 'caramelo.bone.-.5'].map((a) => avatarSvg(a, 56)).join('')}</div>
+          <h1>Monte o seu quiz e jogue ao vivo com a turma</h1>
+          <p>Você escreve as perguntas, abre uma sala e todo mundo joga pelo celular, cada um com o seu bicho. Quem acerta mais rápido ganha mais pontos, e o ranking aparece depois de cada pergunta.</p>
           <div class="btnrow"><a class="btn" href="/criar" data-link>Criar meu quiz</a><a class="btn sec" href="/entrar" data-link>Entrar com código</a></div>
         </section>
         <section class="panel">

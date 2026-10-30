@@ -2,6 +2,7 @@
 import type { BaseState, RankRow } from '../../shared/protocol';
 import { LETRAS, esc, fmt } from '../lib/dom';
 import { avatarSvg } from '../lib/avatar-art';
+import { OLHO, simbolo } from '../lib/simbolos';
 
 export function brandBar(s: BaseState) {
   const logo = s.brand.logo ? `<img src="/api/salas/${s.code}/logo?v=${s.brand.logo}" alt="Logo de ${esc(s.brand.name || 'quem organiza')}">` : '';
@@ -12,8 +13,8 @@ export function brandBar(s: BaseState) {
 /** Cabeçalho da pergunta com cronômetro e barra. Os ids são atualizados pelo relógio da página. */
 export function questionHead(s: BaseState) {
   const q = s.question!;
-  return `<div class="meta"><span>Pergunta ${s.qIndex + 1} de ${s.total}</span>${
-    s.phase === 'question' ? `<span aria-hidden="true"><b id="tempo">${q.tl}</b> s</span>` : ''
+  return `<div class="meta"><span class="pill">Pergunta ${s.qIndex + 1} de ${s.total}</span>${
+    s.phase === 'question' ? `<span class="timer" aria-hidden="true">${OLHO}<b id="tempo">${q.tl}</b></span>` : ''
   }</div>${s.phase === 'question' ? '<div class="bar" aria-hidden="true"><i id="barra"></i></div>' : ''}<div class="qt">${esc(q.t)}</div>`;
 }
 
@@ -34,7 +35,7 @@ export function answersStatic(s: BaseState, mine: number | null = null) {
     .map((o, k) => {
       const cls = `ans c${k}` + (rev ? (k === s.correct ? ' ok' : ' dim') : '') + (mine === k && !rev ? ' mine' : '');
       const n = rev && s.counts ? `<span class="n" aria-label="${s.counts[k]} ${s.counts[k] === 1 ? 'pessoa' : 'pessoas'}">${s.counts[k]}</span>` : '<span></span>';
-      return `<div class="${cls}"><span class="lt">${LETRAS[k]}</span><span>${esc(o)}${rev && k === s.correct ? '<span class="sr"> (resposta certa)</span>' : ''}</span>${n}</div>`;
+      return `<div class="${cls}">${simbolo(k)}<span class="lt">${LETRAS[k]}</span><span>${esc(o)}${rev && k === s.correct ? '<span class="sr"> (resposta certa)</span>' : ''}</span>${n}</div>`;
     })
     .join('')}</div>`;
 }

@@ -10,7 +10,7 @@ import { store } from '../lib/storage';
 import { applyTheme } from '../lib/theme';
 import { palco } from '../lib/podio';
 import { avatarSvg } from '../lib/avatar-art';
-import { PASSOS_PODIO, animateRank, answersStatic, prepare, preparando, brandBar, confete, cortina, errorScreen, fogoFaixa, fotoCabeca, podiumTitle, questionHead, rankColunas, rankList, rankPista, revelacaoTv, tick } from './jogo-comum';
+import { PASSOS_PODIO, animateRank, answersStatic, prepare, preparando, brandBar, confete, cortina, errorScreen, fogoFaixa, fotoCabeca, podiumTitle, questionHead, rankColunas, rankList, rankPista, revelacaoTv, tick, top10 } from './jogo-comum';
 import type { RankRow } from '../../shared/protocol';
 
 /** Rotação das figurinhas na sala de espera: o jeito solto do logo. */
@@ -60,7 +60,7 @@ function mount(main: HTMLElement, code: string) {
     if (m.type !== 'state' || m.role !== 'host') return;
     const prev = s;
     s = m;
-    applyTheme(s.theme, s.brand.color);
+    applyTheme(s.theme, s.brand.color, s.visual);
     if (s.phase === 'lobby') ultimoRk = [];
     else if (s.ranking.length) ultimoRk = s.ranking;
     const phaseChanged = !prev || prev.phase !== s.phase || prev.qIndex !== s.qIndex;
@@ -77,7 +77,7 @@ function mount(main: HTMLElement, code: string) {
       window.scrollTo(0, 0);
       if (s.phase === 'ranking') animateRank(main);
       // cortina de folhas na troca de pergunta
-      if (prev && s.phase === 'question' && prev.phase !== 'question') cortina();
+      if (prev && s.phase === 'question' && prev.phase !== 'question') cortina(s.visual);
     }
   }
 
@@ -123,7 +123,7 @@ function mount(main: HTMLElement, code: string) {
         window.setTimeout(() => {
           passo = i;
           render();
-          if (i === 4) confete(s?.theme === 'corp');
+          if (i === 4) confete(s?.theme === 'corp' && s?.visual === 'floresta');
         }, ms),
       );
     });
@@ -202,18 +202,19 @@ function mount(main: HTMLElement, code: string) {
     const scored = s.ranking.some((r) => r.score > 0 && !s.drawn.some((d) => d.id === r.id));
     const anyLeft = s.ranking.some((r) => !s.drawn.some((d) => d.id === r.id));
     const novo = [0, 3, 2, 0, 1][passo];
-    const card = `<section class="stage center foto" id="foto">${fotoCabeca(s)}<div class="big" aria-live="polite">${podiumTitle(s.podium, passo)}</div>${
-      s.podium.length ? palco(s.podium, s.theme, passo, novo, s.code) : ''
+    const card = `<section class="stage center foto" id="foto">${fotoCabeca(s)}<div class="big" aria-live="polite">${podiumTitle(s.podium, passo, s.visual)}</div>${
+      s.podium.length ? palco(s.podium, s.theme, passo, novo, s.code, s.visual) : ''
     }<p class="foto-pe">${esc(location.host)} · quiz ao vivo</p></section>`;
     if (passo < 4) return card + `<section class="panel center"><button class="btn sec auto" data-act="pular" data-focus="pular">Pular o suspense</button></section>`;
-    return `${card}
+    // depois do pódio, os 10 primeiros para todo mundo ver
+    return `${card}${top10(s.ranking)}
       <section class="panel center"><button class="btn auto" data-act="foto" data-focus="foto">Modo foto: só o pódio na tela</button><p class="small">Deixa só o pódio na tela, para a turma tirar foto. Aperte Esc para voltar.</p></section>
       <section class="panel center"><h2>Sorteio de prêmios</h2>
         <div class="sorteio" id="sorteio" aria-live="polite">${last ? esc(last.nick) : ''}</div>
         ${shownDrawn > 1 ? `<p class="small">Já sorteados: ${s.drawn.slice(0, shownDrawn - 1).map((d) => esc(d.nick)).join(', ')}</p>` : ''}
         <div class="btnrow" style="width:100%"><button class="btn" data-act="draw" data-v="all" data-focus="drawall"${anyLeft && !spinning ? '' : ' disabled'}>Sortear entre todos</button><button class="btn sec" data-act="draw" data-v="scored" data-focus="drawpts"${scored && !spinning ? '' : ' disabled'}>Só entre quem pontuou</button></div>
         <p class="small">Cada sorteio tira um nome que ainda não saiu. Sorteie quantos prêmios quiser.</p></section>
-      <section class="panel"><h2>Classificação final</h2>${s.ranking.length ? rankList(s.ranking) : '<p class="small">Ninguém jogou.</p>'}
+      <section class="panel"><h2>Classificação ${s.ranking.length > 10 ? 'completa' : 'final'}</h2>${s.ranking.length ? rankList(s.ranking) : '<p class="small">Ninguém jogou.</p>'}
         <div class="btnrow"><button class="btn" data-act="restart" data-focus="restart">Jogar de novo</button><button class="btn sec" data-act="close" data-focus="close">Encerrar sala</button></div>
         <p class="small">Jogar de novo usa as mesmas perguntas e as mesmas pessoas, com os pontos zerados.</p></section>`;
   }

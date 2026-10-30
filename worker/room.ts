@@ -41,7 +41,7 @@ export class Room extends DurableObject<Env> {
       imgs['img:' + i] = q.img;
       return { ...q, img: '1' };
     });
-    this.room = G.newRoom({ code, hostKey, theme: body.theme, brand: body.brand, questions, hasLogo: !!body.logo, now });
+    this.room = G.newRoom({ code, hostKey, theme: body.theme, visual: body.visual, brand: body.brand, questions, hasLogo: !!body.logo, now });
     if (body.logo) await this.ctx.storage.put('logo', body.logo);
     for (const [k, v] of Object.entries(imgs)) await this.ctx.storage.put(k, v);
     await this.save();

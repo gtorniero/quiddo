@@ -1,6 +1,6 @@
 // "Meus quizzes": guardados no navegador do anfitrião. Importar e exportar em JSON.
-import type { Brand, Question, Theme } from '../../shared/protocol';
-import { IMG_RE, LIMITS, cleanText } from '../../shared/rules';
+import type { Brand, Question, Theme, Visual } from '../../shared/protocol';
+import { IMG_RE, LIMITS, cleanText, visualDoModo } from '../../shared/rules';
 import { pacote } from '../data/pacotes';
 import { store, uid } from './storage';
 
@@ -10,7 +10,8 @@ export type Pergunta = Question & { vf?: boolean };
 export interface Quiz {
   id: string;
   titulo: string;
-  tema: Theme;
+  tema: Theme; // o modo
+  visual?: Visual; // escolhido depois do modo; ausente = Floresta
   tempo: number; // segundos de cada pergunta, o mesmo para todas: 10, 15, 20 ou 30
   dobroUltima?: boolean; // a última pergunta com resposta certa vale o dobro
   marca: Brand & { ultima?: string };
@@ -24,6 +25,7 @@ export function novoQuiz(tema: Theme = 'corp'): Quiz {
     id: uid(),
     titulo: tema === 'corp' ? 'Quiz da equipe' : tema === 'escola' ? 'Quiz da turma' : 'Quiz da galera',
     tema,
+    visual: 'floresta',
     tempo: 20,
     marca: { name: '', color: '' },
     logo: '',
@@ -38,6 +40,7 @@ const TEMPOS = LIMITS.times as readonly number[];
 function normalizar(q: Quiz): Quiz {
   if (!TEMPOS.includes(q.tempo)) q.tempo = TEMPOS.includes(q.perguntas[0]?.tl) ? q.perguntas[0].tl : 20;
   if (q.tema !== 'festa' && q.tema !== 'escola') q.tema = 'corp';
+  q.visual = visualDoModo(q.tema, q.visual);
   return q;
 }
 
@@ -108,5 +111,6 @@ export function importar(texto: string): Quiz {
   });
   q.tempo = TEMPOS.includes(Number(d.tempo)) ? Number(d.tempo) : 0;
   q.dobroUltima = d.dobroUltima === true;
+  q.visual = d.visual;
   return normalizar(q);
 }

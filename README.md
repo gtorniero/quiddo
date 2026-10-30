@@ -22,8 +22,8 @@ Para testar com o celular na mesma rede Wi-Fi: `npm run dev -- --host` e abra no
 
 | Endereço | O que é |
 | --- | --- |
-| `/` | Home: o que é, como funciona, os dois temas |
-| `/criar` | Editor do quiz: Meus quizzes, tema (Corporativo, Amigos & família, Escola), tempo de cada pergunta, Sua marca (só Corporativo e Escola), perguntas, abrir a sala |
+| `/` | Home: o que é, como funciona, os três modos |
+| `/criar` | Editor do quiz: Meus quizzes, modo (Corporativo, Amigos & família, Escola), visual do jogo, tempo de cada pergunta, Sua marca (só Corporativo e Escola), perguntas, abrir a sala |
 | `/host/{CODIGO}` | Tela do anfitrião, para a TV ou o projetor |
 | `/{CODIGO}` | Entrada e tela do jogador |
 | `/entrar` | Digitar o código da sala |
@@ -50,7 +50,17 @@ Antes de cada pergunta há um "Prepare-se" de 3 segundos: a pergunta aparece, a 
 
 Depois de cada pergunta o ranking mostra as moedinhas entrando, o placar subindo e quem trocou de posição. No fim, o pódio é revelado do 3º para o 1º lugar, com suspense, e o "modo foto" deixa só o pódio na tela.
 
-O pódio muda de cenário: em Amigos & família ele reveza entre a mata à noite (vaga-lumes), a chuva de ipê e a praia no fim de tarde (a cena sai do código da sala, então a TV e os celulares mostram a mesma); a Escola tem o álbum de figurinhas com o carimbo "Nota 10"; o Corporativo mantém o palco sóbrio. Quando o 1º aparece, cada lugar comemora do seu jeito (o 1º gira com coroa, o 2º pula, o 3º balança) e quem ficou fora do pódio aplaude no celular.
+**Modos e visuais.** O modo é o tipo de evento (Corporativo, Amigos & família, Escola) e aparece na home e no editor. O visual só aparece no editor, depois do modo, e lista apenas os visuais daquele modo (`VISUAIS_DO_MODO` em `shared/rules.ts`; o servidor recusa visual fora do modo e cai em Floresta):
+
+| Modo | Visuais |
+|---|---|
+| Corporativo | Floresta (padrão), Escritório, Entretenimento |
+| Amigos & família | Floresta (padrão), Entretenimento, Espaço, Amor |
+| Escola | Floresta (padrão), Sala de aula, Álbum de figurinhas, Espaço, Entretenimento |
+
+Floresta é o Quiddo de sempre. Cada outro visual troca as cores da TV e dos celulares, o relógio do "Prepare-se" (caneca de café, contagem de filme, lousa, pacotinho de figurinhas, planeta, coração), a cortina da troca de pergunta (post-its, cortina de cinema, folhas de caderno, figurinhas, espaço, corações) e o cenário do pódio (`src/lib/visuais-arte.ts` e `src/lib/podio.ts`). Em todos, o pódio revela o 3º, depois o 2º e por último o 1º, e em seguida a TV e todos os celulares mostram os 10 primeiros.
+
+Na Floresta, o pódio muda de cenário: em Amigos & família e Escola ele reveza entre a mata à noite (vaga-lumes), a chuva de ipê e a praia no fim de tarde (a cena sai do código da sala, então a TV e os celulares mostram a mesma); o Corporativo mantém o palco sóbrio. O álbum de figurinhas com o carimbo "Nota 10" virou um visual próprio da Escola. Quando o 1º aparece, cada lugar comemora do seu jeito (o 1º gira com coroa, o 2º pula, o 3º balança) e quem ficou fora do pódio aplaude no celular.
 
 Entre as rodadas: a contagem do "Prepare-se" é o olho do tucano; a pergunta que vale o dobro chega com o selo ×2 e a tela treme; a última pergunta cai do alto com os 3 primeiros nervosos na TV; uma cortina de folhas atravessa a TV na troca de pergunta. Na revelação, as erradas afundam, a certa ganha o selo, os bichos de quem acertou entram em fila e aparece o "Mais rápido no gatilho". O ranking da TV alterna entre a pista (cada bicho corre até a pontuação nova) e as colunas, e destaca quem está "pegando fogo" (3 acertos seguidos ou mais).
 

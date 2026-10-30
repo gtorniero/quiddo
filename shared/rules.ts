@@ -1,5 +1,5 @@
 // Regras do jogo que valem dos dois lados: limites, pontuação, códigos e validação.
-import type { Brand, CreateRoomBody, Question, Theme } from './protocol';
+import type { Brand, CreateRoomBody, Question, Theme, Visual } from './protocol';
 
 export const LIMITS = {
   maxPlayers: 200,
@@ -80,6 +80,18 @@ export const IMG_RE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
+/** Visuais de cada modo, na ordem do editor. Floresta vem primeiro e é o padrão. */
+export const VISUAIS_DO_MODO: Record<Theme, Visual[]> = {
+  corp: ['floresta', 'escritorio', 'entretenimento'],
+  festa: ['floresta', 'entretenimento', 'espaco', 'amor'],
+  escola: ['floresta', 'sala', 'album', 'espaco', 'entretenimento'],
+};
+
+/** O visual pedido, se ele existe no modo; senão, Floresta. */
+export function visualDoModo(theme: Theme, v: unknown): Visual {
+  return VISUAIS_DO_MODO[theme].includes(v as Visual) ? (v as Visual) : 'floresta';
+}
+
 /** Valida o que o anfitrião manda para abrir a sala. Lança Error com mensagem em português. */
 export function validateCreate(body: unknown): CreateRoomBody {
   const b = (body || {}) as Partial<CreateRoomBody>;
@@ -113,5 +125,5 @@ export function validateCreate(body: unknown): CreateRoomBody {
   if (logo && (!IMG_RE.test(logo) || logo.length > LIMITS.logoBytes)) {
     throw new Error('Logo inválido ou grande demais.');
   }
-  return { questions, theme, brand, logo };
+  return { questions, theme, visual: visualDoModo(theme, b.visual), brand, logo };
 }

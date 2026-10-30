@@ -1,10 +1,12 @@
 // Pedaços de tela usados pelo anfitrião e pelo jogador.
-import type { Acerto, BaseState, RankRow } from '../../shared/protocol';
+import type { Acerto, BaseState, RankRow, Visual } from '../../shared/protocol';
 import { PREP_MS } from '../../shared/game';
 import { LETRAS, esc, fmt } from '../lib/dom';
 import { avatarSvg, comMoldura } from '../lib/avatar-art';
 import type { Moldura } from '../lib/avatar-art';
 import { OLHO, simbolo } from '../lib/simbolos';
+import { VISUAIS } from '../data/visuais';
+import { contaVisual, cortinaVisual } from '../lib/visuais-arte';
 
 export function brandBar(s: BaseState) {
   const logo = s.brand.logo ? `<img src="/api/salas/${s.code}/logo?v=${s.brand.logo}" alt="Logo de ${esc(s.brand.name || 'quem organiza')}">` : '';
@@ -36,8 +38,10 @@ export function prepare(s: BaseState, top3: RankRow[] = []) {
       : tipo
         ? `<div class="tipo-selo">${tipo}</div>`
         : '';
+  const v = s.visual || 'floresta';
+  const conta = v === 'floresta' ? OLHO_CONTA : contaVisual(v);
   const nervosos = ultima && top3.length ? `<div class="nervosos" aria-hidden="true">${top3.map((r) => `<span class="nervoso">${avatarSvg(r.avatar, 72)}<small>${r.rank}º ${esc(r.nick)}</small></span>`).join('')}</div>` : '';
-  return `<section class="stage center prep${q.dobro && !ultima ? ' treme-tela' : ''}${ultima ? ' final-clima' : ''}"><span class="pill">Pergunta ${s.qIndex + 1} de ${s.total}</span>${titulo}<div class="qt">${esc(q.t)}</div>${OLHO_CONTA}<p class="prep-txt" role="status">Prepare-se!</p>${nervosos}</section>`;
+  return `<section class="stage center prep${q.dobro && !ultima ? ' treme-tela' : ''}${ultima ? ' final-clima' : ''}"><span class="pill">Pergunta ${s.qIndex + 1} de ${s.total}</span>${titulo}<div class="qt">${esc(q.t)}</div>${conta}<p class="prep-txt" role="status">${esc(VISUAIS[v].prep)}</p>${nervosos}</section>`;
 }
 
 /** Cabeçalho da pergunta com cronômetro e barra. Os ids são atualizados pelo relógio da página. */
@@ -56,10 +60,11 @@ export function tick(s: BaseState | null, now: number) {
   if (now < s.startsAt) {
     const falta = s.startsAt - now;
     const n = document.getElementById('prep');
-    const v = falta < 350 ? 'Bora!' : String(Math.max(1, Math.ceil(falta / 1000)));
+    const vai = VISUAIS[s.visual || 'floresta'].vai;
+    const v = falta < 350 ? vai : String(Math.max(1, Math.ceil(falta / 1000)));
     if (n && n.textContent !== v) {
       n.textContent = v;
-      n.classList.toggle('bora', v === 'Bora!');
+      n.classList.toggle('bora', v === vai);
       n.animate?.([{ transform: 'scale(1.5)', opacity: 0.3 }, { transform: 'scale(1)', opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.3,1.4,.5,1)' });
     }
     // o anel do olho esvazia no tempo do servidor, mesmo se a tela abriu no meio da contagem
@@ -198,13 +203,19 @@ export function revelacaoTv(acertaram: Acerto[], total: number) {
   return `<div class="acertos">${fila}${rapido}</div>`;
 }
 
-/** Cortina de folhas que atravessa a TV na troca de pergunta. */
-export function cortina() {
+/** Cortina que atravessa a TV na troca de pergunta: folhas na Floresta, o desenho do visual nos outros. */
+export function cortina(visual: Visual = 'floresta') {
   if (calmo()) return;
   document.querySelector('.cortina')?.remove();
   const c = document.createElement('div');
-  c.className = 'cortina';
+  c.className = 'cortina cortina-' + visual;
   c.setAttribute('aria-hidden', 'true');
+  if (visual !== 'floresta') {
+    c.innerHTML = cortinaVisual(visual);
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 1400);
+    return;
+  }
   c.innerHTML = `<svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice" focusable="false"><g stroke="#0E2A22" stroke-width="6">
     <path d="M-80 640 C-110 380 60 120 340 50 C380 330 220 560 -80 640Z" fill="#13A07A"/><path d="M-60 620 C40 430 170 230 330 70" fill="none"/>
     <path d="M160 680 C90 420 260 150 560 90 C610 360 470 610 160 680Z" fill="#0F8A68"/><path d="M180 660 C280 480 400 300 550 110" fill="none"/>
@@ -306,10 +317,22 @@ export function fotoCabeca(s: BaseState) {
 }
 
 /** Frase do suspense acima do pódio. */
-export function podiumTitle(rows: RankRow[], step: number) {
+export function podiumTitle(rows: RankRow[], step: number, visual: Visual = 'floresta') {
   if (!rows.length) return 'Fim do quiz';
-  if (step >= 4) return `${esc(rows[0].nick)} venceu!`;
+  if (step >= 4) return esc(VISUAIS[visual].campeao).replace('{n}', () => esc(rows[0].nick));
   return ['Quem subiu no pódio?', 'Em 3º lugar…', 'Em 2º lugar…', 'E quem venceu foi…'][step];
+}
+
+/** Os 10 primeiros, para todo mundo, depois do pódio. As linhas entram uma a uma, do 1º ao 10º. */
+export function top10(rows: RankRow[], me = '') {
+  const dez = rows.slice(0, 10);
+  if (!dez.length) return '';
+  return `<section class="panel top10" aria-labelledby="h-top10"><h2 id="h-top10">Os 10 primeiros</h2><ol class="top10-lista">${dez
+    .map(
+      (r, i) =>
+        `<li class="${r.id === me ? 'me ' : ''}${r.rank <= 3 ? 'r' + r.rank : ''}" style="--i:${i}"><i>${r.rank}º</i><span class="who">${comMoldura(avatarSvg(r.avatar, 40), r.rank === 1 ? 'lider' : null)}<b>${esc(r.nick)}${r.id === me ? ' (você)' : ''}</b></span><b class="pts">${fmt(r.score)}<small> pts</small></b></li>`,
+    )
+    .join('')}</ol></section>`;
 }
 
 /** Passos do suspense do pódio, em milissegundos desde o fim do jogo. */

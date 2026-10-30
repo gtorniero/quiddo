@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CODE_RE, compactQuestion, normalizeCode, points, randomCode, validateCreate } from '../shared/rules';
+import { CODE_RE, VISUAIS_DO_MODO, compactQuestion, normalizeCode, points, randomCode, validateCreate, visualDoModo } from '../shared/rules';
 
 describe('pontos', () => {
   it('vale 1000 na hora e 500 no último instante', () => {
@@ -80,5 +80,27 @@ describe('perguntas', () => {
     const questions = Array.from({ length: 40 }, () => ({ t: 'Q', o: ['1', '2'], c: 0, tl: 10, img }));
     expect(() => validateCreate({ questions })).toThrow(/Imagens demais/);
     expect(() => validateCreate({ questions: [{ t: 'a', o: ['1', '2'], c: 0, tl: 10 }], logo: 'javascript:1' })).toThrow();
+  });
+});
+
+describe('modos e visuais', () => {
+  const q = [{ t: 'a', o: ['1', '2'], c: 0, tl: 10 }];
+  it('Floresta é o padrão e existe em todos os modos', () => {
+    for (const m of ['corp', 'festa', 'escola'] as const) expect(VISUAIS_DO_MODO[m][0]).toBe('floresta');
+    expect(validateCreate({ theme: 'festa', questions: q }).visual).toBe('floresta');
+  });
+  it('aceita só o visual que existe no modo', () => {
+    expect(validateCreate({ theme: 'corp', visual: 'escritorio', questions: q }).visual).toBe('escritorio');
+    expect(validateCreate({ theme: 'festa', visual: 'escritorio', questions: q }).visual).toBe('floresta');
+    expect(validateCreate({ theme: 'festa', visual: 'amor', questions: q }).visual).toBe('amor');
+    expect(validateCreate({ theme: 'escola', visual: 'amor', questions: q }).visual).toBe('floresta');
+    expect(validateCreate({ theme: 'escola', visual: 'album', questions: q }).visual).toBe('album');
+    expect(validateCreate({ theme: 'corp', visual: 'sala', questions: q }).visual).toBe('floresta');
+    expect(visualDoModo('escola', 'espaco')).toBe('espaco');
+    expect(visualDoModo('corp', 'espaco')).toBe('floresta');
+    expect(visualDoModo('corp', 'qualquer')).toBe('floresta');
+  });
+  it('Entretenimento está em todos os modos, sem senha', () => {
+    for (const m of ['corp', 'festa', 'escola'] as const) expect(visualDoModo(m, 'entretenimento')).toBe('entretenimento');
   });
 });

@@ -1,6 +1,6 @@
 // Motor do jogo: estado da sala e transições de fase, sem rede nem relógio próprio.
 // O Durable Object guarda um `Room`, chama estas funções e manda as visões para cada um.
-import type { Acerto, Brand, Drawn, DrawMode, HostState, Phase, PlayerState, Question, RankRow, Theme } from './protocol';
+import type { Acerto, Brand, Drawn, DrawMode, HostState, Phase, PlayerState, Question, RankRow, Theme, Visual } from './protocol';
 import { LIMITS, cleanNick, points } from './rules';
 import { AVATAR_PADRAO, cleanAvatar, uniqueAvatar } from './avatar';
 
@@ -35,6 +35,7 @@ export interface Room {
   code: string;
   hostKey: string;
   theme: Theme;
+  visual?: Visual; // salas antigas não têm: Floresta
   brand: Brand;
   logo: number; // versão do logo (0 = sem logo)
   questions: Question[];
@@ -52,11 +53,12 @@ export interface Room {
   endedAt: number; // 0 enquanto o jogo não acabou
 }
 
-export function newRoom(o: { code: string; hostKey: string; theme: Theme; brand: Brand; questions: Question[]; hasLogo: boolean; now: number }): Room {
+export function newRoom(o: { code: string; hostKey: string; theme: Theme; visual?: Visual; brand: Brand; questions: Question[]; hasLogo: boolean; now: number }): Room {
   return {
     code: o.code,
     hostKey: o.hostKey,
     theme: o.theme,
+    visual: o.visual || 'floresta',
     brand: o.brand,
     logo: o.hasLogo ? o.now : 0,
     questions: o.questions,
@@ -276,6 +278,7 @@ function base(room: Room, now: number) {
     type: 'state' as const,
     code: room.code,
     theme: room.theme,
+    visual: room.visual || 'floresta',
     brand: { ...room.brand, logo: room.logo },
     phase: room.phase,
     qIndex: room.qIndex,
@@ -336,6 +339,7 @@ export function playerView(room: Room, playerId: string, now: number, rk: RankRo
       streak: showRank ? p.streak || 0 : 0,
       choice: a ? a.choice : null,
     },
-    ranking: showRank ? rk.slice(0, 5) : [],
+    // no fim, todo mundo vê os 10 primeiros depois do pódio
+    ranking: room.phase === 'final' ? rk.slice(0, 10) : showRank ? rk.slice(0, 5) : [],
   };
 }

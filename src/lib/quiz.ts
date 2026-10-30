@@ -26,7 +26,7 @@ export function novoQuiz(tema: Theme = 'corp'): Quiz {
     titulo: tema === 'corp' ? 'Quiz da equipe' : tema === 'escola' ? 'Quiz da turma' : 'Quiz da galera',
     tema,
     visual: 'floresta',
-    tempo: 20,
+    tempo: 15,
     marca: { name: '', color: '' },
     logo: '',
     perguntas: pacote(tema),
@@ -38,7 +38,7 @@ const TEMPOS = LIMITS.times as readonly number[];
 
 /** Quizzes salvos por versões antigas não têm `tempo`: usa o da primeira pergunta. */
 function normalizar(q: Quiz): Quiz {
-  if (!TEMPOS.includes(q.tempo)) q.tempo = TEMPOS.includes(q.perguntas[0]?.tl) ? q.perguntas[0].tl : 20;
+  if (!TEMPOS.includes(q.tempo)) q.tempo = TEMPOS.includes(q.perguntas[0]?.tl) ? q.perguntas[0].tl : 15;
   if (q.tema !== 'festa' && q.tema !== 'escola') q.tema = 'corp';
   q.visual = visualDoModo(q.tema, q.visual);
   return q;
@@ -94,7 +94,7 @@ export function importar(texto: string): Quiz {
     const o = Array.isArray(p?.o) ? p.o.slice(0, 4).map((x) => String(x ?? '').slice(0, LIMITS.answerText)) : [];
     while (o.length < 2) o.push('');
     const c = Number.isInteger(p?.c) && p.c >= 0 && p.c < o.length ? p.c : 0;
-    const tl = TEMPOS.includes(p?.tl) ? p.tl : 20;
+    const tl = TEMPOS.includes(p?.tl) ? p.tl : 15;
     const out: Pergunta = { t: String(p?.t ?? '').slice(0, LIMITS.questionText), o, c, tl };
     if (p?.tipo === 'opiniao' || p?.tipo === 'quem') {
       out.tipo = p.tipo;

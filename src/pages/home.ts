@@ -76,7 +76,7 @@ export function page(): Page {
         <section class="h-bloco">
           <h2>Como funciona</h2>
           <ol class="h-passos">
-            <li><span class="n">1</span><b>Escreva as perguntas</b><p>Múltipla escolha, verdadeiro ou falso, enquete ou "quem é mais provável". Dá para pôr imagem e a sua marca.</p></li>
+            <li><span class="n">1</span><b>Escreva as perguntas</b><p>Múltipla escolha ou verdadeiro ou falso, com imagem se quiser. Nos temas Corporativo e Escola, com a sua marca.</p></li>
             <li><span class="n">2</span><b>Abra a sala na tela principal</b><p>No telão, no projetor ou no computador aparecem um código e um QR. A turma entra pelo celular, escolhe um bicho e um apelido.</p></li>
             <li><span class="n">3</span><b>Joguem juntos</b><p>A pergunta aparece em todas as telas ao mesmo tempo. Ranking a cada rodada, pódio e sorteio no fim.</p></li>
           </ol>

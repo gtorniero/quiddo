@@ -18,7 +18,7 @@ export function brandBar(s: BaseState) {
 export const preparando = (s: BaseState, now: number) => s.phase === 'question' && now < s.startsAt;
 
 /** Olho do tucano grande da contagem do "Prepare-se": o anel amarelo esvazia em 3 s e o número fica na pupila. */
-const OLHO_CONTA = `<div class="olho-conta" aria-hidden="true"><svg viewBox="0 0 300 300" focusable="false"><circle cx="150" cy="150" r="136" fill="#13A07A" stroke="#0E2A22" stroke-width="8"/><circle cx="150" cy="150" r="105" fill="none" stroke="#0E6B50" stroke-width="14"/><circle class="anel" id="anel" cx="150" cy="150" r="105" fill="none" stroke="#FFC83D" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="100 200" transform="rotate(-90 150 150)"/><circle cx="150" cy="150" r="88" fill="#5BC0EB" stroke="#0E2A22" stroke-width="7"/><circle cx="150" cy="150" r="62" fill="#fff" stroke="#0E2A22" stroke-width="4"/></svg><b class="prep-n" id="prep">3</b></div>`;
+const OLHO_CONTA = `<div class="olho-conta" aria-hidden="true"><svg viewBox="0 0 300 300" focusable="false"><circle cx="150" cy="150" r="136" fill="#13A07A" stroke="#0E2A22" stroke-width="8"/><circle cx="150" cy="150" r="105" fill="none" stroke="#0E6B50" stroke-width="14"/><circle class="anel" id="anel" cx="150" cy="150" r="105" fill="none" stroke="#FFC83D" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="100 200" transform="rotate(-90 150 150)"/><circle cx="150" cy="150" r="88" fill="#5BC0EB" stroke="#0E2A22" stroke-width="7"/><circle cx="150" cy="150" r="62" fill="#fff" stroke="#0E2A22" stroke-width="4"/></svg><b class="prep-n" id="prep">4</b></div>`;
 
 /** Selo "×2" que cai na tela antes da pergunta que vale o dobro. */
 const CARIMBO_X2 = '<div class="x2" aria-hidden="true"><span>×2</span></div>';
@@ -203,7 +203,7 @@ export function revelacaoTv(acertaram: Acerto[], total: number) {
   return `<div class="acertos">${fila}${rapido}</div>`;
 }
 
-/** Cortina que atravessa a TV na troca de pergunta: folhas na Floresta, o desenho do visual nos outros. */
+/** Moldura na troca de pergunta, só nas bordas da tela (folhas na Floresta, o desenho do visual nos outros): o meio fica livre para a contagem. */
 export function cortina(visual: Visual = 'floresta') {
   if (calmo()) return;
   document.querySelector('.cortina')?.remove();
@@ -213,7 +213,7 @@ export function cortina(visual: Visual = 'floresta') {
   if (visual !== 'floresta') {
     c.innerHTML = cortinaVisual(visual);
     document.body.appendChild(c);
-    setTimeout(() => c.remove(), 1400);
+    setTimeout(() => c.remove(), 1900);
     return;
   }
   c.innerHTML = `<svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice" focusable="false"><g stroke="#0E2A22" stroke-width="6">
@@ -227,7 +227,7 @@ export function cortina(visual: Visual = 'floresta') {
     <circle cx="380" cy="330" r="30" fill="#FF7A1A"/>
   </g><g stroke="#0E2A22" stroke-width="4" fill="#E5383B"><circle cx="620" cy="400" r="22"/><circle cx="645" cy="418" r="22"/><circle cx="636" cy="447" r="22"/><circle cx="604" cy="447" r="22"/><circle cx="595" cy="418" r="22"/></g><circle cx="620" cy="428" r="13" fill="#FFC83D" stroke="#0E2A22" stroke-width="4"/></svg>`;
   document.body.appendChild(c);
-  setTimeout(() => c.remove(), 1400);
+  setTimeout(() => c.remove(), 1900);
 }
 
 /** Palmas para quem ficou fora do pódio: o bicho aplaude os três primeiros. */

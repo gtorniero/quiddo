@@ -101,7 +101,7 @@ export function validateCreate(body: unknown): CreateRoomBody {
   for (const raw of b.questions.slice(0, LIMITS.maxQuestions)) {
     const r = (raw || {}) as Partial<Question>;
     const o = Array.isArray(r.o) ? r.o.slice(0, 4).map((x) => cleanText(x, LIMITS.answerText)) : [];
-    const tl = (LIMITS.times as readonly number[]).includes(Number(r.tl)) ? Number(r.tl) : 20;
+    const tl = (LIMITS.times as readonly number[]).includes(Number(r.tl)) ? Number(r.tl) : 15;
     const c = Number.isInteger(r.c) && (r.c as number) >= 0 && (r.c as number) < o.length ? (r.c as number) : 0;
     const tipo = r.tipo === 'opiniao' || r.tipo === 'quem' ? r.tipo : undefined;
     const img = typeof r.img === 'string' && r.img.length <= LIMITS.imgBytes && IMG_RE.test(r.img) ? r.img : undefined;

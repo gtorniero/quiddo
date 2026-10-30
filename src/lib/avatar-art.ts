@@ -100,7 +100,7 @@ const ARTE_BICHOS: Record<Bicho, { ht: number; ey: number; svg: string }> = {
      <ellipse cx="46" cy="62" rx="7" ry="6" fill="#4A2F1C"/><ellipse cx="74" cy="62" rx="7" ry="6" fill="#4A2F1C"/>
      <circle cx="46" cy="61" r="3.5" fill="#fff"/><circle cx="74" cy="61" r="3.5" fill="#fff"/>
      <circle cx="46.5" cy="61.5" r="2" fill="${INK}"/><circle cx="74.5" cy="61.5" r="2" fill="${INK}"/>` },
-  perereca: { ht: 26, ey: 40, svg:
+  sapo: { ht: 26, ey: 40, svg:
     `<circle cx="40" cy="42" r="15" fill="#4CAF50"/><circle cx="80" cy="42" r="15" fill="#4CAF50"/>
      <ellipse cx="60" cy="74" rx="46" ry="32" fill="#4CAF50"/>
      <ellipse cx="60" cy="90" rx="30" ry="14" fill="#B6E388"/>
@@ -165,18 +165,19 @@ const ARTE_BICHOS: Record<Bicho, { ht: number; ey: number; svg: string }> = {
      <circle cx="34" cy="70" r="5" fill="#F4A3B8" opacity=".5"/><circle cx="86" cy="70" r="5" fill="#F4A3B8" opacity=".5"/>` },
 };
 
-// Itens de cabeça: desenhados a partir do topo da cabeça (t)
-const ARTE_CABECA: Record<ItemCabeca, { draw: (t: number, e: number) => string }> = {
-  bone:     { draw: (t) => `<path d="M34 ${t+12} Q34 ${t-14} 60 ${t-14} Q86 ${t-14} 86 ${t+12}Z" fill="#1E7FD6"/><path d="M70 ${t+8} h32 q5 0 2 6 h-34z" fill="#155FA3"/><circle cx="60" cy="${t-13}" r="3" fill="#155FA3"/>` },
-  palha:    { draw: (t) => `<ellipse cx="60" cy="${t+6}" rx="44" ry="9" fill="#E9C46A"/><rect x="40" y="${t-16}" width="40" height="22" rx="9" fill="#E9C46A"/><rect x="40" y="${t-1}" width="40" height="6" fill="#E5383B"/>` },
-  coroa:    { draw: (t) => `<path d="M38 ${t+8} L36 ${t-16} L48 ${t-4} L60 ${t-20} L72 ${t-4} L84 ${t-16} L82 ${t+8}Z" fill="#FFC83D" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><circle cx="60" cy="${t}" r="3.5" fill="#E5383B"/><circle cx="47" cy="${t+2}" r="2.5" fill="#1E7FD6"/><circle cx="73" cy="${t+2}" r="2.5" fill="#13A07A"/>` },
-  laranja:  { draw: (t) => `<circle cx="60" cy="${t-6}" r="12" fill="#FF8A00"/><path d="M60 ${t-18} q5 -7 13 -4" stroke="#2E7D32" stroke-width="4" fill="none" stroke-linecap="round"/>` },
-  flor:     { draw: (t) => { const x=82,y=t+6; return `<g fill="#FF5C8A"><circle cx="${x}" cy="${y-8}" r="7"/><circle cx="${x+8}" cy="${y-2}" r="7"/><circle cx="${x+5}" cy="${y+7}" r="7"/><circle cx="${x-5}" cy="${y+7}" r="7"/><circle cx="${x-8}" cy="${y-2}" r="7"/></g><circle cx="${x}" cy="${y}" r="4" fill="#FFC83D"/>`; } },
+// Itens de cabeça: desenhados a partir do topo da cabeça (t). `b` é onde o item termina embaixo (t + b);
+// se isso cair perto dos olhos, o item sobe (ver avatarSvg). O fone fica preso nos olhos e não sobe.
+const ARTE_CABECA: Record<ItemCabeca, { b?: number; draw: (t: number, e: number) => string }> = {
+  bone:     { b: 14, draw: (t) => `<path d="M34 ${t+12} Q34 ${t-14} 60 ${t-14} Q86 ${t-14} 86 ${t+12}Z" fill="#1E7FD6"/><path d="M70 ${t+8} h32 q5 0 2 6 h-34z" fill="#155FA3"/><circle cx="60" cy="${t-13}" r="3" fill="#155FA3"/>` },
+  palha:    { b: 15, draw: (t) => `<ellipse cx="60" cy="${t+6}" rx="44" ry="9" fill="#E9C46A"/><rect x="40" y="${t-16}" width="40" height="22" rx="9" fill="#E9C46A"/><rect x="40" y="${t-1}" width="40" height="6" fill="#E5383B"/>` },
+  coroa:    { b: 8, draw: (t) => `<path d="M38 ${t+8} L36 ${t-16} L48 ${t-4} L60 ${t-20} L72 ${t-4} L84 ${t-16} L82 ${t+8}Z" fill="#FFC83D" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/><circle cx="60" cy="${t}" r="3.5" fill="#E5383B"/><circle cx="47" cy="${t+2}" r="2.5" fill="#1E7FD6"/><circle cx="73" cy="${t+2}" r="2.5" fill="#13A07A"/>` },
+  laranja:  { b: 6, draw: (t) => `<circle cx="60" cy="${t-6}" r="12" fill="#FF8A00"/><path d="M60 ${t-18} q5 -7 13 -4" stroke="#2E7D32" stroke-width="4" fill="none" stroke-linecap="round"/>` },
+  flor:     { b: 20, draw: (t) => { const x=82,y=t+6; return `<g fill="#FF5C8A"><circle cx="${x}" cy="${y-8}" r="7"/><circle cx="${x+8}" cy="${y-2}" r="7"/><circle cx="${x+5}" cy="${y+7}" r="7"/><circle cx="${x-5}" cy="${y+7}" r="7"/><circle cx="${x-8}" cy="${y-2}" r="7"/></g><circle cx="${x}" cy="${y}" r="4" fill="#FFC83D"/>`; } },
   fone:     { draw: (t, e) => `<path d="M24 ${e+8} Q24 ${t-14} 60 ${t-14} Q96 ${t-14} 96 ${e+8}" stroke="${INK}" stroke-width="6" fill="none" stroke-linecap="round"/><rect x="14" y="${e-6}" width="16" height="26" rx="7" fill="#E5383B"/><rect x="90" y="${e-6}" width="16" height="26" rx="7" fill="#E5383B"/>` },
-  festa:    { draw: (t) => `<path d="M46 ${t+6} L60 ${t-28} L74 ${t+6}Z" fill="#13A07A"/><path d="M50 ${t-4} L70 ${t-4} M54 ${t-14} L66 ${t-14}" stroke="#FFC83D" stroke-width="4"/><circle cx="60" cy="${t-29}" r="5" fill="#FF7A1A"/>` },
-  gorro:    { draw: (t) => `<path d="M32 ${t+12} Q32 ${t-20} 60 ${t-20} Q88 ${t-20} 88 ${t+12}Z" fill="#E5383B"/><rect x="30" y="${t+4}" width="60" height="11" rx="5.5" fill="#FFF6E6"/><circle cx="60" cy="${t-21}" r="7" fill="#FFF6E6"/>` },
-  faixa:    { draw: (t) => `<rect x="26" y="${t+10}" width="68" height="9" rx="4.5" fill="#1E7FD6"/><path d="M90 ${t+14} l12 -6 l-2 10z M90 ${t+14} l12 6 l-6 4z" fill="#1E7FD6"/>` },
-  cartola:  { draw: (t) => `<ellipse cx="60" cy="${t+4}" rx="32" ry="6" fill="#1B1B1B"/><rect x="42" y="${t-26}" width="36" height="30" rx="4" fill="#1B1B1B"/><rect x="42" y="${t-6}" width="36" height="6" fill="#E5383B"/>` },
+  festa:    { b: 6, draw: (t) => `<path d="M46 ${t+6} L60 ${t-28} L74 ${t+6}Z" fill="#13A07A"/><path d="M50 ${t-4} L70 ${t-4} M54 ${t-14} L66 ${t-14}" stroke="#FFC83D" stroke-width="4"/><circle cx="60" cy="${t-29}" r="5" fill="#FF7A1A"/>` },
+  gorro:    { b: 15, draw: (t) => `<path d="M32 ${t+12} Q32 ${t-20} 60 ${t-20} Q88 ${t-20} 88 ${t+12}Z" fill="#E5383B"/><rect x="30" y="${t+4}" width="60" height="11" rx="5.5" fill="#FFF6E6"/><circle cx="60" cy="${t-21}" r="7" fill="#FFF6E6"/>` },
+  faixa:    { b: 19, draw: (t) => `<rect x="26" y="${t+10}" width="68" height="9" rx="4.5" fill="#1E7FD6"/><path d="M90 ${t+14} l12 -6 l-2 10z M90 ${t+14} l12 6 l-6 4z" fill="#1E7FD6"/>` },
+  cartola:  { b: 10, draw: (t) => `<ellipse cx="60" cy="${t+4}" rx="32" ry="6" fill="#1B1B1B"/><rect x="42" y="${t-26}" width="36" height="30" rx="4" fill="#1B1B1B"/><rect x="42" y="${t-6}" width="36" height="6" fill="#E5383B"/>` },
 };
 
 // Itens de rosto: desenhados na altura dos olhos (e)
@@ -197,9 +198,13 @@ let seq = 0;
 export function avatarSvg(v: Avatar | string, size = 48, label = false): string {
   const o = typeof v === 'string' ? parseAvatar(v) || parseAvatar(AVATAR_PADRAO)! : v;
   const A = ARTE_BICHOS[o.a];
-  const head = o.h ? ARTE_CABECA[o.h].draw(A.ht, A.ey) : '';
+  const item = o.h ? ARTE_CABECA[o.h] : null;
+  // o item de cabeça termina pelo menos 12 unidades acima da linha dos olhos, para não tapar o rosto
+  const top = item && item.b != null ? Math.min(A.ht, A.ey - 12 - item.b) : A.ht;
+  const head = item ? item.draw(top, A.ey) : '';
   const face = o.f ? ARTE_ROSTO[o.f].draw(A.ey) : '';
   const id = 'av' + ++seq;
   const a11y = label ? `role="img" aria-label="${avatarName(o)}"` : 'aria-hidden="true"';
   return `<svg class="av" viewBox="0 0 120 120" width="${size}" height="${size}" ${a11y} focusable="false"><defs><clipPath id="${id}"><circle cx="60" cy="60" r="55"/></clipPath></defs><circle cx="60" cy="60" r="57" fill="${CORES_AVATAR[o.c]}"/><g clip-path="url(#${id})"><g transform="translate(12 18) scale(0.8)">${A.svg}${face}${head}</g></g><circle cx="60" cy="60" r="57" fill="none" stroke="${INK}" stroke-width="4"/></svg>`;
 }
+

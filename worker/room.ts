@@ -34,8 +34,16 @@ export class Room extends DurableObject<Env> {
   async create(code: string, hostKey: string, body: CreateRoomBody): Promise<boolean> {
     if (this.room) return false;
     const now = Date.now();
-    this.room = G.newRoom({ code, hostKey, theme: body.theme, scoring: body.scoring, brand: body.brand, questions: body.questions, hasLogo: !!body.logo, now });
+    // as imagens ficam em chaves próprias; o estado da sala guarda só a marca '1'
+    const imgs: Record<string, string> = {};
+    const questions = body.questions.map((q, i) => {
+      if (!q.img) return q;
+      imgs['img:' + i] = q.img;
+      return { ...q, img: '1' };
+    });
+    this.room = G.newRoom({ code, hostKey, theme: body.theme, brand: body.brand, questions, hasLogo: !!body.logo, now });
     if (body.logo) await this.ctx.storage.put('logo', body.logo);
+    for (const [k, v] of Object.entries(imgs)) await this.ctx.storage.put(k, v);
     await this.save();
     await this.scheduleAlarm();
     return true;
@@ -43,7 +51,12 @@ export class Room extends DurableObject<Env> {
 
   async fetch(req: Request): Promise<Response> {
     const url = new URL(req.url);
-    if (url.pathname.endsWith('/logo')) return this.serveLogo();
+    if (url.pathname.endsWith('/logo')) return this.serveImage('logo', !!(this.room && this.room.logo));
+    const im = /\/img\/(\d{1,2})$/.exec(url.pathname);
+    if (im) {
+      const q = this.room && this.room.questions[Number(im[1])];
+      return this.serveImage('img:' + im[1], !!(q && q.img));
+    }
     if (req.headers.get('Upgrade') !== 'websocket') return new Response('Esperava WebSocket', { status: 426 });
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
@@ -52,11 +65,11 @@ export class Room extends DurableObject<Env> {
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  private async serveLogo(): Promise<Response> {
-    const data = this.room && this.room.logo ? await this.ctx.storage.get<string>('logo') : null;
-    if (!data) return new Response('Sem logo', { status: 404 });
+  private async serveImage(key: string, exists: boolean): Promise<Response> {
+    const data = exists ? await this.ctx.storage.get<string>(key) : null;
+    if (!data) return new Response('Sem imagem', { status: 404 });
     const m = /^data:(image\/[a-z]+);base64,(.*)$/.exec(data);
-    if (!m) return new Response('Sem logo', { status: 404 });
+    if (!m) return new Response('Sem imagem', { status: 404 });
     const bin = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
     return new Response(bin, { headers: { 'Content-Type': m[1], 'Cache-Control': 'public, max-age=86400' } });
   }

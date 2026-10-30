@@ -1,7 +1,7 @@
-// Tema (corp/festa) e cor da marca. A cor da marca substitui a cor principal do tema.
+// Tema (corp, festa, escola) e cor da marca. A cor da marca substitui a cor principal do tema (só corp e escola).
 import type { Theme } from '../../shared/protocol';
 
-export const THEME_ACC: Record<Theme, string> = { corp: '#0E2A22', festa: '#13A07A' };
+export const THEME_ACC: Record<Theme, string> = { corp: '#0E2A22', festa: '#13A07A', escola: '#2B59C3' };
 
 const HEX = /^#([0-9a-f]{6})$/i;
 

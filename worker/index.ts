@@ -2,6 +2,7 @@
 //   POST /api/salas              abre uma sala (corpo: CreateRoomBody) → { code, hostKey }
 //   GET  /api/salas/{CODIGO}/ws  WebSocket da sala (anfitrião e jogadores)
 //   GET  /api/salas/{CODIGO}/logo logo do anfitrião
+//   GET  /api/salas/{CODIGO}/img/{N} imagem da pergunta N
 // O resto vai para os arquivos estáticos; rotas como /criar e /ABCD caem no index.html.
 import type { CreateRoomResult } from '../shared/protocol';
 import { CODE_RE, randomCode, validateCreate } from '../shared/rules';
@@ -35,7 +36,8 @@ export default {
       return json({ erro: 'Não deu para abrir a sala agora. Tente de novo.' }, 503);
     }
 
-    if (parts[1] === 'salas' && parts.length === 4 && CODE_RE.test(parts[2]) && (parts[3] === 'ws' || parts[3] === 'logo')) {
+    const isImg = parts.length === 5 && parts[3] === 'img' && /^\d{1,2}$/.test(parts[4]);
+    if (parts[1] === 'salas' && CODE_RE.test(parts[2] || '') && ((parts.length === 4 && (parts[3] === 'ws' || parts[3] === 'logo')) || isImg)) {
       const stub = env.ROOMS.get(env.ROOMS.idFromName(parts[2]));
       return stub.fetch(req);
     }

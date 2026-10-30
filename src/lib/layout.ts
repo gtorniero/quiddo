@@ -1,7 +1,7 @@
 // Cabeçalho, navegação e aviso de conexão, iguais em todas as páginas.
-// Logo do Quiddo: colorido nas páginas claras, negativo (creme) na tela da TV.
+// Logo do Quiddo: colorido nas páginas claras, de uma cor só no tema Corporativo, negativo (creme) na tela da TV.
 const MARCA =
-  '<img class="logo-cor" src="/marca/quiddo-cor.svg" alt="Quiddo" width="132" height="40"><img class="logo-neg" src="/marca/quiddo-negativo.svg" alt="Quiddo" width="132" height="40">';
+  '<img class="logo-cor" src="/marca/quiddo-cor.svg" alt="Quiddo" width="132" height="40"><img class="logo-mono" src="/marca/quiddo-mono.svg" alt="Quiddo" width="132" height="40"><img class="logo-neg" src="/marca/quiddo-negativo.svg" alt="Quiddo" width="132" height="40">';
 
 export function header(path: string, compact = false) {
   const el = document.getElementById('topo')!;
@@ -10,7 +10,7 @@ export function header(path: string, compact = false) {
     `<a class="logo" href="/" data-link aria-label="Quiddo, página inicial">${MARCA}</a>` +
     (compact
       ? ''
-      : `<nav class="nav" aria-label="Principal"><a href="/criar" data-link${cur('/criar')}>Criar meu quiz</a><a href="/entrar" data-link${cur('/entrar')}>Entrar com código</a><a href="/guias" data-link${cur('/guias')}>Guias</a></nav>`);
+      : `<nav class="nav" aria-label="Principal"><a class="nav-criar" href="/criar" data-link${cur('/criar')}>Criar meu quiz</a><a href="/entrar" data-link${cur('/entrar')}>Entrar<span class="nav-longo"> com código</span></a><a href="/guias" data-link${cur('/guias')}>Guias</a></nav>`);
 }
 
 let bannerTimer = 0;

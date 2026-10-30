@@ -107,7 +107,7 @@ Componentes de referência em `referencias/elementos.png`: botões (primário, s
 
 **Sistema:** cada jogador monta o avatar com **um bicho + até 1 item de cabeça + até 1 item de rosto + uma cor de fundo**. Ver `referencias/escolha-de-personagem.png`.
 
-- **20 bichos:** tucano, capivara, onça, preguiça, arara, mico-leão, tamanduá, tatu, boto, jacaré, lobo-guará, quati, perereca, coruja, jabuti, papagaio, bem-te-vi, caramelo, gato, peixe-boi.
+- **20 bichos:** tucano, capivara, onça, preguiça, arara, mico-leão, tamanduá, tatu, boto, jacaré, lobo-guará, quati, sapo, coruja, jabuti, papagaio, bem-te-vi, caramelo, gato, peixe-boi.
 - **10 itens de cabeça:** boné, chapéu de palha, coroa, laranja, flor, fone, chapéu de festa, gorro, faixa, cartola.
 - **5 itens de rosto:** óculos escuros, óculos redondos, óculos de coração, bigode, adesivo de estrela.
 - **10 cores de fundo** (`--q-av-0` a `--q-av-9`).

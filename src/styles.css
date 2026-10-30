@@ -1403,3 +1403,1013 @@ body:has(main.tv) .foot .assin {
 .hero .btnrow {
   width: 100%;
 }
+
+/* ================= experiência completa ================= */
+
+/* ---------- tema Escola: papel de caderno, azul e amarelo-lápis ---------- */
+[data-tema='escola'] {
+  --bg: #eef4ff;
+  --fg: #14213d;
+  --fg2: #3d4a66;
+  --line: #14213d;
+  --soft-line: #c9d6ef;
+  --acc: #2b59c3;
+  --acc-ink: #ffffff;
+  --acc-text: #1f448f;
+  --acc-soft: #dde7fb;
+  --good: #1b7a4a;
+  --mata: #1b2f6b;
+  --amarelo: #ffc83d;
+  --laranja: #ff8c42;
+  --sh: 0 6px 0 #14213d;
+  --sh-sm: 0 4px 0 #14213d;
+}
+[data-tema='escola'] body {
+  background-color: #eef4ff;
+  background-image: linear-gradient(#d6e2fa 1px, transparent 1px), linear-gradient(90deg, rgba(229, 56, 59, 0.28) 2px, transparent 2px);
+  background-size: 100% 32px, 100% 100%;
+  background-position: 0 8px, 56px 0;
+}
+[data-tema='escola'] body:has(main.tv),
+body:has(main.tv)[data-tema='escola'] {
+  background: #1b2f6b;
+}
+[data-tema='escola'] .rank > div:first-child,
+[data-tema='escola'] .podium .p1 {
+  background: var(--amarelo);
+}
+[data-tema='escola'] .podium .p3 {
+  background: #8fb2f2;
+}
+
+/* ---------- logo: uma cor só no Corporativo ---------- */
+.logo .logo-mono,
+.foto-quiddo .logo-mono {
+  display: none;
+}
+[data-tema='corp'] body:not(:has(main.tv)) .logo .logo-cor,
+[data-tema='corp'] .foto-quiddo .logo-cor {
+  display: none;
+}
+[data-tema='corp'] body:not(:has(main.tv)) .logo .logo-mono,
+[data-tema='corp'] .foto-quiddo .logo-mono {
+  display: block;
+}
+.foto-quiddo .logo-cor {
+  display: block;
+}
+
+/* ---------- editor: passos com título grande ---------- */
+.passo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: clamp(24px, 5vw, 30px);
+}
+.passo > span {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--amarelo);
+  border: var(--bw) solid var(--line);
+  font-size: 20px;
+  font-style: normal;
+}
+.passo small {
+  font: 700 16px var(--text);
+  color: var(--fg2);
+}
+.chips.big button {
+  font-size: 16px;
+  padding: 10px 18px;
+  min-height: 52px;
+}
+/* resposta certa: contorno grosso e cor diferente, além do botão de opção */
+.opt-ed.certa input[type='text'] {
+  border: 4px solid var(--good);
+  background: #e3f6ec;
+  font-weight: 800;
+}
+.opt-ed.certa .marca-certa {
+  color: var(--good);
+  font-weight: 900;
+}
+.opt-ed.certa .marca-certa span::before {
+  content: '✓ ';
+}
+
+/* ---------- moedinhas ---------- */
+svg.moeda {
+  width: 18px;
+  height: 18px;
+  vertical-align: -3px;
+  margin-right: 3px;
+}
+.moeda-voa {
+  position: fixed;
+  z-index: 60;
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+}
+.moeda-voa svg.moeda {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+}
+.rank b.pts {
+  display: inline-block;
+  min-width: 3.2em;
+  text-align: right;
+}
+.placar {
+  font: 800 20px var(--text);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.placar .meus-pts {
+  font-family: var(--disp);
+  font-size: 40px;
+  display: inline-block;
+}
+.ganho {
+  color: var(--good);
+  font-weight: 900;
+}
+.subiu {
+  color: var(--good);
+  font-weight: 900;
+  font-size: 18px;
+  animation: pop 0.4s ease-out 0.9s backwards;
+}
+
+/* ---------- pódio com suspense ---------- */
+.big.pequeno {
+  font-size: clamp(28px, 8vw, 40px);
+}
+.podium > div.oculto {
+  background: #e9e4d8;
+  color: var(--fg2);
+  align-content: center;
+}
+.podium .q {
+  font: 900 54px var(--disp);
+  line-height: 1;
+  opacity: 0.6;
+}
+.podium > div.vazio {
+  border: 0;
+  background: none;
+}
+.podium > div.novo {
+  animation: sobe 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+}
+.podium > div.tremendo {
+  animation: treme 0.25s ease-in-out infinite;
+}
+@keyframes sobe {
+  from {
+    transform: translateY(40%) scale(0.9);
+    opacity: 0;
+  }
+}
+@keyframes treme {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(-1.2deg);
+  }
+  75% {
+    transform: rotate(1.2deg);
+  }
+}
+.confete {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 70;
+  overflow: hidden;
+}
+.confete i {
+  position: absolute;
+  top: -20px;
+  width: 10px;
+  height: 16px;
+  border-radius: 2px;
+  animation: cai linear forwards;
+}
+@keyframes cai {
+  to {
+    top: 105vh;
+    transform: rotate(720deg);
+  }
+}
+
+/* ---------- cartão de foto do pódio ---------- */
+.foto {
+  gap: 18px;
+}
+.foto-topo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.foto-quiddo img {
+  width: 120px;
+  height: auto;
+}
+.foto-logo-marca {
+  max-height: 48px;
+  max-width: 200px;
+  object-fit: contain;
+}
+.foto-evento {
+  display: grid;
+  text-align: right;
+  line-height: 1.2;
+}
+.foto-evento b {
+  font: 900 20px var(--disp);
+}
+.foto-evento span {
+  font-size: 14px;
+  color: var(--fg2);
+  font-weight: 700;
+}
+.foto-pe {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--fg2);
+  letter-spacing: 0.04em;
+}
+body.modo-foto .top,
+body.modo-foto .foot,
+body.modo-foto main > :not(#foto) {
+  display: none !important;
+}
+body.modo-foto main {
+  max-width: 1200px;
+  min-height: 100vh;
+  align-content: center;
+  padding: 24px;
+}
+body.modo-foto #foto {
+  padding: 36px;
+}
+body.modo-foto .podium .p1 {
+  min-height: 300px;
+}
+body.modo-foto .podium .p2 {
+  min-height: 240px;
+}
+body.modo-foto .podium .p3 {
+  min-height: 190px;
+}
+.sair-foto {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  z-index: 80;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  border-radius: 999px;
+  padding: 8px 14px;
+  min-height: 44px;
+  font: 800 14px var(--text);
+  cursor: pointer;
+}
+
+/* ---------- rodapé padrão Beyond the Work ---------- */
+.btw {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg);
+  text-decoration: none;
+  min-height: 44px;
+}
+.btw-sym {
+  width: 30px;
+  height: 30px;
+  flex: none;
+}
+.btw-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.1;
+}
+.btw-txt small {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg2);
+}
+.btw-txt b {
+  font-family: 'Sora', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.0375em;
+}
+body:has(main.tv) .btw {
+  color: #fff6e6;
+}
+body:has(main.tv) .btw-txt small {
+  color: #cde7dc;
+}
+@media (max-width: 480px) {
+  .rank > div {
+    grid-template-columns: 30px 1fr auto auto;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .rank em {
+    font-size: 13px;
+  }
+  .rank em svg.moeda {
+    display: none;
+  }
+}
+
+/* ---------- lobby: contador e quem chega ---------- */
+.contador {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.contador b {
+  font: 900 clamp(56px, 9vw, 96px) / 1 var(--disp);
+  font-variant-numeric: tabular-nums;
+}
+.contador span {
+  font: 800 clamp(20px, 3vw, 28px) var(--text);
+  color: var(--fg2);
+}
+.contador.pequeno {
+  justify-content: center;
+}
+.contador.pequeno b {
+  font-size: 48px;
+}
+.contador.pequeno span {
+  font-size: 18px;
+}
+.jogadores {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 12px;
+}
+.jogador {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 12px 6px 4px;
+  border-radius: 18px;
+  border: var(--bw) solid var(--line);
+  background: var(--card);
+  box-shadow: var(--sh-sm);
+  text-align: center;
+}
+.jogador b {
+  font-size: 17px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.jogador .linkbtn {
+  font-size: 12px;
+  min-height: 36px;
+  padding: 4px 8px;
+}
+.jogador.off {
+  opacity: 0.5;
+}
+.jogador.chegou {
+  animation: chega 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+  background: var(--amarelo);
+}
+@keyframes chega {
+  from {
+    transform: scale(0.3) rotate(-8deg);
+    opacity: 0;
+  }
+}
+.esperando {
+  font-size: 20px;
+  font-weight: 800;
+}
+.entrou {
+  position: fixed;
+  left: 50%;
+  top: 18px;
+  z-index: 75;
+  transform: translate(-50%, -160%);
+  background: var(--amarelo);
+  color: #0e2a22;
+  border: 3px solid #0e2a22;
+  box-shadow: 0 5px 0 #0e2a22;
+  border-radius: 999px;
+  padding: 10px 26px;
+  font: 900 clamp(22px, 3vw, 32px) var(--disp);
+  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+  pointer-events: none;
+}
+.entrou.on {
+  transform: translate(-50%, 0);
+}
+/* imagem da pergunta: grande na TV, menor no celular */
+.qimg {
+  display: block;
+  width: 100%;
+  max-height: 46vh;
+  object-fit: contain;
+  border-radius: 16px;
+  border: var(--bw) solid var(--line);
+  background: #fff;
+}
+main:not(.tv) .qimg {
+  max-height: 30vh;
+}
+.qimg-ed {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.qimg-ed img {
+  max-height: 120px;
+  max-width: 220px;
+  border-radius: 10px;
+  border: 2px solid var(--line);
+}
+.opt-ed input[readonly] {
+  background: var(--bg);
+}
+.qed > .filebtn {
+  justify-self: start;
+}
+@media (min-width: 700px) {
+  .temas {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.tv .qimg {
+  max-height: 30vh;
+}
+
+/* ================= pódio em camadas ================= */
+.palco {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  min-height: 300px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: var(--bw) solid var(--line);
+  isolation: isolate;
+}
+@media (max-width: 640px) {
+  .palco {
+    aspect-ratio: 4 / 5;
+  }
+}
+.palco .cenario {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  z-index: 0;
+}
+.palco .sol {
+  transform-origin: 980px 120px;
+  animation: gira 40s linear infinite;
+}
+.palco .nuvens {
+  animation: nuvem 18s ease-in-out infinite alternate;
+}
+.palco .holofote {
+  transform-origin: 50% 0;
+  animation: holofote 6s ease-in-out infinite alternate;
+}
+.palco .holofote.h2 {
+  animation-delay: -3s;
+}
+@keyframes gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes nuvem {
+  to {
+    transform: translateX(60px);
+  }
+}
+@keyframes holofote {
+  from {
+    transform: skewX(-8deg);
+  }
+  to {
+    transform: skewX(8deg);
+  }
+}
+/* chuva de festa, sem parar, atrás dos degraus */
+.chuva {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.chuva i {
+  position: absolute;
+  top: -8%;
+  width: 10px;
+  height: 14px;
+  background: var(--c);
+  border-radius: 2px;
+  animation-name: chove;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.chuva i.folha {
+  width: 16px;
+  height: 10px;
+  border-radius: 0 100% 0 100%;
+  background: #3e8e41;
+}
+.chuva i.estrela {
+  width: 16px;
+  height: 16px;
+  border-radius: 0;
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+.chuva i.fita {
+  width: 4px;
+  height: 26px;
+  border-radius: 2px;
+  opacity: 0.75;
+}
+@keyframes chove {
+  0% {
+    transform: translate(0, 0) rotate(0);
+  }
+  50% {
+    transform: translate(18px, 55vh) rotate(260deg);
+  }
+  100% {
+    transform: translate(-12px, 110vh) rotate(540deg);
+  }
+}
+/* degraus */
+.degraus {
+  position: absolute;
+  z-index: 2;
+  left: 7%;
+  right: 7%;
+  bottom: 5%;
+  display: grid;
+  grid-template-columns: 1fr 1.12fr 1fr;
+  align-items: end;
+  gap: 0;
+}
+.degrau {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+.boneco {
+  width: 54%;
+  margin-bottom: -5%;
+  position: relative;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+}
+.boneco svg.av {
+  width: 100%;
+  height: auto;
+  max-width: none;
+  filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.22));
+}
+.d1 .boneco {
+  width: 62%;
+}
+.boneco.campeao svg.av {
+  animation: pula 1.1s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+.boneco.novo {
+  animation: entra 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.35) both;
+}
+.boneco.oculto {
+  aspect-ratio: 1;
+  align-content: center;
+}
+.boneco.oculto span {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border: 4px dashed var(--line);
+  font: 900 clamp(34px, 6vw, 64px) var(--disp);
+  color: var(--fg2);
+}
+.boneco.tremendo {
+  animation: treme 0.25s ease-in-out infinite;
+}
+@keyframes pula {
+  0%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+  40% {
+    transform: translateY(-8%) scaleY(1.03);
+  }
+  55% {
+    transform: translateY(0) scaleY(0.96);
+  }
+}
+@keyframes entra {
+  from {
+    transform: translateY(-60%) scale(0.6);
+    opacity: 0;
+  }
+}
+.bloco {
+  width: 100%;
+  position: relative;
+}
+.bloco .tampa {
+  height: clamp(10px, 1.6vw, 18px);
+  margin: 0 4%;
+  background: var(--tampa);
+  border: 3px solid #0e2a22;
+  border-bottom: 0;
+  clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%);
+}
+.bloco .frente {
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 2px;
+  padding: 6px 4px 10px;
+  border: 3px solid #0e2a22;
+  border-radius: 6px 6px 0 0;
+  color: #0e2a22;
+  text-align: center;
+  background-color: var(--cor);
+  /* textura: listras diagonais leves e brilho no topo */
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 30%, rgba(0, 0, 0, 0.12)),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.14) 0 10px, rgba(255, 255, 255, 0) 10px 22px);
+  box-shadow: inset 0 -8px 0 rgba(0, 0, 0, 0.12);
+}
+.d1 .frente {
+  height: clamp(130px, 19vw, 210px);
+}
+.d2 .frente {
+  height: clamp(104px, 14.5vw, 160px);
+}
+.d3 .frente {
+  height: clamp(88px, 11.5vw, 128px);
+}
+.d3 .frente .num {
+  font-size: clamp(22px, 3.4vw, 42px);
+}
+.d1 {
+  --cor: #ffc83d;
+  --tampa: #ffe08a;
+}
+.d2 {
+  --cor: #d7dee6;
+  --tampa: #eef2f6;
+}
+.d3 {
+  --cor: #e08a4f;
+  --tampa: #f2b088;
+}
+.frente .num {
+  font: 900 clamp(26px, 4.4vw, 54px) / 1 var(--disp);
+  text-shadow: 0 3px 0 rgba(255, 255, 255, 0.45);
+}
+.frente b {
+  font: 900 clamp(13px, 1.8vw, 22px) / 1.1 var(--disp);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.frente small {
+  font-size: clamp(11px, 1.3vw, 15px);
+  font-weight: 800;
+}
+.degrau.vazio {
+  visibility: hidden;
+}
+/* Corporativo: sóbrio, grafite com faixa metálica */
+.palco-corp .bloco .frente {
+  background-color: #2b3532;
+  color: #fff6e6;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 40%), repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 6px);
+  border-top: 6px solid var(--cor);
+}
+.palco-corp .bloco .tampa {
+  background: #3d4a46;
+}
+.palco-corp .frente .num {
+  color: var(--cor);
+  text-shadow: none;
+}
+.palco-corp .d2 {
+  --cor: #c7ced6;
+}
+.palco-corp .d1 {
+  --cor: #d9b45a;
+}
+.palco-corp .d3 {
+  --cor: #c98a5a;
+}
+.palco-corp .boneco.campeao svg.av {
+  animation-duration: 2.2s;
+}
+/* modo foto: palco maior */
+body.modo-foto .palco {
+  aspect-ratio: 16 / 8;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chuva {
+    display: none;
+  }
+}
+
+/* ---------- home e cabeçalho no celular ---------- */
+.btn.grande {
+  font-size: 22px;
+  min-height: 64px;
+  max-width: 420px;
+}
+.hero-entrar {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  max-width: 520px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--card);
+  border: var(--bw) solid var(--line);
+  box-shadow: var(--sh-sm);
+}
+.hero-entrar .row {
+  flex-wrap: nowrap;
+  align-items: end;
+}
+.hero-entrar .row > label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.hero-entrar .row > .btn {
+  flex: 0 0 auto;
+  width: auto;
+}
+.hero-entrar label {
+  font-size: 0;
+  gap: 0;
+}
+.hero-entrar input.code {
+  font-size: 24px;
+  min-height: 52px;
+}
+@media (max-width: 640px) {
+  .top {
+    flex-wrap: nowrap;
+    padding: 10px 16px;
+  }
+  .logo img {
+    width: 104px;
+    height: auto;
+  }
+  .nav {
+    flex-wrap: nowrap;
+    gap: 2px;
+  }
+  .nav a {
+    font-size: 15px;
+    padding: 6px 12px;
+  }
+  .nav .nav-criar,
+  .nav-longo {
+    display: none;
+  }
+  .hero {
+    gap: 14px;
+    padding-top: 6px;
+  }
+  .hero p {
+    font-size: 17px;
+  }
+  .hero .bichos svg.av {
+    width: 46px;
+    height: 46px;
+  }
+}
+
+/* ---------- Prepare-se, vale o dobro e perguntas de opinião ---------- */
+.prep {
+  min-height: 46vh;
+  align-content: center;
+}
+.prep-n {
+  font: 900 clamp(90px, 18vw, 180px) / 1 var(--disp);
+  color: var(--acc-text);
+}
+.prep-txt {
+  font: 900 clamp(24px, 4vw, 36px) var(--disp);
+}
+.dobro-selo,
+.tipo-selo {
+  font: 900 clamp(26px, 5vw, 44px) var(--disp);
+  background: var(--amarelo);
+  color: #0e2a22;
+  border: var(--bw) solid #0e2a22;
+  box-shadow: var(--sh-sm);
+  border-radius: 999px;
+  padding: 6px 24px;
+  animation: pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+.tipo-selo {
+  font-size: clamp(18px, 3vw, 26px);
+  background: var(--card);
+}
+.pill.dobro {
+  background: var(--amarelo);
+  color: #0e2a22;
+  margin-right: auto;
+  margin-left: 8px;
+}
+.votos {
+  display: grid;
+  gap: 10px;
+}
+.voto {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 16px;
+  border: var(--bw) solid var(--line);
+  background: var(--card);
+  overflow: hidden;
+  font-weight: 800;
+  font-size: clamp(17px, 2.2vw, 24px);
+  isolation: isolate;
+}
+.voto::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--p);
+  background: var(--acc-soft);
+  z-index: -1;
+  animation: barra 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.voto.top::before {
+  background: var(--amarelo);
+}
+.voto.meu {
+  outline: 3px solid var(--acc);
+  outline-offset: 2px;
+}
+.voto b {
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+.voto small {
+  color: var(--fg2);
+  font-weight: 700;
+}
+@keyframes barra {
+  from {
+    width: 0;
+  }
+}
+.quem-sala {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+  font-weight: 900;
+}
+.quem-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+.quem-grid button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  min-height: 64px;
+  border-radius: 16px;
+  border: var(--bw) solid var(--line);
+  background: var(--card);
+  box-shadow: var(--sh-sm);
+  font: 800 16px var(--text);
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+}
+.quem-grid button span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.quem-grid button.mine {
+  background: var(--amarelo);
+}
+.quem-grid button.dim {
+  opacity: 0.35;
+}
+.verdict.voto-feito {
+  color: var(--acc-text);
+}
+/* editor: tipos de pergunta e chave do dobro */
+.add-tipos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+.add-tipos .btn {
+  display: grid;
+  justify-items: start;
+  text-align: left;
+  gap: 2px;
+  font-size: 17px;
+}
+.add-tipos .btn span {
+  font: 700 13px var(--text);
+  color: var(--fg2);
+}
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  border: var(--bw) solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  padding: 12px 14px;
+  font: 600 15px var(--text);
+  color: var(--fg);
+  cursor: pointer;
+  min-height: 56px;
+}
+.toggle small {
+  color: var(--fg2);
+}
+.toggle .chave {
+  flex: none;
+  width: 52px;
+  height: 30px;
+  border-radius: 999px;
+  border: var(--bw) solid var(--line);
+  background: var(--soft-line);
+  position: relative;
+}
+.toggle .chave::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--line);
+  transition: left 0.2s;
+}
+.toggle[aria-pressed='true'] .chave {
+  background: var(--amarelo);
+}
+.toggle[aria-pressed='true'] .chave::after {
+  left: 24px;
+}

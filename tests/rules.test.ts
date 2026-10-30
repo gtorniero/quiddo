@@ -11,10 +11,6 @@ describe('pontos', () => {
     expect(points(5_000, 10)).toBe(750);
     expect(points(3_200, 20)).toBe(920);
   });
-  it('no modo "Sem pressa" acerto vale 1000 em qualquer tempo', () => {
-    expect(points(0, 10, 'fixed')).toBe(1000);
-    expect(points(9_900, 10, 'fixed')).toBe(1000);
-  });
   it('nunca passa dos limites', () => {
     expect(points(99_000, 10)).toBe(500);
     expect(points(-50, 10)).toBe(1000);
@@ -44,10 +40,45 @@ describe('perguntas', () => {
   it('valida o pedido de abrir sala', () => {
     const r = validateCreate({ theme: 'x', questions: [{ t: ' Oi ', o: ['1', '2'], c: 1, tl: 7 }], brand: { name: 'A', color: 'red' }, logo: '' });
     expect(r.theme).toBe('corp');
-    expect(r.scoring).toBe('speed');
     expect(r.questions[0]).toEqual({ t: 'Oi', o: ['1', '2'], c: 1, tl: 20 });
     expect(r.brand.color).toBe('');
+    const escola = validateCreate({ theme: 'escola', questions: [{ t: 'a', o: ['1', '2'], c: 0, tl: 10 }], brand: { name: 'Escola X', color: '#123456' }, logo: '' });
+    expect(escola.theme).toBe('escola');
+    expect(escola.brand).toEqual({ name: 'Escola X', color: '#123456' });
+    const festa = validateCreate({ theme: 'festa', questions: [{ t: 'a', o: ['1', '2'], c: 0, tl: 10 }], brand: { name: 'Bia', color: '#123456' }, logo: 'data:image/png;base64,AAAA' });
+    expect(festa.brand).toEqual({ name: '', color: '' });
+    expect(festa.logo).toBe('');
     expect(() => validateCreate({ questions: [] })).toThrow();
+  });
+  it('aceita imagem válida na pergunta e descarta o que não é imagem', () => {
+    const img = 'data:image/jpeg;base64,' + 'A'.repeat(1000);
+    const r = validateCreate({
+      questions: [
+        { t: 'Com foto', o: ['1', '2'], c: 0, tl: 10, img },
+        { t: 'Sem foto', o: ['1', '2'], c: 0, tl: 10, img: 'javascript:alert(1)' },
+        { t: 'Foto grande', o: ['1', '2'], c: 0, tl: 10, img: 'data:image/jpeg;base64,' + 'A'.repeat(300_000) },
+      ],
+    });
+    expect(r.questions[0].img).toBe(img);
+    expect(r.questions[1].img).toBeUndefined();
+    expect(r.questions[2].img).toBeUndefined();
+  });
+  it('valida perguntas de opinião e a que vale o dobro', () => {
+    const r = validateCreate({
+      questions: [
+        { t: 'Praia ou montanha?', o: ['Praia', 'Montanha', ''], c: 2, tl: 10, tipo: 'opiniao' },
+        { t: 'Quem é mais provável…?', o: [], c: 0, tl: 10, tipo: 'quem' },
+        { t: 'Final', o: ['a', 'b'], c: 1, tl: 10, dobro: true },
+      ],
+    });
+    expect(r.questions[0]).toEqual({ t: 'Praia ou montanha?', o: ['Praia', 'Montanha'], c: -1, tl: 10, tipo: 'opiniao' });
+    expect(r.questions[1]).toEqual({ t: 'Quem é mais provável…?', o: [], c: -1, tl: 10, tipo: 'quem' });
+    expect(r.questions[2].dobro).toBe(true);
+  });
+  it('recusa quiz com imagens demais', () => {
+    const img = 'data:image/jpeg;base64,' + 'A'.repeat(250_000);
+    const questions = Array.from({ length: 40 }, () => ({ t: 'Q', o: ['1', '2'], c: 0, tl: 10, img }));
+    expect(() => validateCreate({ questions })).toThrow(/Imagens demais/);
     expect(() => validateCreate({ questions: [{ t: 'a', o: ['1', '2'], c: 0, tl: 10 }], logo: 'javascript:1' })).toThrow();
   });
 });

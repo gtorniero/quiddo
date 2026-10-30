@@ -55,11 +55,13 @@ await Promise.all(
       if (m.phase === 'question' && p.answeredQ !== m.qIndex) {
         p.answeredQ = m.qIndex;
         const choice = Math.random() < 0.6 ? 0 : 1 + Math.floor(Math.random() * 3);
+        // espera o "Prepare-se" acabar (relógio do servidor) e responde em até 5 s
+        const prep = Math.max(0, (m.startsAt || 0) - m.serverNow);
         setTimeout(() => {
           ws.send(JSON.stringify({ type: 'answer', qIndex: m.qIndex, choice }));
           stats.answered++;
           if (choice === 0) stats.right++;
-        }, 300 + Math.random() * 5000);
+        }, prep + 300 + Math.random() * 5000);
       }
     });
   }),

@@ -1,6 +1,6 @@
 // Motor do jogo: estado da sala e transições de fase, sem rede nem relógio próprio.
 // O Durable Object guarda um `Room`, chama estas funções e manda as visões para cada um.
-import type { Brand, Drawn, DrawMode, HostState, Phase, PlayerState, Question, RankRow, Scoring, Theme } from './protocol';
+import type { Brand, Drawn, DrawMode, HostState, Phase, PlayerState, Question, RankRow, Theme } from './protocol';
 import { LIMITS, cleanNick, points } from './rules';
 import { AVATAR_PADRAO, cleanAvatar, uniqueAvatar } from './avatar';
 
@@ -15,6 +15,16 @@ export interface Player {
   connected: boolean;
 }
 
+/** Opção de "Quem é mais provável…": uma pessoa da sala. */
+export interface Pessoa {
+  id: string;
+  nick: string;
+  avatar: string;
+}
+
+/** Duração do "Prepare-se" antes de cada pergunta. */
+export const PREP_MS = 3000;
+
 export interface Answer {
   choice: number;
   ms: number;
@@ -24,14 +34,14 @@ export interface Room {
   code: string;
   hostKey: string;
   theme: Theme;
-  scoring: Scoring;
   brand: Brand;
   logo: number; // versão do logo (0 = sem logo)
   questions: Question[];
   phase: Phase;
   qIndex: number;
-  startedAt: number; // quando a pergunta atual foi enviada
+  startedAt: number; // quando a pergunta atual liberou as respostas (fim do "Prepare-se")
   endsAt: number;
+  opts?: Pessoa[]; // opções da pergunta "quem" atual
   players: Record<string, Player>;
   answers: Record<string, Answer>;
   counts: number[];
@@ -41,12 +51,11 @@ export interface Room {
   endedAt: number; // 0 enquanto o jogo não acabou
 }
 
-export function newRoom(o: { code: string; hostKey: string; theme: Theme; scoring?: Scoring; brand: Brand; questions: Question[]; hasLogo: boolean; now: number }): Room {
+export function newRoom(o: { code: string; hostKey: string; theme: Theme; brand: Brand; questions: Question[]; hasLogo: boolean; now: number }): Room {
   return {
     code: o.code,
     hostKey: o.hostKey,
     theme: o.theme,
-    scoring: o.scoring || 'speed',
     brand: o.brand,
     logo: o.hasLogo ? o.now : 0,
     questions: o.questions,
@@ -110,12 +119,26 @@ export function kick(room: Room, playerId: string): boolean {
 }
 
 function openQuestion(room: Room, qIndex: number, now: number) {
+  const q = room.questions[qIndex];
   room.qIndex = qIndex;
   room.phase = 'question';
   room.answers = {};
   room.counts = [];
-  room.startedAt = now;
-  room.endsAt = now + room.questions[qIndex].tl * 1000;
+  room.startedAt = now + PREP_MS;
+  room.endsAt = room.startedAt + q.tl * 1000;
+  // "Quem é mais provável…": a lista é a sala no momento em que a pergunta abre
+  room.opts =
+    q.tipo === 'quem'
+      ? Object.values(room.players)
+          .sort((a, b) => a.nick.localeCompare(b.nick, 'pt-BR'))
+          .map((p) => ({ id: p.id, nick: p.nick, avatar: avatarOf(p) }))
+      : undefined;
+}
+
+/** Quantas opções a pergunta atual tem. */
+function nOpcoes(room: Room): number {
+  const q = room.questions[room.qIndex];
+  return q.tipo === 'quem' ? (room.opts || []).length : q.o.length;
 }
 
 export function start(room: Room, now: number): boolean {
@@ -143,13 +166,12 @@ function resetScores(room: Room) {
   }
 }
 
-/** Registra a resposta. O tempo é medido aqui, no servidor, a partir do envio da pergunta. */
+/** Registra a resposta. O tempo é medido aqui, no servidor, a partir do fim do "Prepare-se". */
 export function answer(room: Room, playerId: string, qIndex: number, choice: number, now: number): boolean {
   if (room.phase !== 'question' || qIndex !== room.qIndex) return false;
   if (!room.players[playerId] || room.answers[playerId]) return false;
-  const q = room.questions[room.qIndex];
-  if (!Number.isInteger(choice) || choice < 0 || choice >= q.o.length) return false;
-  if (now > room.endsAt) return false;
+  if (!Number.isInteger(choice) || choice < 0 || choice >= nOpcoes(room)) return false;
+  if (now < room.startedAt || now > room.endsAt) return false;
   room.answers[playerId] = { choice, ms: Math.max(0, now - room.startedAt) };
   return true;
 }
@@ -169,11 +191,13 @@ export function reveal(room: Room): boolean {
   if (room.phase !== 'question') return false;
   const q = room.questions[room.qIndex];
   const before = rankMap(room);
-  room.counts = q.o.map(() => 0);
+  room.counts = Array.from({ length: nOpcoes(room) }, () => 0);
+  const valePonto = !q.tipo || q.tipo === 'quiz';
   for (const p of Object.values(room.players)) {
     p.prevRank = before[p.id] || 0;
     const a = room.answers[p.id];
-    p.delta = a && a.choice === q.c ? points(a.ms, q.tl, room.scoring) : 0;
+    // pergunta de opinião não tem certa nem errada: não mexe no placar
+    p.delta = valePonto && a && a.choice === q.c ? points(a.ms, q.tl) * (q.dobro ? 2 : 1) : 0;
     p.score += p.delta;
     if (a) room.counts[a.choice]++;
   }
@@ -236,17 +260,27 @@ function base(room: Room, now: number) {
     type: 'state' as const,
     code: room.code,
     theme: room.theme,
-    scoring: room.scoring || 'speed',
     brand: { ...room.brand, logo: room.logo },
     phase: room.phase,
     qIndex: room.qIndex,
     total: room.questions.length,
-    question: q ? { t: q.t, o: q.o, tl: q.tl } : null,
+    question: q
+      ? {
+          t: q.t,
+          o: q.tipo === 'quem' ? (room.opts || []).map((p) => p.nick) : q.o,
+          ...(q.tipo === 'quem' ? { oa: (room.opts || []).map((p) => p.avatar) } : {}),
+          tipo: q.tipo || 'quiz',
+          dobro: !!q.dobro,
+          tl: q.tl,
+          img: q.img ? room.createdAt : 0,
+        }
+      : null,
+    startsAt: room.phase === 'question' ? room.startedAt : 0,
     endsAt: room.endsAt,
     serverNow: now,
     answeredCount: Object.keys(room.answers).length,
     playerCount: Object.keys(room.players).length,
-    correct: revealed && q ? q.c : null,
+    correct: revealed && q && q.c >= 0 ? q.c : null,
     counts: revealed ? room.counts : null,
     drawn: room.drawn,
   };
@@ -274,7 +308,7 @@ export function playerView(room: Room, playerId: string, now: number, rk: RankRo
     ...base(room, now),
     role: 'player',
     podium: room.phase === 'final' ? rk.slice(0, 3) : [],
-    me: { id: p.id, nick: p.nick, avatar: avatarOf(p), score: p.score, delta: p.delta, rank: mine ? mine.rank : 0, choice: a ? a.choice : null },
+    me: { id: p.id, nick: p.nick, avatar: avatarOf(p), score: p.score, delta: p.delta, rank: mine ? mine.rank : 0, prevRank: mine ? mine.prevRank : 0, choice: a ? a.choice : null },
     ranking: showRank ? rk.slice(0, 5) : [],
   };
 }

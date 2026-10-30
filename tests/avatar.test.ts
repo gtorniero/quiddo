@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AVATAR_PADRAO, BICHOS, CABECA, CORES_N, ROSTO, avatarName, cleanAvatar, encodeAvatar, parseAvatar, randomAvatar, uniqueAvatar } from '../shared/avatar';
+import { AVATAR_PADRAO, BICHOS, CABECA, CORES_N, ROSTO, avatarName, cleanAvatar, encodeAvatar, parseAvatar, randomAvatar, startAvatar, uniqueAvatar } from '../shared/avatar';
 import * as G from '../shared/game';
 
 describe('avatar', () => {
@@ -36,6 +36,20 @@ describe('avatar', () => {
     expect(uniqueAvatar('gato.coroa.-.9', ['gato.coroa.-.9', 'gato.coroa.-.0'])).toBe('gato.coroa.-.1');
     const all = Array.from({ length: CORES_N }, (_, c) => `gato.coroa.-.${c}`);
     expect(uniqueAvatar('gato.coroa.-.2', all)).toBe('gato.coroa.-.2');
+  });
+
+  it('quem chega começa sem nada na cabeça nem no rosto', () => {
+    for (let i = 0; i < 50; i++) {
+      const v = startAvatar();
+      expect(v.h).toBeNull();
+      expect(v.f).toBeNull();
+      expect(parseAvatar(encodeAvatar(v))).not.toBeNull();
+    }
+  });
+
+  it('não tem mais "perereca"; o nome antigo vira sapo', () => {
+    expect(Object.values(BICHOS)).not.toContain('Perereca');
+    expect(parseAvatar('perereca.festa.-.7')).toEqual({ a: 'sapo', h: 'festa', f: null, c: 7 });
   });
 
   it('o sorteio sempre gera um avatar válido', () => {

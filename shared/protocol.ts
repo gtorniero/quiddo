@@ -1,17 +1,21 @@
 // Tipos compartilhados entre o navegador e o servidor (Worker + Durable Object).
 // Toda mensagem é JSON e tem `type`. O servidor manda sempre o estado absoluto.
 
-export type Theme = 'corp' | 'festa';
+export type Theme = 'corp' | 'festa' | 'escola';
 export type Phase = 'lobby' | 'question' | 'reveal' | 'ranking' | 'final';
 export type DrawMode = 'all' | 'scored';
-/** speed: de 500 a 1000, quanto mais rápido mais pontos. fixed: "Sem pressa", acertou vale 1000. */
-export type Scoring = 'speed' | 'fixed';
+
+/** quiz: tem resposta certa e vale ponto. opiniao: enquete, ninguém erra. quem: "Quem é mais provável…", as opções são as pessoas da sala. */
+export type Tipo = 'quiz' | 'opiniao' | 'quem';
 
 export interface Question {
   t: string; // texto
-  o: string[]; // 2 a 4 respostas
-  c: number; // índice da certa
+  o: string[]; // 2 a 4 respostas (vazio em "quem": a sala vira a lista)
+  c: number; // índice da certa (-1 nas perguntas de opinião)
+  tipo?: Tipo; // ausente = quiz
+  dobro?: boolean; // vale o dobro de pontos
   tl: number; // tempo em segundos: 10, 15, 20 ou 30
+  img?: string; // imagem opcional: data URL ao abrir a sala; na sala vira '1' (guardada à parte)
 }
 
 export interface Brand {
@@ -22,8 +26,7 @@ export interface Brand {
 export interface CreateRoomBody {
   questions: Question[];
   theme: Theme;
-  scoring: Scoring;
-  brand: Brand;
+  brand: Brand; // ignorada no tema festa
   logo: string; // data URL (PNG/JPEG/WebP) ou ''
 }
 
@@ -51,7 +54,11 @@ export type ClientMsg =
 export interface PublicQuestion {
   t: string;
   o: string[];
+  oa?: string[]; // avatares das opções, em "quem"
+  tipo: Tipo;
+  dobro: boolean;
   tl: number;
+  img: number; // 0 = sem imagem; senão a versão para montar /api/salas/{CODIGO}/img/{qIndex}?v=
 }
 
 export interface RankRow {
@@ -74,12 +81,12 @@ export interface BaseState {
   type: 'state';
   code: string;
   theme: Theme;
-  scoring: Scoring;
   brand: Brand & { logo: number }; // logo: versão (0 = sem logo)
   phase: Phase;
   qIndex: number;
   total: number;
   question: PublicQuestion | null;
+  startsAt: number; // fim do "Prepare-se": antes disso ninguém responde (relógio do servidor)
   endsAt: number; // relógio do servidor
   serverNow: number;
   answeredCount: number;
@@ -105,6 +112,7 @@ export interface PlayerState extends BaseState {
     score: number;
     delta: number;
     rank: number;
+    prevRank: number; // posição antes da última pergunta (0 = não tinha)
     choice: number | null; // o que respondeu nesta pergunta
   };
   ranking: RankRow[]; // top 5

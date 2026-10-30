@@ -51,8 +51,11 @@ export function cleanNick(s: unknown): string {
 
 /** Uma pergunta está pronta quando tem texto, ao menos 2 respostas e a certa preenchida. */
 export function isReady(q: Question): boolean {
+  if (!q.t.trim()) return false;
+  if (q.tipo === 'quem') return true;
   const filled = q.o.filter((o) => o.trim());
-  return !!q.t.trim() && filled.length >= 2 && !!(q.o[q.c] || '').trim();
+  if (q.tipo === 'opiniao') return filled.length >= 2;
+  return filled.length >= 2 && !!(q.o[q.c] || '').trim();
 }
 
 /** Tira respostas vazias e reajusta o índice da certa. Devolve null se a pergunta não estiver pronta. */
@@ -60,12 +63,15 @@ export function compactQuestion(q: Question): Question | null {
   if (!isReady(q)) return null;
   const o: string[] = [];
   let c = 0;
-  q.o.forEach((ans, i) => {
-    if (!ans.trim()) return;
-    if (i === q.c) c = o.length;
-    o.push(ans.trim());
-  });
-  const out: Question = { t: q.t.trim(), o, c, tl: q.tl };
+  if (q.tipo !== 'quem')
+    q.o.forEach((ans, i) => {
+      if (!ans.trim()) return;
+      if (i === q.c) c = o.length;
+      o.push(ans.trim());
+    });
+  const out: Question = { t: q.t.trim(), o, c: q.tipo === 'opiniao' || q.tipo === 'quem' ? -1 : c, tl: q.tl };
+  if (q.tipo === 'opiniao' || q.tipo === 'quem') out.tipo = q.tipo;
+  else if (q.dobro) out.dobro = true;
   if (q.img) out.img = q.img;
   return out;
 }
@@ -85,8 +91,9 @@ export function validateCreate(body: unknown): CreateRoomBody {
     const o = Array.isArray(r.o) ? r.o.slice(0, 4).map((x) => cleanText(x, LIMITS.answerText)) : [];
     const tl = (LIMITS.times as readonly number[]).includes(Number(r.tl)) ? Number(r.tl) : 20;
     const c = Number.isInteger(r.c) && (r.c as number) >= 0 && (r.c as number) < o.length ? (r.c as number) : 0;
+    const tipo = r.tipo === 'opiniao' || r.tipo === 'quem' ? r.tipo : undefined;
     const img = typeof r.img === 'string' && r.img.length <= LIMITS.imgBytes && IMG_RE.test(r.img) ? r.img : undefined;
-    const q = compactQuestion({ t: cleanText(r.t, LIMITS.questionText), o, c, tl, img });
+    const q = compactQuestion({ t: cleanText(r.t, LIMITS.questionText), o, c, tl, img, tipo, dobro: r.dobro === true });
     if (q) questions.push(q);
   }
   if (!questions.length) throw new Error('Nenhuma pergunta pronta.');

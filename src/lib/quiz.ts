@@ -12,6 +12,7 @@ export interface Quiz {
   titulo: string;
   tema: Theme;
   tempo: number; // segundos de cada pergunta, o mesmo para todas: 10, 15, 20 ou 30
+  dobroUltima?: boolean; // a última pergunta com resposta certa vale o dobro
   marca: Brand & { ultima?: string };
   logo: string;
   perguntas: Pergunta[];
@@ -92,6 +93,11 @@ export function importar(texto: string): Quiz {
     const c = Number.isInteger(p?.c) && p.c >= 0 && p.c < o.length ? p.c : 0;
     const tl = TEMPOS.includes(p?.tl) ? p.tl : 20;
     const out: Pergunta = { t: String(p?.t ?? '').slice(0, LIMITS.questionText), o, c, tl };
+    if (p?.tipo === 'opiniao' || p?.tipo === 'quem') {
+      out.tipo = p.tipo;
+      out.c = -1;
+      if (p.tipo === 'quem') out.o = [];
+    }
     if (p?.vf) {
       out.vf = true;
       out.o = ['Verdadeiro', 'Falso'];
@@ -101,5 +107,6 @@ export function importar(texto: string): Quiz {
     return out;
   });
   q.tempo = TEMPOS.includes(Number(d.tempo)) ? Number(d.tempo) : 0;
+  q.dobroUltima = d.dobroUltima === true;
   return normalizar(q);
 }

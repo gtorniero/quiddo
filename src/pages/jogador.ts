@@ -13,7 +13,7 @@ import { BICHOS, CABECA, CORES_N, ROSTO, avatarName, encodeAvatar, parseAvatar, 
 import type { Avatar, Bicho, ItemCabeca, ItemRosto } from '../../shared/avatar';
 import { CORES_AVATAR, avatarSvg } from '../lib/avatar-art';
 import { simbolo } from '../lib/simbolos';
-import { MOEDA, PASSOS_PODIO, answersStatic, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick } from './jogo-comum';
+import { MOEDA, PASSOS_PODIO, answersStatic, prepare, preparando, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick } from './jogo-comum';
 
 interface Seat {
   pid: string;
@@ -42,6 +42,7 @@ function mount(main: HTMLElement, code: string) {
   let passo = 4; // suspense do pódio, no mesmo ritmo da TV
   let passoTimers: number[] = [];
   let lastHtml = '';
+  let prepTimer = 0;
   let av: Avatar = parseAvatar(store.get('avatar', '')) || startAvatar();
   let sugerido = ''; // o apelido que o site sugeriu; se a pessoa não mexeu, ele acompanha o visual
 
@@ -129,6 +130,12 @@ function mount(main: HTMLElement, code: string) {
     }
     if (s.phase === 'final' && prev && prev.phase !== 'final') suspense();
     if (s.phase !== 'final') pararSuspense();
+    // as respostas aparecem quando o "Prepare-se" acaba
+    clearTimeout(prepTimer);
+    if (sock && preparando(s, sock.now())) prepTimer = window.setTimeout(() => {
+      render();
+      main.querySelector<HTMLElement>('button.ans, .quem-grid button')?.focus({ preventScroll: true });
+    }, s.startsAt - sock.now() + 30);
     render();
     if (!prev || prev.phase !== s.phase || prev.qIndex !== s.qIndex) {
       window.scrollTo(0, 0);
@@ -196,8 +203,23 @@ function mount(main: HTMLElement, code: string) {
   }
 
   function question(s: PlayerState) {
+    if (sock && preparando(s, sock.now())) return prepare(s);
     const chosen = s.me.choice ?? sending;
     const q = s.question!;
+    if (q.tipo === 'quem') {
+      // "Quem é mais provável…": a lista é a sala, cada um com o seu bicho
+      const pessoas = q.o
+        .map(
+          (nick, k) =>
+            `<button class="${chosen === k ? 'mine' : chosen != null ? 'dim' : ''}" data-act="ans" data-v="${k}" data-focus="a${k}"${chosen != null ? ' disabled' : ''}${chosen === k ? ' aria-pressed="true"' : ''}>${avatarSvg(
+              (q.oa || [])[k] || '',
+              52,
+            )}<span>${esc(nick)}${nick === s.me.nick ? ' (você)' : ''}</span></button>`,
+        )
+        .join('');
+      return `<section class="stage">${questionHead(s)}<div class="quem-grid" role="group" aria-label="Escolha alguém da sala">${pessoas}</div>
+        <p class="hint" role="status">${chosen != null ? 'Voto enviado. Espere o resultado.' : 'Toque em alguém da sala. Vale votar em você.'}</p></section>`;
+    }
     const buttons = q.o
       .map(
         (o, k) =>
@@ -207,11 +229,14 @@ function mount(main: HTMLElement, code: string) {
       )
       .join('');
     return `<section class="stage">${questionHead(s)}<div class="answers" role="group" aria-label="Respostas">${buttons}</div>
-      <p class="hint" role="status">${chosen != null ? (s.me.choice != null ? 'Resposta enviada. Espere a revelação.' : 'Enviando…') : 'Toque na sua resposta. Quanto mais rápido, mais pontos.'}</p></section>`;
+      <p class="hint" role="status">${chosen != null ? (s.me.choice != null ? 'Resposta enviada. Espere a revelação.' : 'Enviando…') : q.tipo === 'opiniao' ? 'Não tem resposta certa: vote no que você acha.' : 'Toque na sua resposta. Quanto mais rápido, mais pontos.'}</p></section>`;
   }
 
   function reveal(s: PlayerState) {
     const answered = s.me.choice != null;
+    if (s.question!.tipo !== 'quiz') {
+      return `<section class="stage">${questionHead(s)}<div class="verdict voto-feito" role="status">${answered ? 'Voto contado!' : 'Não votou'}</div>${answersStatic(s, s.me.choice)}</section>`;
+    }
     const ok = answered && s.me.choice === s.correct;
     return `<section class="stage">${questionHead(s)}<div class="verdict ${ok ? 'ok' : 'no'}" role="status">${answered ? (ok ? `Mandou bem! +${fmt(s.me.delta)}` : 'Quase!') : 'Não respondeu'}</div>
       ${answersStatic(s, s.me.choice)}
@@ -290,6 +315,7 @@ function mount(main: HTMLElement, code: string) {
   return () => {
     if (sock) sock.stop();
     clearInterval(clock);
+    clearTimeout(prepTimer);
     pararSuspense();
     clearTimeout(drawTimer);
     main.removeEventListener('submit', onSubmit);

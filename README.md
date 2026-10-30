@@ -44,7 +44,9 @@ Cada jogador escolhe um bicho do Brasil com até dois itens (cabeça e rosto) e 
 
 Pontos: errou ou não respondeu, 0. Acertou: `round(500 + 500 × max(0, 1 − tempo / limite))`, de 500 a 1000. O tempo é medido no servidor e o anfitrião escolhe um tempo único para todas as perguntas: 10, 15, 20 ou 30 segundos (padrão 20). A rapidez sempre vale ponto.
 
-Cada pergunta pode ser de múltipla escolha (2 a 4 respostas) ou de verdadeiro ou falso, e pode ter uma imagem (reduzida no navegador para até 960×540; aparece na TV e nos celulares).
+Cada pergunta pode ser de múltipla escolha (2 a 4 respostas), verdadeiro ou falso, enquete (opinião, sem resposta certa) ou "Quem é mais provável…" (vota em alguém da sala, com a lista montada na hora). Enquete e "Quem é mais provável" não valem ponto. Qualquer pergunta pode ter uma imagem (reduzida no navegador para até 960×540; aparece na TV e nos celulares).
+
+Antes de cada pergunta há um "Prepare-se" de 3 segundos: a pergunta aparece, a contagem corre e só depois dá para responder; o tempo de resposta conta a partir daí. O editor tem a opção "A última pergunta vale o dobro", que dobra os pontos da última pergunta com resposta certa.
 
 Depois de cada pergunta o ranking mostra as moedinhas entrando, o placar subindo e quem trocou de posição. No fim, o pódio é revelado do 3º para o 1º lugar, com suspense, e o "modo foto" deixa só o pódio na tela.
 

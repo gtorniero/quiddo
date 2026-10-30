@@ -119,13 +119,22 @@ function mount(main: HTMLElement) {
 
   function secPerguntas(passo: Passo) {
     const n = q.perguntas.length;
+    const cheio = n >= LIMITS.maxQuestions;
     return `<section class="panel" aria-labelledby="h-perg">${passo('Perguntas', 'h-perg')}<p class="small" id="h-perg-n">${contagem()}</p>
       <div class="qlist">${q.perguntas.map((_, i) => editorPergunta(i, n)).join('')}</div>
-      <div class="btnrow"><button class="btn sec" data-act="add"${n >= LIMITS.maxQuestions ? ' disabled' : ''}>Adicionar pergunta</button><button class="btn sec" data-act="addvf"${n >= LIMITS.maxQuestions ? ' disabled' : ''}>Adicionar verdadeiro ou falso</button></div>
+      <div class="tag">Adicionar</div>
+      <div class="add-tipos">
+        <button class="btn sec" data-act="add"${cheio ? ' disabled' : ''}><b>Pergunta</b><span>de 2 a 4 respostas, uma certa</span></button>
+        <button class="btn sec" data-act="addvf"${cheio ? ' disabled' : ''}><b>Verdadeiro ou falso</b><span>uma afirmação, duas respostas</span></button>
+        <button class="btn sec" data-act="addop"${cheio ? ' disabled' : ''}><b>Enquete</b><span>opinião, sem resposta certa</span></button>
+        <button class="btn sec" data-act="addquem"${cheio ? ' disabled' : ''}><b>Quem é mais provável…</b><span>vota em alguém da sala</span></button>
+      </div>
+      <button class="toggle" data-act="dobro" aria-pressed="${!!q.dobroUltima}"><span class="chave" aria-hidden="true"></span><span><b>A última pergunta vale o dobro</b><br><small>Dá chance de virada no fim. Vale para a última pergunta com resposta certa.</small></span></button>
     </section>`;
   }
 
-  const titulo = (i: number) => `${q.perguntas[i].vf ? 'Verdadeiro ou falso' : 'Pergunta'} ${i + 1}${isReady(q.perguntas[i]) ? '' : ' · falta completar'}`;
+  const nomeTipo = (p: Quiz['perguntas'][number]) => (p.vf ? 'Verdadeiro ou falso' : p.tipo === 'opiniao' ? 'Enquete' : p.tipo === 'quem' ? 'Quem é mais provável' : 'Pergunta');
+  const titulo = (i: number) => `${nomeTipo(q.perguntas[i])} ${i + 1}${isReady(q.perguntas[i]) ? '' : ' · falta completar'}`;
 
   const contagem = () => `${prontas()} de ${q.perguntas.length} prontas. Marque a resposta certa de cada uma.`;
 
@@ -139,21 +148,25 @@ function mount(main: HTMLElement) {
         <button data-act="down" data-i="${i}" aria-label="Descer a pergunta ${num}"${i === n - 1 ? ' disabled' : ''}>↓</button>
         <button data-act="dup" data-i="${i}" aria-label="Duplicar a pergunta ${num}"${n >= LIMITS.maxQuestions ? ' disabled' : ''}>Duplicar</button>
         <button data-act="del" data-i="${i}" aria-label="Remover a pergunta ${num}">Remover</button></span></div>
-      <textarea data-i="${i}" data-f="t" maxlength="${LIMITS.questionText}" aria-label="Texto da pergunta ${num}" placeholder="${p.vf ? 'Escreva uma afirmação. Ex.: O Brasil tem 26 estados e o Distrito Federal.' : 'Escreva a pergunta'}">${esc(p.t)}</textarea>
+      <textarea data-i="${i}" data-f="t" maxlength="${LIMITS.questionText}" aria-label="Texto da pergunta ${num}" placeholder="${
+        p.vf ? 'Escreva uma afirmação. Ex.: O Brasil tem 26 estados e o Distrito Federal.' : p.tipo === 'quem' ? 'Ex.: Quem é mais provável chegar atrasado no próprio casamento?' : p.tipo === 'opiniao' ? 'Ex.: Praia ou montanha?' : 'Escreva a pergunta'
+      }">${esc(p.t)}</textarea>
       ${
         p.img
           ? `<div class="qimg-ed"><img src="${esc(p.img)}" alt="Imagem da pergunta ${num}"><button class="btn sec small auto" data-act="semimg" data-i="${i}">Remover imagem</button></div>`
           : `<span class="btn sec small auto filebtn">Adicionar imagem<input type="file" data-img="${i}" accept="image/png,image/jpeg,image/webp,image/gif" aria-label="Adicionar imagem à pergunta ${num}"></span>`
       }
-      ${p.o
+      ${p.tipo === 'quem' ? '<p class="small">Não precisa escrever opções: na hora do jogo, cada celular mostra a lista das pessoas da sala, com o bicho de cada uma. Não vale ponto.</p>' : ''}
+      ${p.tipo === 'opiniao' ? '<p class="small">Enquete: não tem resposta certa e não vale ponto. A TV mostra quantos votaram em cada opção.</p>' : ''}
+      ${(p.tipo === 'quem' ? [] : p.o)
         .map(
-          (o, k) => `<div class="opt-ed${p.c === k ? ' certa' : ''}"><span class="lt c${k}" aria-hidden="true">${LETRAS[k]}</span>
-        <input type="text" data-i="${i}" data-f="o" data-k="${k}" maxlength="${LIMITS.answerText}" value="${esc(o)}" placeholder="Resposta ${LETRAS[k]}" aria-label="Resposta ${LETRAS[k]} da pergunta ${num}"${p.vf ? ' readonly' : ''}>
-        <label class="marca-certa"><input type="radio" name="c${i}" data-i="${i}" data-f="c" data-k="${k}"${p.c === k ? ' checked' : ''}><span>${p.c === k ? 'Certa' : 'certa'}</span></label>
+          (o, k) => `<div class="opt-ed${p.c === k && !p.tipo ? ' certa' : ''}"><span class="lt c${k}" aria-hidden="true">${LETRAS[k]}</span>
+        <input type="text" data-i="${i}" data-f="o" data-k="${k}" maxlength="${LIMITS.answerText}" value="${esc(o)}" placeholder="${p.tipo === 'opiniao' ? 'Opção' : 'Resposta'} ${LETRAS[k]}" aria-label="${p.tipo === 'opiniao' ? 'Opção' : 'Resposta'} ${LETRAS[k]} da pergunta ${num}"${p.vf ? ' readonly' : ''}>
+        ${p.tipo === 'opiniao' ? '<span></span>' : `<label class="marca-certa"><input type="radio" name="c${i}" data-i="${i}" data-f="c" data-k="${k}"${p.c === k ? ' checked' : ''}><span>${p.c === k ? 'Certa' : 'certa'}</span></label>`}
         ${p.o.length > 2 && !p.vf ? `<button class="x" data-act="delopt" data-i="${i}" data-k="${k}" aria-label="Tirar a resposta ${LETRAS[k]} da pergunta ${num}">×</button>` : '<span></span>'}</div>`,
         )
         .join('')}
-      ${p.o.length < 4 && !p.vf ? `<button class="linkbtn" style="justify-self:start" data-act="addopt" data-i="${i}">Adicionar resposta</button>` : ''}
+      ${p.o.length < 4 && !p.vf && p.tipo !== 'quem' ? `<button class="linkbtn" style="justify-self:start" data-act="addopt" data-i="${i}">Adicionar resposta</button>` : ''}
     </div>`;
   }
 
@@ -167,9 +180,11 @@ function mount(main: HTMLElement) {
   // ---------- ações ----------
 
   async function abrirSala() {
-    const questions = q.perguntas
-      .filter(isReady)
-      .map((p) => compactQuestion({ ...p, tl: q.tempo }))
+    const prontasLista = q.perguntas.filter(isReady);
+    // "a última vale o dobro": a última pergunta com resposta certa (enquete não vale ponto)
+    const ultimaQuiz = q.dobroUltima ? prontasLista.map((p) => !p.tipo || p.tipo === 'quiz').lastIndexOf(true) : -1;
+    const questions = prontasLista
+      .map((p, i) => compactQuestion({ ...p, tl: q.tempo, dobro: i === ultimaQuiz }))
       .filter((p): p is NonNullable<typeof p> => !!p);
     const festa = q.tema === 'festa';
     const body: CreateRoomBody = { questions, theme: q.tema, brand: festa ? { name: '', color: '' } : { name: q.marca.name, color: q.marca.color }, logo: festa ? '' : q.logo };
@@ -248,6 +263,20 @@ function mount(main: HTMLElement) {
         q.logo = '';
         persist();
         return render('#bL');
+      case 'addop':
+        q.perguntas.push({ t: '', o: ['', ''], c: -1, tl: q.tempo, tipo: 'opiniao' });
+        persist();
+        render();
+        return main.querySelector<HTMLElement>(`textarea[data-i="${q.perguntas.length - 1}"]`)?.focus();
+      case 'addquem':
+        q.perguntas.push({ t: '', o: [], c: -1, tl: q.tempo, tipo: 'quem' });
+        persist();
+        render();
+        return main.querySelector<HTMLElement>(`textarea[data-i="${q.perguntas.length - 1}"]`)?.focus();
+      case 'dobro':
+        q.dobroUltima = !q.dobroUltima;
+        persist();
+        return render('[data-act="dobro"]');
       case 'addvf':
         q.perguntas.push({ t: '', o: ['Verdadeiro', 'Falso'], c: 0, tl: q.tempo, vf: true });
         persist();

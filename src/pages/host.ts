@@ -10,7 +10,7 @@ import { store } from '../lib/storage';
 import { applyTheme } from '../lib/theme';
 import { palco } from '../lib/podio';
 import { avatarSvg } from '../lib/avatar-art';
-import { PASSOS_PODIO, animateRank, answersStatic, brandBar, confete, errorScreen, fotoCabeca, podiumTitle, questionHead, rankList, tick } from './jogo-comum';
+import { PASSOS_PODIO, animateRank, answersStatic, prepare, preparando, brandBar, confete, errorScreen, fotoCabeca, podiumTitle, questionHead, rankList, tick } from './jogo-comum';
 
 export function page(code: string): Page {
   return { title: `Sala ${code}`, wide: true, compact: true, mount: (main) => mount(main, code) };
@@ -26,6 +26,7 @@ function mount(main: HTMLElement, code: string) {
   let passo = 4; // suspense do pódio: 0 a 4 (ver PASSOS_PODIO)
   let passoTimers: number[] = [];
   let lastHtml = '';
+  let prepTimer = 0;
   const vistos = new Set<string>(); // quem já apareceu no lobby (para animar só quem acabou de entrar)
   let avisoTimer = 0;
 
@@ -61,6 +62,9 @@ function mount(main: HTMLElement, code: string) {
     // o suspense do pódio só roda quando o jogo acaba com a tela aberta; quem recarrega vê o pódio pronto
     if (s.phase === 'final' && prev && prev.phase !== 'final') suspense();
     if (s.phase !== 'final') pararSuspense(4);
+    // redesenha quando o "Prepare-se" acaba, para as respostas aparecerem
+    clearTimeout(prepTimer);
+    if (preparando(s, sock.now())) prepTimer = window.setTimeout(render, s.startsAt - sock.now() + 30);
     render();
     if (phaseChanged) {
       window.scrollTo(0, 0);
@@ -155,11 +159,23 @@ function mount(main: HTMLElement, code: string) {
   function pergunta(s: HostState) {
     const rev = s.phase === 'reveal';
     const live = s.players.filter((p) => p.connected).length;
+    const opiniao = s.question!.tipo !== 'quiz';
+    const last = s.qIndex >= s.total - 1;
+    if (!rev && preparando(s, sock.now())) return prepare(s) + `<section class="panel"><div class="btnrow"><button class="btn sec" data-act="close" data-focus="close">Encerrar</button></div></section>`;
+    const status = rev
+      ? opiniao
+        ? `${s.answeredCount} ${s.answeredCount === 1 ? 'voto' : 'votos'}`
+        : `Resposta certa: <b style="font-size:inherit">${String.fromCharCode(65 + (s.correct ?? 0))}</b>`
+      : `${s.answeredCount} de ${live} ${opiniao ? 'votaram' : 'responderam'}${s.question!.tipo === 'quem' ? ' · votem pelo celular em alguém da sala' : ''}`;
+    // pergunta de opinião não mexe no placar: pula o ranking
+    const avancar = !rev
+      ? `<button class="btn" data-act="reveal" data-focus="go">${opiniao ? 'Mostrar os votos' : 'Revelar a resposta'}</button>`
+      : opiniao
+        ? `<button class="btn" data-act="next" data-focus="go">${last ? 'Ver o pódio' : 'Próxima pergunta'}</button>`
+        : '<button class="btn" data-act="showRanking" data-focus="go">Ver o ranking</button>';
     return `<section class="stage">${questionHead(s)}${answersStatic(s)}
-      <div class="meta"><span aria-live="polite">${rev ? `Resposta certa: <b style="font-size:inherit">${String.fromCharCode(65 + (s.correct ?? 0))}</b>` : `${s.answeredCount} de ${live} responderam`}</span></div></section>
-      <section class="panel"><div class="btnrow">${
-        rev ? '<button class="btn" data-act="showRanking" data-focus="go">Ver o ranking</button>' : '<button class="btn" data-act="reveal" data-focus="go">Revelar a resposta</button>'
-      }<button class="btn sec" data-act="close" data-focus="close">Encerrar</button></div><p class="small">Dica: a seta para a direita do teclado ou o passador de slides também avançam.</p></section>`;
+      <div class="meta"><span aria-live="polite">${status}</span></div></section>
+      <section class="panel"><div class="btnrow">${avancar}<button class="btn sec" data-act="close" data-focus="close">Encerrar</button></div><p class="small">Dica: a seta para a direita do teclado ou o passador de slides também avançam.</p></section>`;
   }
 
   function ranking(s: HostState) {
@@ -223,7 +239,7 @@ function mount(main: HTMLElement, code: string) {
   function primary() {
     if (!s) return;
     if (s.phase === 'question') send({ type: 'reveal' });
-    else if (s.phase === 'reveal') send({ type: 'showRanking' });
+    else if (s.phase === 'reveal') send({ type: s.question && s.question.tipo !== 'quiz' ? 'next' : 'showRanking' });
     else if (s.phase === 'ranking') send({ type: 'next' });
     else if (s.phase === 'final' && passo < 4) {
       pararSuspense(4);
@@ -311,6 +327,7 @@ function mount(main: HTMLElement, code: string) {
   return () => {
     sock.stop();
     clearInterval(clock);
+    clearTimeout(prepTimer);
     pararSuspense(4);
     modoFoto(false);
     document.removeEventListener('fullscreenchange', onFull);

@@ -26,11 +26,12 @@ export function page(): Page {
         .join('');
       main.innerHTML = `
         <section class="hero">
-                    <div class="bichos" aria-hidden="true">${['tucano.coroa.-.0', 'capivara.laranja.-.1', 'onca.-.escuros.2', 'sapo.festa.-.7', 'arara.flor.-.4', 'caramelo.bone.-.5'].map((a) => avatarSvg(a, 56)).join('')}</div>
           <div class="tag">Quizz do seu jeito</div>
           <h1>Monte o seu quiz e jogue ao vivo com a turma</h1>
-          <p>Você escreve as perguntas, abre uma sala e todo mundo joga pelo celular, cada um com o seu bicho. Quem acerta mais rápido ganha mais pontos, e o ranking aparece depois de cada pergunta.</p>
-          <div class="btnrow"><a class="btn" href="/criar" data-link>Criar meu quiz</a><a class="btn sec" href="/entrar" data-link>Entrar com código</a></div>
+          <p>Você escreve as perguntas, abre a sala na TV e todo mundo joga pelo celular, cada um com o seu bicho.</p>
+          <a class="btn grande" href="/criar" data-link>Criar meu quiz</a>
+          <div class="hero-entrar"><p class="small"><b>Vai jogar?</b> Digite o código que aparece na TV.</p>${codeForm('hero')}</div>
+          <div class="bichos" aria-hidden="true">${['tucano.coroa.-.0', 'capivara.laranja.-.1', 'onca.-.escuros.2', 'sapo.festa.-.7', 'arara.flor.-.4', 'caramelo.bone.-.5'].map((a) => avatarSvg(a, 56)).join('')}</div>
         </section>
         <section class="panel">
           <h2>Como funciona</h2>
@@ -41,14 +42,10 @@ export function page(): Page {
           </ol>
         </section>
         <section class="panel">
-          <h2>Dois jeitos de jogar</h2>
+          <h2>Três jeitos de jogar</h2>
           <div class="temas" role="group" aria-label="Tema">${temas}</div>
           <p class="small">Toque num tema para ver como fica. Cada um vem com um pacote de perguntas pronto para editar.</p>
           <a class="btn auto" href="/criar" data-link>Começar com este tema</a>
-        </section>
-        <section class="panel">
-          <h2>Vai jogar?</h2>
-          ${codeForm('home')}
         </section>
         ${guias ? `<section class="panel"><h2>Ideias e guias</h2><div class="guias">${guias}<a href="/guias" data-link><b>Ver todos os guias</b><span>Empresas, escolas, eventos e festas</span></a></div></section>` : ''}`;
       const onClick = (e: Event) => {

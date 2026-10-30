@@ -63,6 +63,18 @@ describe('perguntas', () => {
     expect(r.questions[1].img).toBeUndefined();
     expect(r.questions[2].img).toBeUndefined();
   });
+  it('valida perguntas de opinião e a que vale o dobro', () => {
+    const r = validateCreate({
+      questions: [
+        { t: 'Praia ou montanha?', o: ['Praia', 'Montanha', ''], c: 2, tl: 10, tipo: 'opiniao' },
+        { t: 'Quem é mais provável…?', o: [], c: 0, tl: 10, tipo: 'quem' },
+        { t: 'Final', o: ['a', 'b'], c: 1, tl: 10, dobro: true },
+      ],
+    });
+    expect(r.questions[0]).toEqual({ t: 'Praia ou montanha?', o: ['Praia', 'Montanha'], c: -1, tl: 10, tipo: 'opiniao' });
+    expect(r.questions[1]).toEqual({ t: 'Quem é mais provável…?', o: [], c: -1, tl: 10, tipo: 'quem' });
+    expect(r.questions[2].dobro).toBe(true);
+  });
   it('recusa quiz com imagens demais', () => {
     const img = 'data:image/jpeg;base64,' + 'A'.repeat(250_000);
     const questions = Array.from({ length: 40 }, () => ({ t: 'Q', o: ['1', '2'], c: 0, tl: 10, img }));

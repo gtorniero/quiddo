@@ -5,10 +5,15 @@ export type Theme = 'corp' | 'festa' | 'escola';
 export type Phase = 'lobby' | 'question' | 'reveal' | 'ranking' | 'final';
 export type DrawMode = 'all' | 'scored';
 
+/** quiz: tem resposta certa e vale ponto. opiniao: enquete, ninguém erra. quem: "Quem é mais provável…", as opções são as pessoas da sala. */
+export type Tipo = 'quiz' | 'opiniao' | 'quem';
+
 export interface Question {
   t: string; // texto
-  o: string[]; // 2 a 4 respostas
-  c: number; // índice da certa
+  o: string[]; // 2 a 4 respostas (vazio em "quem": a sala vira a lista)
+  c: number; // índice da certa (-1 nas perguntas de opinião)
+  tipo?: Tipo; // ausente = quiz
+  dobro?: boolean; // vale o dobro de pontos
   tl: number; // tempo em segundos: 10, 15, 20 ou 30
   img?: string; // imagem opcional: data URL ao abrir a sala; na sala vira '1' (guardada à parte)
 }
@@ -49,6 +54,9 @@ export type ClientMsg =
 export interface PublicQuestion {
   t: string;
   o: string[];
+  oa?: string[]; // avatares das opções, em "quem"
+  tipo: Tipo;
+  dobro: boolean;
   tl: number;
   img: number; // 0 = sem imagem; senão a versão para montar /api/salas/{CODIGO}/img/{qIndex}?v=
 }
@@ -78,6 +86,7 @@ export interface BaseState {
   qIndex: number;
   total: number;
   question: PublicQuestion | null;
+  startsAt: number; // fim do "Prepare-se": antes disso ninguém responde (relógio do servidor)
   endsAt: number; // relógio do servidor
   serverNow: number;
   answeredCount: number;

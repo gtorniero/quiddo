@@ -1,8 +1,8 @@
 // Pódio do fim do jogo: cena em camadas (céu, fundo, árvores, chão), coisas caindo do céu sem parar,
-// degraus de verdade com textura e os bichos de corpo inteiro em cima.
+// degraus de verdade com textura e o cartão redondo do bicho de cada um em cima.
 // Amigos & família e Escola são festivos; Corporativo é sóbrio (palco escuro, holofotes, dourado).
 import type { RankRow, Theme } from '../../shared/protocol';
-import { bichoCorpo } from './avatar-art';
+import { avatarSvg } from './avatar-art';
 import { esc, fmt } from './dom';
 
 const INK = '#0E2A22';
@@ -116,7 +116,7 @@ export function palco(rows: RankRow[], tema: Theme, step = 4, novo = -1): string
       if (!r) return `<div class="degrau d${pos} vazio"></div>`;
       const show = visto(pos);
       const quem = show
-        ? `<div class="boneco${pos === novo ? ' novo' : ''}${pos === 1 ? ' campeao' : ''}">${bichoCorpo(r.avatar, pos === 1)}</div>`
+        ? `<div class="boneco${pos === novo ? ' novo' : ''}${pos === 1 ? ' campeao' : ''}">${avatarSvg(r.avatar, 160)}</div>`
         : `<div class="boneco oculto${pos === 1 && step === 3 ? ' tremendo' : ''}"><span aria-hidden="true">?</span></div>`;
       const placa = show ? `<b>${esc(r.nick)}</b><small>${fmt(r.score)} pts</small>` : '<b>&nbsp;</b><small>&nbsp;</small>';
       return `<div class="degrau d${pos}">${quem}<div class="bloco"><div class="tampa"></div><div class="frente"><span class="num">${pos}</span>${placa}</div></div></div>`;

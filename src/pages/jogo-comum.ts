@@ -10,10 +10,22 @@ export function brandBar(s: BaseState) {
   return logo || name ? `<div class="brand">${logo}${name}</div>` : '';
 }
 
+/** Ainda está no "Prepare-se"? `now` no relógio do servidor. */
+export const preparando = (s: BaseState, now: number) => s.phase === 'question' && now < s.startsAt;
+
+/** Tela do "Prepare-se": a pergunta aparece e a contagem 3, 2, 1 corre antes das respostas. */
+export function prepare(s: BaseState) {
+  const q = s.question!;
+  const tipo = q.tipo === 'quem' ? 'Quem é mais provável' : q.tipo === 'opiniao' ? 'Opinião: não tem resposta certa' : '';
+  return `<section class="stage center prep"><span class="pill">Pergunta ${s.qIndex + 1} de ${s.total}</span>${
+    q.dobro ? '<div class="dobro-selo">Esta vale o dobro!</div>' : tipo ? `<div class="tipo-selo">${tipo}</div>` : ''
+  }<div class="qt">${esc(q.t)}</div><div class="prep-n" id="prep" aria-hidden="true">3</div><p class="prep-txt" role="status">Prepare-se!</p></section>`;
+}
+
 /** Cabeçalho da pergunta com cronômetro e barra. Os ids são atualizados pelo relógio da página. */
 export function questionHead(s: BaseState) {
   const q = s.question!;
-  return `<div class="meta"><span class="pill">Pergunta ${s.qIndex + 1} de ${s.total}</span>${
+  return `<div class="meta"><span class="pill">Pergunta ${s.qIndex + 1} de ${s.total}</span>${q.dobro ? '<span class="pill dobro">Vale o dobro</span>' : ''}${
     s.phase === 'question' ? `<span class="timer" aria-hidden="true">${OLHO}<b id="tempo">${q.tl}</b></span>` : ''
   }</div>${s.phase === 'question' ? '<div class="bar" aria-hidden="true"><i id="barra"></i></div>' : ''}<div class="qt">${esc(q.t)}</div>${
     q.img ? `<img class="qimg" src="/api/salas/${s.code}/img/${s.qIndex}?v=${q.img}" alt="Imagem da pergunta">` : ''
@@ -23,6 +35,15 @@ export function questionHead(s: BaseState) {
 /** Atualiza o cronômetro. `now` já no relógio do servidor. */
 export function tick(s: BaseState | null, now: number) {
   if (!s || s.phase !== 'question' || !s.question) return;
+  if (now < s.startsAt) {
+    const n = document.getElementById('prep');
+    const v = String(Math.max(1, Math.ceil((s.startsAt - now) / 1000)));
+    if (n && n.textContent !== v) {
+      n.textContent = v;
+      n.animate?.([{ transform: 'scale(1.4)', opacity: 0.4 }, { transform: 'scale(1)', opacity: 1 }], { duration: 300 });
+    }
+    return;
+  }
   const left = Math.max(0, s.endsAt - now);
   const t = document.getElementById('tempo');
   const b = document.getElementById('barra');
@@ -32,6 +53,7 @@ export function tick(s: BaseState | null, now: number) {
 
 export function answersStatic(s: BaseState, mine: number | null = null) {
   const q = s.question!;
+  if (q.tipo !== 'quiz') return opiniaoResultado(s, mine);
   const rev = s.correct != null;
   return `<div class="answers">${q.o
     .map((o, k) => {
@@ -49,6 +71,31 @@ export const MOEDA =
 const calmo = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Ranking. Mostra sempre os valores finais; animateRank() faz a contagem e a subida em cima deles. */
+/** Resultado das perguntas de opinião: barras com quantos votaram em cada opção, sem certa nem errada. */
+function opiniaoResultado(s: BaseState, mine: number | null) {
+  const q = s.question!;
+  const counts = s.counts;
+  if (!counts) {
+    // antes da revelação (TV durante a pergunta)
+    if (q.tipo === 'quem') {
+      const avs = q.oa || [];
+      return `<div class="quem-sala" aria-hidden="true">${avs.slice(0, 40).map((a) => avatarSvg(a, 48)).join('')}${avs.length > 40 ? `<span>+${avs.length - 40}</span>` : ''}</div>`;
+    }
+    return `<div class="answers">${q.o.map((o, k) => `<div class="ans c${k}">${simbolo(k)}<span class="lt">${LETRAS[k]}</span><span>${esc(o)}</span><span></span></div>`).join('')}</div>`;
+  }
+  const total = counts.reduce((a, b) => a + b, 0) || 1;
+  let idx = q.o.map((_, k) => k);
+  if (q.tipo === 'quem') idx = idx.filter((k) => counts[k] > 0).sort((a, b) => counts[b] - counts[a]).slice(0, 5);
+  if (!idx.length) return '<p class="hint">Ninguém votou.</p>';
+  return `<div class="votos">${idx
+    .map((k, i) => {
+      const pct = Math.round((counts[k] / total) * 100);
+      const rosto = q.tipo === 'quem' && q.oa ? avatarSvg(q.oa[k], 44) : `<span class="lt c${k}">${LETRAS[k]}</span>`;
+      return `<div class="voto${mine === k ? ' meu' : ''}${q.tipo === 'quem' && i === 0 ? ' top' : ''}" style="--p:${pct}%">${rosto}<span class="voto-txt">${esc(q.o[k])}${mine === k ? ' <small>(seu voto)</small>' : ''}</span><b>${counts[k]} ${counts[k] === 1 ? 'voto' : 'votos'} · ${pct}%</b></div>`;
+    })
+    .join('')}</div>`;
+}
+
 export function rankList(rows: RankRow[], me = '', animate = false) {
   return `<div class="rank${animate ? ' anim' : ''}">${rows
     .map(

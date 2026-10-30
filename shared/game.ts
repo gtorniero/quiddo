@@ -15,6 +15,16 @@ export interface Player {
   connected: boolean;
 }
 
+/** Opção de "Quem é mais provável…": uma pessoa da sala. */
+export interface Pessoa {
+  id: string;
+  nick: string;
+  avatar: string;
+}
+
+/** Duração do "Prepare-se" antes de cada pergunta. */
+export const PREP_MS = 3000;
+
 export interface Answer {
   choice: number;
   ms: number;
@@ -29,8 +39,9 @@ export interface Room {
   questions: Question[];
   phase: Phase;
   qIndex: number;
-  startedAt: number; // quando a pergunta atual foi enviada
+  startedAt: number; // quando a pergunta atual liberou as respostas (fim do "Prepare-se")
   endsAt: number;
+  opts?: Pessoa[]; // opções da pergunta "quem" atual
   players: Record<string, Player>;
   answers: Record<string, Answer>;
   counts: number[];
@@ -108,12 +119,26 @@ export function kick(room: Room, playerId: string): boolean {
 }
 
 function openQuestion(room: Room, qIndex: number, now: number) {
+  const q = room.questions[qIndex];
   room.qIndex = qIndex;
   room.phase = 'question';
   room.answers = {};
   room.counts = [];
-  room.startedAt = now;
-  room.endsAt = now + room.questions[qIndex].tl * 1000;
+  room.startedAt = now + PREP_MS;
+  room.endsAt = room.startedAt + q.tl * 1000;
+  // "Quem é mais provável…": a lista é a sala no momento em que a pergunta abre
+  room.opts =
+    q.tipo === 'quem'
+      ? Object.values(room.players)
+          .sort((a, b) => a.nick.localeCompare(b.nick, 'pt-BR'))
+          .map((p) => ({ id: p.id, nick: p.nick, avatar: avatarOf(p) }))
+      : undefined;
+}
+
+/** Quantas opções a pergunta atual tem. */
+function nOpcoes(room: Room): number {
+  const q = room.questions[room.qIndex];
+  return q.tipo === 'quem' ? (room.opts || []).length : q.o.length;
 }
 
 export function start(room: Room, now: number): boolean {
@@ -141,13 +166,12 @@ function resetScores(room: Room) {
   }
 }
 
-/** Registra a resposta. O tempo é medido aqui, no servidor, a partir do envio da pergunta. */
+/** Registra a resposta. O tempo é medido aqui, no servidor, a partir do fim do "Prepare-se". */
 export function answer(room: Room, playerId: string, qIndex: number, choice: number, now: number): boolean {
   if (room.phase !== 'question' || qIndex !== room.qIndex) return false;
   if (!room.players[playerId] || room.answers[playerId]) return false;
-  const q = room.questions[room.qIndex];
-  if (!Number.isInteger(choice) || choice < 0 || choice >= q.o.length) return false;
-  if (now > room.endsAt) return false;
+  if (!Number.isInteger(choice) || choice < 0 || choice >= nOpcoes(room)) return false;
+  if (now < room.startedAt || now > room.endsAt) return false;
   room.answers[playerId] = { choice, ms: Math.max(0, now - room.startedAt) };
   return true;
 }
@@ -167,11 +191,13 @@ export function reveal(room: Room): boolean {
   if (room.phase !== 'question') return false;
   const q = room.questions[room.qIndex];
   const before = rankMap(room);
-  room.counts = q.o.map(() => 0);
+  room.counts = Array.from({ length: nOpcoes(room) }, () => 0);
+  const valePonto = !q.tipo || q.tipo === 'quiz';
   for (const p of Object.values(room.players)) {
     p.prevRank = before[p.id] || 0;
     const a = room.answers[p.id];
-    p.delta = a && a.choice === q.c ? points(a.ms, q.tl) : 0;
+    // pergunta de opinião não tem certa nem errada: não mexe no placar
+    p.delta = valePonto && a && a.choice === q.c ? points(a.ms, q.tl) * (q.dobro ? 2 : 1) : 0;
     p.score += p.delta;
     if (a) room.counts[a.choice]++;
   }
@@ -238,12 +264,23 @@ function base(room: Room, now: number) {
     phase: room.phase,
     qIndex: room.qIndex,
     total: room.questions.length,
-    question: q ? { t: q.t, o: q.o, tl: q.tl, img: q.img ? room.createdAt : 0 } : null,
+    question: q
+      ? {
+          t: q.t,
+          o: q.tipo === 'quem' ? (room.opts || []).map((p) => p.nick) : q.o,
+          ...(q.tipo === 'quem' ? { oa: (room.opts || []).map((p) => p.avatar) } : {}),
+          tipo: q.tipo || 'quiz',
+          dobro: !!q.dobro,
+          tl: q.tl,
+          img: q.img ? room.createdAt : 0,
+        }
+      : null,
+    startsAt: room.phase === 'question' ? room.startedAt : 0,
     endsAt: room.endsAt,
     serverNow: now,
     answeredCount: Object.keys(room.answers).length,
     playerCount: Object.keys(room.players).length,
-    correct: revealed && q ? q.c : null,
+    correct: revealed && q && q.c >= 0 ? q.c : null,
     counts: revealed ? room.counts : null,
     drawn: room.drawn,
   };

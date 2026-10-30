@@ -7,6 +7,8 @@ const qs = [
 ];
 let room: G.Room;
 const T0 = 1_000_000;
+// abre as perguntas 3 s antes de T0: o "Prepare-se" termina exatamente em T0
+const S = T0 - G.PREP_MS;
 
 beforeEach(() => {
   room = G.newRoom({ code: 'ABCD', hostKey: 'k', theme: 'corp', brand: { name: '', color: '' }, questions: qs, hasLogo: false, now: T0 });
@@ -18,15 +20,15 @@ beforeEach(() => {
 describe('fases', () => {
   it('segue lobby → question → reveal → ranking → question → … → final', () => {
     expect(room.phase).toBe('lobby');
-    expect(G.next(room, T0)).toBe(false);
-    expect(G.start(room, T0)).toBe(true);
+    expect(G.next(room, S)).toBe(false);
+    expect(G.start(room, S)).toBe(true);
     expect(room.phase).toBe('question');
     expect(room.endsAt).toBe(T0 + 20_000);
     expect(G.showRanking(room)).toBe(false);
     expect(G.reveal(room)).toBe(true);
     expect(room.phase).toBe('reveal');
     expect(G.showRanking(room)).toBe(true);
-    expect(G.next(room, T0 + 30_000)).toBe(true);
+    expect(G.next(room, S + 30_000)).toBe(true);
     expect(room.phase).toBe('question');
     expect(room.qIndex).toBe(1);
     G.reveal(room);
@@ -37,7 +39,7 @@ describe('fases', () => {
   });
 
   it('fecha sozinha quando todos os conectados respondem', () => {
-    G.start(room, T0);
+    G.start(room, S);
     G.answer(room, 'p1', 0, 0, T0 + 100);
     G.answer(room, 'p2', 0, 1, T0 + 200);
     expect(G.everyoneAnswered(room)).toBe(false);
@@ -46,12 +48,12 @@ describe('fases', () => {
   });
 
   it('jogar de novo zera pontos e sorteio', () => {
-    G.start(room, T0);
+    G.start(room, S);
     G.answer(room, 'p1', 0, 0, T0);
     G.reveal(room);
-    G.next(room, T0);
+    G.next(room, S);
     G.reveal(room);
-    G.next(room, T0);
+    G.next(room, S);
     G.draw(room, 'all', () => 0);
     expect(G.restart(room, T0 + 1)).toBe(true);
     expect(room.players.p1.score).toBe(0);
@@ -63,7 +65,7 @@ describe('fases', () => {
 
 describe('respostas e pontos', () => {
   it('mede o tempo no servidor e pontua só quem acertou', () => {
-    G.start(room, T0);
+    G.start(room, S);
     expect(G.answer(room, 'p1', 0, 0, T0 + 5_000)).toBe(true); // certa, 5 s de 20
     expect(G.answer(room, 'p2', 0, 2, T0 + 1_000)).toBe(true); // errada
     G.reveal(room);
@@ -74,7 +76,7 @@ describe('respostas e pontos', () => {
   });
 
   it('não deixa mudar a resposta, responder fora de hora ou de outra pergunta', () => {
-    G.start(room, T0);
+    G.start(room, S);
     expect(G.answer(room, 'p1', 0, 1, T0 + 10)).toBe(true);
     expect(G.answer(room, 'p1', 0, 0, T0 + 20)).toBe(false);
     expect(G.answer(room, 'p2', 1, 0, T0 + 20)).toBe(false);
@@ -84,10 +86,10 @@ describe('respostas e pontos', () => {
   });
 
   it('ranking guarda a posição anterior para a animação de subida', () => {
-    G.start(room, T0);
+    G.start(room, S);
     G.answer(room, 'p1', 0, 0, T0 + 10_000);
     G.reveal(room);
-    G.next(room, T0);
+    G.next(room, S);
     G.answer(room, 'p3', 1, 1, T0);
     G.reveal(room);
     const rk = G.ranking(room);
@@ -100,7 +102,7 @@ describe('respostas e pontos', () => {
 
 describe('jogadores', () => {
   it('volta para a sala com os pontos depois de cair', () => {
-    G.start(room, T0);
+    G.start(room, S);
     G.answer(room, 'p1', 0, 0, T0);
     G.reveal(room);
     room.players.p1.connected = false;
@@ -111,7 +113,7 @@ describe('jogadores', () => {
   });
 
   it('não deixa entrar gente nova depois de começar', () => {
-    G.start(room, T0);
+    G.start(room, S);
     expect(G.join(room, 'p9', 'Davi', T0)).toEqual({ ok: false, code: 'started' });
   });
 
@@ -133,12 +135,12 @@ describe('jogadores', () => {
 
 describe('sorteio', () => {
   it('não repete nome e respeita o modo "só quem pontuou"', () => {
-    G.start(room, T0);
+    G.start(room, S);
     G.answer(room, 'p2', 0, 0, T0);
     G.reveal(room);
-    G.next(room, T0);
+    G.next(room, S);
     G.reveal(room);
-    G.next(room, T0);
+    G.next(room, S);
     expect(G.draw(room, 'scored', () => 0.99)?.id).toBe('p2');
     expect(G.draw(room, 'scored')).toBeNull();
     const a = G.draw(room, 'all')!;
@@ -154,15 +156,81 @@ describe('visões', () => {
     G.join(r, 'p1', 'Ana', 1);
     G.start(r, 100);
     const v = G.playerView(r, 'p1', 100)!;
-    expect(v.question).toEqual({ t: 'V ou F?', o: ['Verdadeiro', 'Falso'], tl: 10, img: 77 });
+    expect(v.question).toEqual({ t: 'V ou F?', o: ['Verdadeiro', 'Falso'], tipo: 'quiz', dobro: false, tl: 10, img: 77 });
+    expect(v.startsAt).toBe(100 + G.PREP_MS);
   });
 
   it('o jogador nunca recebe a resposta certa antes da revelação', () => {
-    G.start(room, T0);
+    G.start(room, S);
     const v = G.playerView(room, 'p1', T0)!;
     expect(v.correct).toBeNull();
     expect(v.question && 'c' in v.question).toBe(false);
     G.reveal(room);
     expect(G.playerView(room, 'p1', T0)!.correct).toBe(0);
+  });
+});
+
+describe('prepare-se', () => {
+  it('ninguém responde durante os 3 s do "Prepare-se"; o tempo conta a partir do fim dele', () => {
+    G.start(room, S);
+    expect(room.endsAt).toBe(T0 + 20_000);
+    expect(G.answer(room, 'p1', 0, 0, T0 - 1)).toBe(false);
+    expect(G.answer(room, 'p1', 0, 0, T0)).toBe(true);
+    G.reveal(room);
+    expect(room.players.p1.delta).toBe(1000);
+  });
+});
+
+describe('pergunta que vale o dobro', () => {
+  it('dobra os pontos de quem acerta', () => {
+    const r = G.newRoom({ code: 'ABCD', hostKey: 'k', theme: 'corp', brand: { name: '', color: '' }, questions: [{ t: 'Final', o: ['a', 'b'], c: 0, tl: 10, dobro: true }], hasLogo: false, now: 0 });
+    G.join(r, 'p1', 'Ana', 0);
+    G.join(r, 'p2', 'Bia', 0);
+    G.start(r, 0);
+    G.answer(r, 'p1', 0, 0, G.PREP_MS + 5_000);
+    G.answer(r, 'p2', 0, 1, G.PREP_MS);
+    G.reveal(r);
+    expect(r.players.p1.delta).toBe(1500);
+    expect(r.players.p2.delta).toBe(0);
+    expect(G.playerView(r, 'p1', 0)!.question!.dobro).toBe(true);
+  });
+});
+
+describe('perguntas de opinião', () => {
+  const nova = (q: Parameters<typeof G.newRoom>[0]['questions'][number]) => {
+    const r = G.newRoom({ code: 'ABCD', hostKey: 'k', theme: 'festa', brand: { name: '', color: '' }, questions: [q, { t: 'Depois', o: ['a', 'b'], c: 0, tl: 10 }], hasLogo: false, now: 0 });
+    G.join(r, 'p1', 'Caio', 0);
+    G.join(r, 'p2', 'Ana', 1);
+    G.join(r, 'p3', 'Bia', 2);
+    return r;
+  };
+
+  it('enquete: conta os votos, não tem certa e não mexe nos pontos', () => {
+    const r = nova({ t: 'Praia ou montanha?', o: ['Praia', 'Montanha'], c: -1, tl: 10, tipo: 'opiniao' });
+    G.start(r, 0);
+    G.answer(r, 'p1', 0, 0, G.PREP_MS + 10);
+    G.answer(r, 'p2', 0, 0, G.PREP_MS + 20);
+    G.answer(r, 'p3', 0, 1, G.PREP_MS + 30);
+    expect(G.everyoneAnswered(r)).toBe(true);
+    G.reveal(r);
+    expect(r.counts).toEqual([2, 1]);
+    expect(Object.values(r.players).every((p) => p.score === 0 && p.delta === 0)).toBe(true);
+    const v = G.playerView(r, 'p1', 0)!;
+    expect(v.correct).toBeNull();
+    expect(v.question!.tipo).toBe('opiniao');
+  });
+
+  it('"quem é mais provável": as opções são as pessoas da sala, em ordem alfabética', () => {
+    const r = nova({ t: 'Quem é mais provável chegar atrasado?', o: [], c: -1, tl: 10, tipo: 'quem' });
+    G.start(r, 0);
+    const q = G.hostView(r, 0).question!;
+    expect(q.o).toEqual(['Ana', 'Bia', 'Caio']);
+    expect(q.oa).toHaveLength(3);
+    expect(G.answer(r, 'p1', 0, 3, G.PREP_MS)).toBe(false);
+    expect(G.answer(r, 'p1', 0, 1, G.PREP_MS)).toBe(true);
+    expect(G.answer(r, 'p2', 0, 1, G.PREP_MS)).toBe(true);
+    G.reveal(r);
+    expect(r.counts).toEqual([0, 2, 0]);
+    expect(r.players.p1.score).toBe(0);
   });
 });

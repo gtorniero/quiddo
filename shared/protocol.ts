@@ -2,6 +2,8 @@
 // Toda mensagem é JSON e tem `type`. O servidor manda sempre o estado absoluto.
 
 export type Theme = 'corp' | 'festa' | 'escola';
+/** Visual (template) dentro do modo. Floresta é o padrão de todos e o visual de sempre do Quiddo. */
+export type Visual = 'floresta' | 'escritorio' | 'entretenimento' | 'sala' | 'album' | 'espaco' | 'amor';
 export type Phase = 'lobby' | 'question' | 'reveal' | 'ranking' | 'final';
 export type DrawMode = 'all' | 'scored';
 
@@ -25,7 +27,8 @@ export interface Brand {
 
 export interface CreateRoomBody {
   questions: Question[];
-  theme: Theme;
+  theme: Theme; // o modo: corp, festa (Amigos & família) ou escola
+  visual?: Visual; // ausente ou fora do modo = floresta
   brand: Brand; // ignorada no tema festa
   logo: string; // data URL (PNG/JPEG/WebP) ou ''
 }
@@ -90,6 +93,7 @@ export interface BaseState {
   type: 'state';
   code: string;
   theme: Theme;
+  visual: Visual;
   brand: Brand & { logo: number }; // logo: versão (0 = sem logo)
   phase: Phase;
   qIndex: number;
@@ -126,7 +130,7 @@ export interface PlayerState extends BaseState {
     streak: number; // acertos seguidos (0 antes da revelação)
     choice: number | null; // o que respondeu nesta pergunta
   };
-  ranking: RankRow[]; // top 5
+  ranking: RankRow[]; // top 5 durante o jogo, top 10 no fim
 }
 
 export type ErrorCode = 'not_found' | 'started' | 'full' | 'kicked' | 'bad_key' | 'bad_nick' | 'closed';

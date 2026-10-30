@@ -4096,3 +4096,803 @@ svg.av.vivo .corpo {
 .add-tipos .btn {
   border-radius: 18px;
 }
+
+/* ================= modos e visuais =================
+   O modo (data-tema) é o tipo de evento; o visual (data-visual) é o template do jogo, só na sala.
+   Floresta é o padrão e não tem data-visual: fica tudo como sempre foi. */
+
+/* ---------- editor: escolha do visual ---------- */
+.visuais {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+}
+.visual-op {
+  border: var(--bw) solid var(--line);
+  border-radius: 18px;
+  padding: 12px;
+  min-height: 48px;
+  text-align: left;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  grid-template-rows: auto auto;
+  gap: 6px 12px;
+  align-items: center;
+  font: inherit;
+  color: inherit;
+  background: var(--card);
+}
+.visual-op .mini-visual {
+  grid-row: span 2;
+  width: 64px;
+  height: 64px;
+}
+.visual-op .vtxt {
+  display: grid;
+  gap: 2px;
+}
+.visual-op b {
+  font-size: 17px;
+}
+.visual-op b small {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--acc);
+  color: var(--acc-ink);
+  border-radius: 999px;
+  padding: 1px 7px;
+  vertical-align: 2px;
+}
+.visual-op .vtxt span {
+  font-size: 14px;
+  color: var(--fg2);
+  line-height: 1.3;
+}
+.visual-op .sw i {
+  width: 18px;
+  height: 18px;
+}
+.visual-op[aria-pressed='true'] {
+  background: var(--acc-soft);
+  box-shadow: var(--sh-sm);
+}
+.visual-op[aria-pressed='true'] .mini-visual {
+  animation: pop 0.3s ease-out;
+}
+.visual-op:focus-visible {
+  outline: 4px solid var(--fg);
+  outline-offset: 3px;
+}
+
+/* ---------- os 10 primeiros, depois do pódio ---------- */
+.top10 h2 {
+  margin: 0;
+}
+.top10-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.top10-lista li {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 14px 6px 8px;
+  border: var(--bw) solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--sh-sm);
+  animation: top10-entra 0.45s cubic-bezier(0.3, 1.3, 0.5, 1) calc(var(--i) * 0.12s + 0.3s) backwards;
+}
+.top10-lista li > i {
+  font: 900 22px/1 var(--disp);
+  font-style: normal;
+  text-align: center;
+}
+.top10-lista .who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.top10-lista .who b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.top10-lista .pts {
+  font: 900 20px/1 var(--disp);
+  white-space: nowrap;
+}
+.top10-lista .pts small {
+  font: 700 13px var(--text);
+}
+.top10-lista li.r1 {
+  background: #ffe08a;
+}
+.top10-lista li.r2 {
+  background: #eef2f6;
+}
+.top10-lista li.r3 {
+  background: #f8d2b5;
+}
+.top10-lista li.me {
+  outline: 4px solid var(--acc);
+  outline-offset: 2px;
+}
+.tv .top10-lista {
+  grid-template-columns: 1fr 1fr;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(5, auto);
+}
+.tv .top10-lista li {
+  font-size: clamp(16px, 1.6vw, 22px);
+}
+@media (max-width: 760px) {
+  .tv .top10-lista {
+    grid-template-columns: 1fr;
+    grid-auto-flow: row;
+    grid-template-rows: none;
+  }
+}
+@keyframes top10-entra {
+  from {
+    opacity: 0;
+    transform: translateX(-30px) scale(0.9);
+  }
+}
+
+/* ---------- relógio do "Prepare-se" de cada visual ---------- */
+.olho-conta svg {
+  overflow: visible;
+}
+.conta-amor .prep-n {
+  transform: translateY(3%);
+}
+.conta-escritorio .fumaca {
+  animation: fumaca 1.6s ease-in-out infinite;
+}
+@keyframes fumaca {
+  0% {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+}
+.conta-entretenimento .claquete {
+  transform-box: fill-box;
+  transform-origin: 0% 100%;
+  animation: claquete 1s ease-in-out infinite;
+}
+@keyframes claquete {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0);
+  }
+  20% {
+    transform: rotate(-24deg);
+  }
+}
+.conta-espaco .chama,
+.cena-lua .chama {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: chama 0.2s ease-in-out infinite alternate;
+}
+@keyframes chama {
+  to {
+    transform: scaleY(1.4);
+  }
+}
+.conta-amor {
+  animation-duration: 0.8s;
+}
+
+/* ---------- cenas novas do pódio ---------- */
+.cena-escritorio .pendente {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: pendente 3s ease-in-out infinite;
+}
+@keyframes pendente {
+  0%,
+  100% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+.cena-escritorio .folhagem {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: pendente 4s ease-in-out infinite;
+}
+.cena-escritorio .grafico rect {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: barra-sobe 1.2s cubic-bezier(0.3, 1.3, 0.5, 1) both;
+}
+.cena-escritorio .grafico rect:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.cena-escritorio .grafico rect:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.cena-escritorio .grafico rect:nth-child(4) {
+  animation-delay: 0.45s;
+}
+.cena-escritorio .grafico rect:nth-child(5) {
+  animation-delay: 0.6s;
+}
+@keyframes barra-sobe {
+  from {
+    transform: scaleY(0);
+  }
+}
+.cena-escritorio .seta-sobe,
+.cena-sala .giz {
+  stroke-dasharray: 100;
+  animation: risca 1.6s ease-out 0.6s both;
+}
+@keyframes risca {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.cena-escritorio .neon {
+  animation: neon 2.4s steps(1) infinite;
+}
+@keyframes neon {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  8% {
+    opacity: 0.4;
+  }
+  10% {
+    opacity: 1;
+  }
+  12% {
+    opacity: 0.5;
+  }
+}
+.cena-cinema .lampada {
+  animation: lampada 0.9s steps(1) infinite;
+}
+.cena-cinema .lampada:nth-of-type(odd) {
+  animation-delay: -0.45s;
+}
+@keyframes lampada {
+  50% {
+    fill: #fff3c4;
+  }
+}
+.cena-cinema .holofote {
+  transform-origin: 50% 0;
+  animation: holofote 6s ease-in-out infinite alternate;
+}
+.cena-cinema .holofote.h2 {
+  animation-delay: -3s;
+}
+.cena-cinema .flash {
+  animation: flash 2.6s steps(1) infinite;
+}
+.cena-cinema .flash.f2 {
+  animation-delay: -1.3s;
+}
+@keyframes flash {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  4% {
+    opacity: 1;
+  }
+  10% {
+    opacity: 0;
+  }
+}
+.cena-sala .aviao {
+  animation: aviao 7s linear infinite;
+}
+@keyframes aviao {
+  0% {
+    transform: translate(-120px, 40px) rotate(-8deg);
+  }
+  50% {
+    transform: translate(560px, -20px) rotate(6deg);
+  }
+  100% {
+    transform: translate(1320px, 30px) rotate(-6deg);
+  }
+}
+.cena-lua .estrela-pisca {
+  animation: estrela 2.4s ease-in-out infinite;
+}
+.cena-lua .terra {
+  animation: gira 40s linear infinite;
+}
+.cena-lua .foguete {
+  animation: decola 7s ease-in infinite;
+}
+@keyframes decola {
+  0%,
+  20% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-640px);
+  }
+}
+.cena-lua .cometa {
+  animation: cometa 5s ease-in infinite;
+}
+@keyframes cometa {
+  0%,
+  70% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  72% {
+    opacity: 1;
+  }
+  90%,
+  100% {
+    transform: translate(-300px, 140px);
+    opacity: 0;
+  }
+}
+.cena-lua .bandeira-lua {
+  transform-box: fill-box;
+  transform-origin: 0% 50%;
+  animation: bandeira-lua 1.6s ease-in-out infinite;
+}
+@keyframes bandeira-lua {
+  50% {
+    transform: skewY(6deg);
+  }
+}
+.chuva i.cadente {
+  width: 90px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #fff, rgba(255, 255, 255, 0));
+  animation: cadente 6s ease-in infinite;
+}
+@keyframes cadente {
+  0%,
+  75% {
+    transform: translate(0, 0) rotate(-25deg);
+    opacity: 0;
+  }
+  78% {
+    opacity: 1;
+  }
+  95%,
+  100% {
+    transform: translate(-260px, 120px) rotate(-25deg);
+    opacity: 0;
+  }
+}
+.cena-amor .balao-cor {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: balao-cor 3s ease-in-out infinite;
+}
+@keyframes balao-cor {
+  0%,
+  100% {
+    transform: rotate(-6deg) translateY(0);
+  }
+  50% {
+    transform: rotate(6deg) translateY(-10px);
+  }
+}
+.cena-amor .varal {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: pendente 4s ease-in-out infinite;
+}
+.chuva i.coracao {
+  width: 18px;
+  height: 16px;
+  border-radius: 0;
+  clip-path: path('M9 16 L1 8 A4.4 4.4 0 0 1 9 2.4 A4.4 4.4 0 0 1 17 8Z');
+}
+
+/* degraus de cada cena */
+.cena-escritorio .bloco .frente {
+  border-radius: 14px 14px 0 0;
+}
+.cena-escritorio .d1 {
+  --cor: #ffc23d;
+  --tampa: #ffe08a;
+}
+.cena-escritorio .d2 {
+  --cor: #8fa6ff;
+  --tampa: #c4d0ff;
+}
+.cena-escritorio .d3 {
+  --cor: #ff8fb0;
+  --tampa: #ffc2d3;
+}
+.cena-cinema .bloco .frente,
+.cena-lua .bloco .frente {
+  background-color: #1f1f25;
+  color: #f5f0e6;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 40%);
+  border-top: 6px solid var(--cor);
+}
+.cena-cinema .bloco .tampa,
+.cena-lua .bloco .tampa {
+  background: var(--cor);
+}
+.cena-cinema .frente .num,
+.cena-lua .frente .num {
+  color: var(--cor);
+  text-shadow: none;
+}
+.cena-cinema .d1,
+.cena-lua .d1 {
+  --cor: #f5b800;
+}
+.cena-cinema .d2,
+.cena-lua .d2 {
+  --cor: #d8d2c8;
+}
+.cena-cinema .d3,
+.cena-lua .d3 {
+  --cor: #c98a5a;
+}
+.cena-lua .bloco .frente {
+  background-color: #3a4170;
+  color: #ffffff;
+}
+/* sala de aula: pilhas de livros, com etiqueta clara para o texto */
+.cena-sala .bloco .frente {
+  border-radius: 4px 4px 0 0;
+  background-image: repeating-linear-gradient(180deg, #e5383b 0 22px, #0e2a22 22px 25px, #2b59c3 25px 47px, #0e2a22 47px 50px, #13a07a 50px 72px, #0e2a22 72px 75px, #ffc83d 75px 97px, #0e2a22 97px 100px);
+}
+.cena-sala .bloco .tampa {
+  background: #7b4fd6;
+}
+.cena-sala .frente .num,
+.cena-sala .frente b:not(.vazio),
+.cena-sala .frente small:not(.vazio) {
+  background: #fffdf5;
+  border: 2px solid #0e2a22;
+  border-radius: 6px;
+  padding: 0 8px;
+  text-shadow: none;
+}
+/* amor: bolos com cobertura escorrendo */
+.cena-amor .bloco .frente {
+  background-color: #fff6e6;
+  color: #5a1027;
+  border-color: #5a1027;
+  background-image: radial-gradient(circle at 14px 0, var(--cor) 0 13px, transparent 14px);
+  background-size: 28px 22px;
+  background-repeat: repeat-x;
+  padding-top: 18px;
+}
+.cena-amor .bloco .tampa {
+  background: var(--cor);
+  border-color: #5a1027;
+}
+.cena-amor .d1 {
+  --cor: #e5383b;
+}
+.cena-amor .d2 {
+  --cor: #ff8fb1;
+}
+.cena-amor .d3 {
+  --cor: #ffd1dc;
+}
+.cena-cinema .carimbo,
+.cena-lua .carimbo {
+  color: #f5b800;
+  border-color: #f5b800;
+  background: rgba(18, 18, 22, 0.75);
+}
+.cena-amor .carimbo {
+  color: #b3262a;
+  border-color: #b3262a;
+}
+
+/* ---------- Escritório: descolado, lilás com cores vivas ---------- */
+[data-visual='escritorio'] {
+  --bg: #f4f1ff;
+  --fg: #1e1b3a;
+  --fg2: #4a4670;
+  --card: #ffffff;
+  --line: #1e1b3a;
+  --soft-line: #d9d3f5;
+  --acc: #4c6fff;
+  --acc-ink: #ffffff;
+  --acc-text: #3048c9;
+  --acc-soft: #e4e9ff;
+  --good: #138a5f;
+  --mata: #3b3fb6;
+  --amarelo: #ffc23d;
+  --a1: #4c6fff;
+  --a2: #ffc23d;
+  --a3: #ff5c8a;
+  --a4: #19b37d;
+  --a1-ink: #ffffff;
+  --a2-ink: #1e1b3a;
+  --a3-ink: #1e1b3a;
+  --a4-ink: #1e1b3a;
+  --r-big: 26px;
+  --sh: 0 6px 0 #1e1b3a;
+  --sh-sm: 0 4px 0 #1e1b3a;
+}
+[data-visual='escritorio'] body {
+  background-color: #f4f1ff;
+  background-image: radial-gradient(#d9d3f5 2px, transparent 2.5px);
+  background-size: 26px 26px;
+  background-position: 0 0;
+}
+[data-visual='escritorio'] body:has(main.tv) {
+  background-color: #3b3fb6;
+  background-image: radial-gradient(circle at 12% 18%, #ff5c8a 0 10px, transparent 11px), radial-gradient(circle at 88% 30%, #ffc23d 0 14px, transparent 15px), radial-gradient(circle at 70% 85%, #19b37d 0 9px, transparent 10px),
+    radial-gradient(rgba(255, 255, 255, 0.12) 2px, transparent 2.5px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 30px 30px;
+  background-attachment: fixed;
+}
+[data-visual='escritorio'] .stage {
+  box-shadow: 0 6px 0 var(--line), 8px 12px 0 #ff5c8a;
+  margin-right: 8px;
+}
+[data-visual='escritorio'] .ans {
+  border-radius: 999px;
+  transform: none;
+}
+[data-visual='escritorio'] .pill:not(.dobro) {
+  background: #ffc23d;
+  color: #1e1b3a;
+}
+
+/* ---------- Entretenimento: noite de estreia ---------- */
+[data-visual='entretenimento'] {
+  --bg: #f5f0e6;
+  --fg: #121216;
+  --fg2: #4a4650;
+  --card: #fffdf8;
+  --line: #121216;
+  --soft-line: #ddd5c6;
+  --acc: #d7263d;
+  --acc-ink: #ffffff;
+  --acc-text: #b01e33;
+  --acc-soft: #fbe3e6;
+  --mata: #121216;
+  --amarelo: #f5b800;
+  --a1: #d7263d;
+  --a2: #f5b800;
+  --a3: #3a3a40;
+  --a4: #f5f0e6;
+  --a1-ink: #ffffff;
+  --a2-ink: #121216;
+  --a3-ink: #ffffff;
+  --a4-ink: #121216;
+  --sh: 0 6px 0 #121216;
+  --sh-sm: 0 4px 0 #121216;
+}
+[data-visual='entretenimento'] body {
+  background-color: #f5f0e6;
+  background-image: radial-gradient(ellipse at 50% -10%, rgba(245, 184, 0, 0.28), transparent 60%), linear-gradient(90deg, #a81b2e 0 6px, transparent 6px calc(100% - 6px), #a81b2e calc(100% - 6px));
+}
+[data-visual='entretenimento'] body:has(main.tv) {
+  background-color: #121216;
+  background-image: radial-gradient(ellipse at 50% 0, rgba(255, 243, 196, 0.22), transparent 55%), linear-gradient(90deg, #a81b2e 0 2.5%, #d7263d 2.5% 4%, transparent 6% 94%, #d7263d 96% 97.5%, #a81b2e 97.5%);
+  background-attachment: fixed;
+}
+[data-visual='entretenimento'] .stage {
+  box-shadow: var(--sh), inset 0 0 0 5px #f5b800;
+}
+[data-visual='entretenimento'] .pill:not(.dobro) {
+  background: #d7263d;
+  color: #fff;
+}
+
+/* ---------- Sala de aula: lousa, giz e madeira ---------- */
+[data-visual='sala'] {
+  --bg: #f3e9d7;
+  --fg: #1f2a24;
+  --fg2: #46524b;
+  --line: #1f2a24;
+  --soft-line: #d8cbb2;
+  --acc: #2e4a3a;
+  --acc-ink: #ffffff;
+  --acc-text: #2e4a3a;
+  --acc-soft: #e1ece5;
+  --mata: #2e4a3a;
+  --amarelo: #ffe066;
+  --a1: #2e4a3a;
+  --a2: #ffe066;
+  --a3: #2b59c3;
+  --a4: #e5383b;
+  --a1-ink: #ffffff;
+  --a2-ink: #1f2a24;
+  --a3-ink: #ffffff;
+  --a4-ink: #ffffff;
+  --sh: 0 6px 0 #1f2a24;
+  --sh-sm: 0 4px 0 #1f2a24;
+}
+[data-visual='sala'] body {
+  background-color: #fffdf5;
+  background-image: linear-gradient(#d6e2fa 1px, transparent 1px), linear-gradient(90deg, rgba(229, 56, 59, 0.3) 2px, transparent 2px);
+  background-size: 100% 32px, 100% 100%;
+  background-position: 0 8px, 56px 0;
+}
+[data-visual='sala'] body:has(main.tv) {
+  background-color: #2e4a3a;
+  background-image: radial-gradient(ellipse at 20% 30%, rgba(242, 242, 234, 0.08), transparent 40%), radial-gradient(ellipse at 80% 70%, rgba(242, 242, 234, 0.07), transparent 45%);
+  box-shadow: inset 0 0 0 14px #6b4a2e;
+  background-attachment: fixed;
+}
+[data-visual='sala'] .pill:not(.dobro) {
+  background: #2e4a3a;
+  color: #f2f2ea;
+}
+
+/* ---------- Álbum de figurinhas: página pautada, cada um é uma figurinha ---------- */
+[data-visual='album'] {
+  --bg: #fffdf5;
+  --fg: #14213d;
+  --fg2: #3d4a66;
+  --line: #14213d;
+  --soft-line: #c9d6ef;
+  --acc: #2b59c3;
+  --acc-ink: #ffffff;
+  --acc-text: #1f448f;
+  --acc-soft: #dde7fb;
+  --mata: #2b59c3;
+  --a1: #2b59c3;
+  --a2: #ffc83d;
+  --a3: #e5383b;
+  --a4: #13a07a;
+  --a1-ink: #ffffff;
+  --a2-ink: #14213d;
+  --a3-ink: #ffffff;
+  --a4-ink: #ffffff;
+  --sh: 0 6px 0 #14213d;
+  --sh-sm: 0 4px 0 #14213d;
+}
+[data-visual='album'] body {
+  background-color: #fffdf5;
+  background-image: linear-gradient(#c9d8f5 2px, transparent 2px), linear-gradient(90deg, rgba(229, 56, 59, 0.35) 3px, transparent 3px);
+  background-size: 100% 34px, 100% 100%;
+  background-position: 0 10px, 40px 0;
+}
+[data-visual='album'] body:has(main.tv) {
+  background-color: #2b59c3;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.14) 3px, transparent 3.5px), radial-gradient(circle at 90% 12%, #ffc83d 0 16px, transparent 17px);
+  background-size: 34px 34px, 100% 100%;
+  background-attachment: fixed;
+}
+[data-visual='album'] .stage {
+  box-shadow: 0 0 0 6px #fff, 0 0 0 9px var(--line), 0 14px 0 6px var(--line);
+  margin: 9px;
+}
+[data-visual='album'] .ans {
+  border-radius: 12px;
+}
+
+/* ---------- Espaço: missão espacial ---------- */
+[data-visual='espaco'] {
+  --bg: #e9ecff;
+  --fg: #0b1033;
+  --fg2: #3a4170;
+  --line: #0b1033;
+  --soft-line: #c9cff2;
+  --acc: #7b4fd6;
+  --acc-ink: #ffffff;
+  --acc-text: #5b35b0;
+  --acc-soft: #ece5fb;
+  --mata: #0b1033;
+  --a1: #e5383b;
+  --a2: #ffc83d;
+  --a3: #1e7fd6;
+  --a4: #7b4fd6;
+  --a1-ink: #ffffff;
+  --a2-ink: #0b1033;
+  --a3-ink: #ffffff;
+  --a4-ink: #ffffff;
+  --sh: 0 6px 0 #0b1033;
+  --sh-sm: 0 4px 0 #0b1033;
+}
+[data-visual='espaco'] body {
+  background-color: #e9ecff;
+  background-image: radial-gradient(#b9c1f2 1.5px, transparent 2px), radial-gradient(#7b4fd6 1.5px, transparent 2px);
+  background-size: 40px 40px, 70px 70px;
+  background-position: 0 0, 20px 30px;
+}
+[data-visual='espaco'] body:has(main.tv) {
+  background-color: #0b1033;
+  background-image: radial-gradient(#fff 1.4px, transparent 2px), radial-gradient(rgba(255, 255, 255, 0.6) 1px, transparent 1.6px);
+  background-size: 90px 90px, 47px 47px;
+  background-position: 0 0, 23px 31px;
+  background-attachment: fixed;
+}
+[data-visual='espaco'] .ans {
+  border-radius: 999px;
+  transform: none;
+}
+[data-visual='espaco'] .pill:not(.dobro) {
+  background: #ffc83d;
+  color: #0b1033;
+}
+
+/* ---------- Amor: corações por todo lado ---------- */
+[data-visual='amor'] {
+  --bg: #ffe3ea;
+  --fg: #5a1027;
+  --fg2: #7a3048;
+  --line: #5a1027;
+  --soft-line: #f5c2cf;
+  --acc: #e5383b;
+  --acc-ink: #ffffff;
+  --acc-text: #b3262a;
+  --acc-soft: #ffe3ea;
+  --mata: #8e1b3e;
+  --a1: #e5383b;
+  --a2: #ffd1dc;
+  --a3: #ff8fb1;
+  --a4: #8e1b3e;
+  --a1-ink: #ffffff;
+  --a2-ink: #5a1027;
+  --a3-ink: #5a1027;
+  --a4-ink: #ffffff;
+  --sh: 0 6px 0 #5a1027;
+  --sh-sm: 0 4px 0 #5a1027;
+}
+[data-visual='amor'] body {
+  background-color: #ffe3ea;
+  background-image: radial-gradient(circle at 30% 40%, #ffc6d4 0 5px, transparent 6px), radial-gradient(circle at 70% 60%, #ffd1dc 0 4px, transparent 5px);
+  background-size: 60px 60px, 44px 44px;
+}
+[data-visual='amor'] body:has(main.tv) {
+  background-color: #8e1b3e;
+  background-image: radial-gradient(circle at 30% 40%, rgba(255, 143, 177, 0.4) 0 6px, transparent 7px), radial-gradient(circle at 70% 60%, rgba(255, 209, 220, 0.25) 0 5px, transparent 6px);
+  background-size: 70px 70px, 50px 50px;
+  background-attachment: fixed;
+}
+[data-visual='amor'] .stage {
+  box-shadow: 0 6px 0 var(--line), 0 0 0 4px #ff8fb1 inset;
+}
+[data-visual='amor'] .pill:not(.dobro) {
+  background: #5a1027;
+  color: #ffe3ea;
+}
+
+/* selo "Pergunta X de Y" com a cara do visual, dentro e fora do cabeçalho */
+[data-visual] .pill:not(.dobro) {
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* rodapé legível em qualquer fundo de visual na TV */
+[data-visual] body:has(main.tv) .foot {
+  color: #f2eefc;
+}

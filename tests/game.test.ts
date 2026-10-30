@@ -303,3 +303,29 @@ describe('sequência e quem acertou mais rápido', () => {
     expect(r.players.p1.streak).toBe(0);
   });
 });
+
+describe('visual e ranking do fim', () => {
+  it('o visual vai para a TV e para os celulares; sala antiga sem visual vira Floresta', () => {
+    const r = G.newRoom({ code: 'ABCD', hostKey: 'k', theme: 'festa', visual: 'amor', brand: { name: '', color: '' }, questions: qs, hasLogo: false, now: T0 });
+    G.join(r, 'p1', 'Ana', T0);
+    expect(G.hostView(r, T0).visual).toBe('amor');
+    expect(G.playerView(r, 'p1', T0)!.visual).toBe('amor');
+    delete r.visual;
+    expect(G.playerView(r, 'p1', T0)!.visual).toBe('floresta');
+  });
+
+  it('no fim, todo celular recebe os 10 primeiros (durante o jogo, 5)', () => {
+    const r = G.newRoom({ code: 'ABCD', hostKey: 'k', theme: 'corp', brand: { name: '', color: '' }, questions: [qs[0]], hasLogo: false, now: T0 });
+    for (let i = 0; i < 14; i++) G.join(r, 'j' + i, 'Jog' + i, T0 + i);
+    G.start(r, S);
+    for (let i = 0; i < 14; i++) G.answer(r, 'j' + i, 0, 0, T0 + 100 * (i + 1));
+    G.reveal(r);
+    expect(G.playerView(r, 'j0', T0)!.ranking).toHaveLength(5);
+    G.next(r, T0 + 30_000);
+    expect(r.phase).toBe('final');
+    const v = G.playerView(r, 'j13', T0)!;
+    expect(v.ranking).toHaveLength(10);
+    expect(v.ranking.map((x) => x.rank)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(v.podium).toHaveLength(3);
+  });
+});

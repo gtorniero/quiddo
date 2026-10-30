@@ -111,11 +111,11 @@ export function page(): Page {
 
         <section class="h-bloco">
           <h2>Três jeitos de jogar</h2>
-          <p class="h-sub">O tema muda as cores da tela e dos celulares. Você escolhe no editor e troca quando quiser.</p>
+          <p class="h-sub">Escolha o modo do seu evento. O visual do jogo você escolhe depois, no editor.</p>
           <div class="h-temas">${(Object.keys(TEMAS) as Theme[])
             .map(
               (k) =>
-                `<a class="h-tema h-tema-${k}" href="/criar" data-link data-tema-novo="${k}"><span class="sw">${TEMAS[k].cores.map((c) => `<i style="background:${c}"></i>`).join('')}</span><b>${esc(TEMAS[k].nome)}</b><span>${esc(TEMAS[k].desc)}</span><em>${k === 'festa' ? 'Sem marca, com as cores do Quiddo' : 'Com nome, cor e logo da sua ' + (k === 'corp' ? 'empresa' : 'escola')}</em><strong>Criar com este tema →</strong></a>`,
+                `<a class="h-tema h-tema-${k}" href="/criar" data-link data-tema-novo="${k}"><span class="sw">${TEMAS[k].cores.map((c) => `<i style="background:${c}"></i>`).join('')}</span><b>${esc(TEMAS[k].nome)}</b><span>${esc(TEMAS[k].desc)}</span><em>${k === 'festa' ? 'Sem marca, com as cores do Quiddo' : 'Com nome, cor e logo da sua ' + (k === 'corp' ? 'empresa' : 'escola')}</em><strong>Criar neste modo →</strong></a>`,
             )
             .join('')}</div>
         </section>
@@ -205,7 +205,7 @@ export function page(): Page {
       io.observe(demo);
 
       const onClick = (e: Event) => {
-        // tema escolhido na vitrine: o editor abre com ele
+        // modo escolhido na vitrine: o editor abre com ele
         const t = (e.target as HTMLElement).closest<HTMLElement>('[data-tema-novo]');
         if (t) store.set('temaNovo', t.dataset.temaNovo);
         const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-demo]');

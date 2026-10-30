@@ -5,6 +5,9 @@ import type { Page } from '../main';
 import type { RankRow } from '../../shared/protocol';
 import { points } from '../../shared/rules';
 import { GUIAS } from '../data/guias';
+import { TEMAS } from '../data/pacotes';
+import type { Theme } from '../../shared/protocol';
+import { store } from '../lib/storage';
 import { LETRAS, esc, fmt } from '../lib/dom';
 import { navigate } from '../lib/nav';
 import { applyTheme } from '../lib/theme';
@@ -50,8 +53,8 @@ export function page(): Page {
         <section class="h-hero">
           <div class="h-texto">
             <span class="selo">Grátis · sem cadastro · pronto em 2 minutos</span>
-            <h1>O quiz ao vivo que faz a sala inteira gritar.</h1>
-            <p>Escreva as suas perguntas, abra a sala na TV e a turma joga pelo celular. Quem acerta mais rápido ganha mais pontos, o ranking sobe a cada rodada e o pódio vira foto.</p>
+            <h1>Crie o seu quiz e jogue ao vivo com a turma toda.</h1>
+            <p>Escreva as suas perguntas, mostre a sala no telão, no projetor ou no computador, e a turma joga pelo celular. Quem acerta mais rápido ganha mais pontos, o ranking sobe a cada rodada e o pódio vira foto.</p>
             <a class="btn cta" href="/criar" data-link>Criar meu quiz grátis <span aria-hidden="true">→</span></a>
             <p class="h-mini">Funciona em qualquer celular, sem baixar app. Até 200 pessoas por sala.</p>
           </div>
@@ -74,14 +77,14 @@ export function page(): Page {
           <h2>Como funciona</h2>
           <ol class="h-passos">
             <li><span class="n">1</span><b>Escreva as perguntas</b><p>Múltipla escolha, verdadeiro ou falso, enquete ou "quem é mais provável". Dá para pôr imagem e a sua marca.</p></li>
-            <li><span class="n">2</span><b>Abra a sala na TV</b><p>Aparecem um código e um QR. A turma entra pelo celular, escolhe um bicho e um apelido.</p></li>
+            <li><span class="n">2</span><b>Abra a sala na tela principal</b><p>No telão, no projetor ou no computador aparecem um código e um QR. A turma entra pelo celular, escolhe um bicho e um apelido.</p></li>
             <li><span class="n">3</span><b>Joguem juntos</b><p>A pergunta aparece em todas as telas ao mesmo tempo. Ranking a cada rodada, pódio e sorteio no fim.</p></li>
           </ol>
           <a class="btn cta" href="/criar" data-link>Criar meu quiz grátis <span aria-hidden="true">→</span></a>
         </section>
 
         <section class="h-bloco">
-          <h2>Do jeito que aparece na sua TV</h2>
+          <h2>Do jeito que aparece na tela</h2>
           <div class="h-telas">
             <figure class="tela">
               <div class="tela-tv">
@@ -107,12 +110,23 @@ export function page(): Page {
         </section>
 
         <section class="h-bloco">
+          <h2>Três jeitos de jogar</h2>
+          <p class="h-sub">O tema muda as cores da tela e dos celulares. Você escolhe no editor e troca quando quiser.</p>
+          <div class="h-temas">${(Object.keys(TEMAS) as Theme[])
+            .map(
+              (k) =>
+                `<a class="h-tema h-tema-${k}" href="/criar" data-link data-tema-novo="${k}"><span class="sw">${TEMAS[k].cores.map((c) => `<i style="background:${c}"></i>`).join('')}</span><b>${esc(TEMAS[k].nome)}</b><span>${esc(TEMAS[k].desc)}</span><em>${k === 'festa' ? 'Sem marca, com as cores do Quiddo' : 'Com nome, cor e logo da sua ' + (k === 'corp' ? 'empresa' : 'escola')}</em><strong>Criar com este tema →</strong></a>`,
+            )
+            .join('')}</div>
+        </section>
+
+        <section class="h-bloco">
           <h2>Por que a turma pede outra rodada</h2>
           <div class="h-beneficios">
             <div><b>Rapidez vale ponto</b><p>De 500 a 1.000 por acerto. Quem responde primeiro sobe no ranking.</p></div>
             <div><b>A última vale o dobro</b><p>Chance de virada no fim, para ninguém desistir.</p></div>
             <div><b>Personagens</b><p>20 bichos do Brasil com boné, coroa, óculos e mais. Cada um monta o seu.</p></div>
-            <div><b>Sorteio de prêmios</b><p>Entre todos ou só entre quem pontuou, com roleta na TV.</p></div>
+            <div><b>Sorteio de prêmios</b><p>Entre todos ou só entre quem pontuou, com roleta no telão.</p></div>
             <div><b>Sua marca</b><p>Nome, cor e logo da empresa ou da escola na tela e nos celulares.</p></div>
             <div><b>Até 200 pessoas</b><p>Sem cadastro e sem app. Abre no navegador de qualquer celular.</p></div>
           </div>
@@ -127,7 +141,7 @@ export function page(): Page {
           <h2>Seu primeiro quiz fica pronto antes do café esfriar.</h2>
           <p>Já vem com perguntas de exemplo para você trocar pelas suas.</p>
           <a class="btn cta claro" href="/criar" data-link>Criar meu quiz grátis <span aria-hidden="true">→</span></a>
-          <div class="h-entrar"><p><b>Vai jogar?</b> Digite o código que aparece na TV.</p>${codeForm('home')}</div>
+          <div class="h-entrar"><p><b>Vai jogar?</b> Digite o código que aparece na tela.</p>${codeForm('home')}</div>
         </section>`;
 
       // ---------- pergunta de demonstração ----------
@@ -191,6 +205,9 @@ export function page(): Page {
       io.observe(demo);
 
       const onClick = (e: Event) => {
+        // tema escolhido na vitrine: o editor abre com ele
+        const t = (e.target as HTMLElement).closest<HTMLElement>('[data-tema-novo]');
+        if (t) store.set('temaNovo', t.dataset.temaNovo);
         const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-demo]');
         if (!b || b.disabled) return;
         if (b.dataset.demo === 'de-novo') return deNovo();

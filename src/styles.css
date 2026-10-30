@@ -3016,3 +3016,72 @@ main.home {
     padding: 10px 8px;
   }
 }
+/* vitrine dos temas na home */
+.h-sub {
+  color: var(--fg2);
+  font-size: 17px;
+  margin-top: -8px;
+}
+.h-temas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  width: 100%;
+}
+.h-tema {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding: 20px;
+  border: var(--bw) solid #0e2a22;
+  border-radius: 22px;
+  box-shadow: 0 5px 0 #0e2a22;
+  color: #0e2a22;
+  text-decoration: none;
+  transition: transform 0.15s;
+}
+.h-tema:hover {
+  transform: translateY(-3px) rotate(-0.5deg);
+}
+.h-tema .sw i {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #0e2a22;
+}
+.h-tema b {
+  font: 900 26px var(--disp);
+}
+.h-tema span:not(.sw) {
+  font-size: 15px;
+  color: #3e4f48;
+}
+.h-tema em {
+  font-style: normal;
+  font-weight: 800;
+  font-size: 14px;
+}
+.h-tema strong {
+  margin-top: 8px;
+  font-weight: 900;
+}
+.h-tema-festa {
+  background-color: #fff;
+  background-image: radial-gradient(circle, rgba(255, 122, 26, 0.25) 2.5px, transparent 3px), radial-gradient(circle, rgba(19, 160, 122, 0.22) 2.5px, transparent 3px);
+  background-size: 60px 60px, 80px 80px;
+  background-position: 0 0, 30px 20px;
+}
+.h-tema-corp {
+  background: #f3f2ef;
+}
+.h-tema-escola {
+  background-color: #eef4ff;
+  background-image: linear-gradient(#d6e2fa 1px, transparent 1px), linear-gradient(90deg, rgba(229, 56, 59, 0.3) 2px, transparent 2px);
+  background-size: 100% 26px, 100% 100%;
+  background-position: 0 6px, 22px 0;
+}
+@media (max-width: 900px) {
+  .h-temas {
+    grid-template-columns: 1fr;
+  }
+}

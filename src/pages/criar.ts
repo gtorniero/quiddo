@@ -16,6 +16,10 @@ export function page(): Page {
 
 function mount(main: HTMLElement) {
   let q: Quiz = atual();
+  // veio da vitrine de temas da home: aplica o tema escolhido
+  const temaNovo = store.get<string>('temaNovo', '');
+  if (temaNovo === 'corp' || temaNovo === 'festa' || temaNovo === 'escola') q.tema = temaNovo;
+  store.del('temaNovo');
   let msg = ''; // aviso geral (importação, espaço cheio)
   let erro = ''; // erro ao abrir a sala
   let abrindo = false;
@@ -84,7 +88,7 @@ function mount(main: HTMLElement) {
         const t = TEMAS[k];
         return `<button class="tema" data-act="tema" data-v="${k}" aria-pressed="${k === q.tema}"><span class="sw">${t.cores.map((c) => `<i style="background:${c}"></i>`).join('')}</span><b>${esc(t.nome)}</b><span>${esc(t.desc)}</span></button>`;
       })
-      .join('')}</div><p class="small">O tema muda o visual da TV e dos celulares de todo mundo. ${q.tema === 'festa' ? 'Em Amigos & família o jogo fica com as cores do Quiddo, sem marca.' : 'Neste tema dá para colocar o nome, a cor e o logo da empresa ou da escola.'}</p></section>`;
+      .join('')}</div><p class="small">O tema muda o visual da tela principal e dos celulares de todo mundo. ${q.tema === 'festa' ? 'Em Amigos & família o jogo fica com as cores do Quiddo, sem marca.' : 'Neste tema dá para colocar o nome, a cor e o logo da empresa ou da escola.'}</p></section>`;
   }
 
   function secTempo(passo: Passo) {
@@ -114,7 +118,7 @@ function mount(main: HTMLElement) {
       }
       <div class="tag">Logo</div>
       <div class="logoprev">${q.logo ? `<img src="${esc(q.logo)}" alt="Seu logo">` : ''}<span class="btn sec small auto filebtn">${q.logo ? 'Trocar logo' : 'Enviar logo'}<input type="file" id="bL" accept="image/png,image/jpeg,image/svg+xml,image/webp" aria-label="${q.logo ? 'Trocar logo' : 'Enviar logo'}"></span>${q.logo ? '<button class="btn sec small auto" data-act="semlogo">Remover logo</button>' : ''}</div>
-      <p class="small">O nome, a cor e o logo aparecem na TV e nos celulares de todo mundo. PNG com fundo transparente fica melhor.</p>
+      <p class="small">O nome, a cor e o logo aparecem na tela principal e nos celulares de todo mundo. PNG com fundo transparente fica melhor.</p>
     </section>`;
   }
 
@@ -158,7 +162,7 @@ function mount(main: HTMLElement) {
           : `<span class="btn sec small auto filebtn">Adicionar imagem<input type="file" data-img="${i}" accept="image/png,image/jpeg,image/webp,image/gif" aria-label="Adicionar imagem à pergunta ${num}"></span>`
       }
       ${p.tipo === 'quem' ? '<p class="small">Não precisa escrever opções: na hora do jogo, cada celular mostra a lista das pessoas da sala, com o bicho de cada uma. Não vale ponto.</p>' : ''}
-      ${p.tipo === 'opiniao' ? '<p class="small">Enquete: não tem resposta certa e não vale ponto. A TV mostra quantos votaram em cada opção.</p>' : ''}
+      ${p.tipo === 'opiniao' ? '<p class="small">Enquete: não tem resposta certa e não vale ponto. A tela principal mostra quantos votaram em cada opção.</p>' : ''}
       ${(p.tipo === 'quem' ? [] : p.o)
         .map(
           (o, k) => `<div class="opt-ed${p.c === k && !p.tipo ? ' certa' : ''}"><span class="lt c${k}" aria-hidden="true">${LETRAS[k]}</span>
@@ -175,7 +179,7 @@ function mount(main: HTMLElement) {
     const n = prontas();
     return `<section class="panel sticky" id="abrir-sala"><button class="btn" data-act="abrir"${n && !abrindo ? '' : ' disabled'}>${abrindo ? 'Abrindo a sala…' : n ? `Abrir a sala com ${n} ${n === 1 ? 'pergunta' : 'perguntas'}` : 'Complete ao menos uma pergunta'}</button>
       <p class="err" role="alert">${esc(erro)}</p>
-      <p class="small">Abra a sala no computador ligado à TV ou ao projetor. A turma joga pelo celular.</p></section>`;
+      <p class="small">Abra a sala no computador que vai para o telão ou o projetor. A turma joga pelo celular.</p></section>`;
   }
 
   // ---------- ações ----------

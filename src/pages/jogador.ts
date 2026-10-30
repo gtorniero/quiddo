@@ -64,18 +64,22 @@ function mount(main: HTMLElement, code: string) {
       .concat((Object.keys(ROSTO) as ItemRosto[]).map((f) => btn('f', f, av.f === f, esc(ROSTO[f]), ROSTO[f])))
       .join('');
     const cores = Array.from({ length: CORES_N }, (_, c) => btn('c', c, av.c === c, `<i style="background:${CORES_AVATAR[c]}"></i>`, `Fundo ${c + 1}`)).join('');
-    return `<div class="avprev">${avatarSvg(av, 120, true)}<button type="button" class="btn sec auto" data-act="sortear" data-focus="sortear">Sortear</button></div>
-      <fieldset class="avset"><legend>Escolha o bicho</legend><div class="avgrid">${bichos}</div></fieldset>
+    return `<fieldset class="avset"><legend>Escolha o bicho</legend><div class="avgrid">${bichos}</div></fieldset>
       <fieldset class="avset"><legend>Na cabeça</legend><div class="chips">${cab}</div></fieldset>
       <fieldset class="avset"><legend>No rosto</legend><div class="chips">${ros}</div></fieldset>
       <fieldset class="avset"><legend>Cor de fundo</legend><div class="avcores">${cores}</div></fieldset>`;
   }
 
   /** Atualiza o personagem e, se a pessoa não escreveu outro apelido, a sugestão de nome. */
+  /** Bicho escolhido, grande, com o botão de sortear. */
+  const previa = () => `${avatarSvg(av, 120, true)}<button type="button" class="btn sec auto" data-act="sortear" data-focus="sortear">Sortear</button>`;
+
   function setAv(next: Avatar) {
     av = next;
     const box = main.querySelector<HTMLElement>('#avp');
     if (box) patch(box, picker());
+    const pv = main.querySelector<HTMLElement>('#avprev');
+    if (pv) patch(pv, previa());
     const nick = main.querySelector<HTMLInputElement>('#nick');
     if (nick && (!nick.value.trim() || nick.value === sugerido)) {
       sugerido = sugestao(av);
@@ -88,10 +92,14 @@ function mount(main: HTMLElement, code: string) {
     sugerido = saved ? '' : sugestao(av);
     main.innerHTML = `<section class="panel"><div class="tag">Sala ${code}</div><h1>Quem é você hoje?</h1>
       <form id="fj" novalidate style="display:grid;gap:14px">
-        <div id="avp" class="avpick">${picker()}</div>
+        <div id="avprev" class="avprev">${previa()}</div>
         <label for="nick">Seu apelido<input type="text" id="nick" maxlength="${LIMITS.nick}" value="${esc(saved || sugerido)}" autocomplete="nickname" placeholder="Como vai aparecer no ranking" aria-describedby="nick-err"></label>
+        <p class="err" id="nick-err" role="alert">${esc(err)}</p>
         <button class="btn" type="submit">Entrar na sala</button>
-      </form><p class="err" id="nick-err" role="alert">${esc(err)}</p>
+        <h2 class="personalizar">Quer mudar o seu bicho?</h2>
+        <div id="avp" class="avpick">${picker()}</div>
+        <button class="btn sec" type="submit">Entrar na sala</button>
+      </form>
       <p class="small">Sem cadastro. Seu bicho e seu apelido só aparecem nesta rodada.</p></section>`;
     if (err) main.querySelector<HTMLInputElement>('#nick')!.focus();
   }

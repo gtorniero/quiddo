@@ -35,12 +35,16 @@ export function novoQuiz(tema: Theme = 'corp'): Quiz {
 }
 
 const TEMPOS = LIMITS.times as readonly number[];
+const PADRAO = ['Quiz da equipe', 'Quiz da turma', 'Quiz da galera'];
 
 /** Quizzes salvos por versões antigas não têm `tempo`: usa o da primeira pergunta. */
 function normalizar(q: Quiz): Quiz {
   if (!TEMPOS.includes(q.tempo)) q.tempo = TEMPOS.includes(q.perguntas[0]?.tl) ? q.perguntas[0].tl : 15;
   if (q.tema !== 'festa' && q.tema !== 'escola') q.tema = 'corp';
   q.visual = visualDoModo(q.tema, q.visual);
+  // versões antigas tinham o nome da empresa ou do evento num campo à parte: agora ele vira o nome do quiz
+  if (q.marca?.name && !q.titulo.includes(q.marca.name)) q.titulo = !q.titulo || PADRAO.includes(q.titulo) ? q.marca.name : `${q.titulo} · ${q.marca.name}`;
+  if (q.marca) q.marca.name = '';
   return q;
 }
 

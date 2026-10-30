@@ -4896,3 +4896,15 @@ svg.av.vivo .corpo {
 [data-visual] body:has(main.tv) .foot {
   color: #f2eefc;
 }
+
+/* editor: a marca dentro do passo "Nome do quiz" */
+.sub-marca {
+  margin: 10px 0 0;
+  padding-top: 14px;
+  border-top: 2px dashed var(--soft-line);
+  font: 900 20px/1.2 var(--disp);
+}
+.sub-marca small {
+  font: 700 14px var(--text);
+  color: var(--fg2);
+}

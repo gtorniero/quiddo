@@ -23,7 +23,7 @@ Para testar com o celular na mesma rede Wi-Fi: `npm run dev -- --host` e abra no
 | Endereço | O que é |
 | --- | --- |
 | `/` | Home: o que é, como funciona, os três modos |
-| `/criar` | Editor do quiz: Meus quizzes, modo (Corporativo, Amigos & família, Escola), visual do jogo, tempo de cada pergunta, Sua marca (só Corporativo e Escola), perguntas, abrir a sala |
+| `/criar` | Editor do quiz: Meus quizzes, nome do quiz (com a marca em Corporativo e Escola), modo (Corporativo, Amigos & família, Escola), visual do jogo, tempo de cada pergunta, perguntas (2 de modelo: verdadeiro ou falso e múltipla escolha), abrir a sala |
 | `/host/{CODIGO}` | Tela do anfitrião, para a TV ou o projetor |
 | `/{CODIGO}` | Entrada e tela do jogador |
 | `/entrar` | Digitar o código da sala |

@@ -131,8 +131,6 @@ function mount(main: HTMLElement) {
       <div class="add-tipos">
         <button class="btn sec" data-act="add"${cheio ? ' disabled' : ''}><b>Pergunta</b><span>de 2 a 4 respostas, uma certa</span></button>
         <button class="btn sec" data-act="addvf"${cheio ? ' disabled' : ''}><b>Verdadeiro ou falso</b><span>uma afirmação, duas respostas</span></button>
-        <button class="btn sec" data-act="addop"${cheio ? ' disabled' : ''}><b>Enquete</b><span>opinião, sem resposta certa</span></button>
-        <button class="btn sec" data-act="addquem"${cheio ? ' disabled' : ''}><b>Quem é mais provável…</b><span>vota em alguém da sala</span></button>
       </div>
       <button class="toggle" data-act="dobro" aria-pressed="${!!q.dobroUltima}"><span class="chave" aria-hidden="true"></span><span><b>A última pergunta vale o dobro</b><br><small>Dá chance de virada no fim. Vale para a última pergunta com resposta certa.</small></span></button>
     </section>`;
@@ -177,7 +175,7 @@ function mount(main: HTMLElement) {
 
   function secAbrir() {
     const n = prontas();
-    return `<section class="panel sticky" id="abrir-sala"><button class="btn" data-act="abrir"${n && !abrindo ? '' : ' disabled'}>${abrindo ? 'Abrindo a sala…' : n ? `Abrir a sala com ${n} ${n === 1 ? 'pergunta' : 'perguntas'}` : 'Complete ao menos uma pergunta'}</button>
+    return `<section class="panel" id="abrir-sala"><button class="btn" data-act="abrir"${n && !abrindo ? '' : ' disabled'}>${abrindo ? 'Abrindo a sala…' : n ? `Abrir a sala com ${n} ${n === 1 ? 'pergunta' : 'perguntas'}` : 'Complete ao menos uma pergunta'}</button>
       <p class="err" role="alert">${esc(erro)}</p>
       <p class="small">Abra a sala no computador que vai para o telão ou o projetor. A turma joga pelo celular.</p></section>`;
   }

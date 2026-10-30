@@ -40,7 +40,7 @@ describe('perguntas', () => {
   it('valida o pedido de abrir sala', () => {
     const r = validateCreate({ theme: 'x', questions: [{ t: ' Oi ', o: ['1', '2'], c: 1, tl: 7 }], brand: { name: 'A', color: 'red' }, logo: '' });
     expect(r.theme).toBe('corp');
-    expect(r.questions[0]).toEqual({ t: 'Oi', o: ['1', '2'], c: 1, tl: 20 });
+    expect(r.questions[0]).toEqual({ t: 'Oi', o: ['1', '2'], c: 1, tl: 15 });
     expect(r.brand.color).toBe('');
     const escola = validateCreate({ theme: 'escola', questions: [{ t: 'a', o: ['1', '2'], c: 0, tl: 10 }], brand: { name: 'Escola X', color: '#123456' }, logo: '' });
     expect(escola.theme).toBe('escola');

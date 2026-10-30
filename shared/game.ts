@@ -24,7 +24,7 @@ export interface Pessoa {
 }
 
 /** Duração do "Prepare-se" antes de cada pergunta. */
-export const PREP_MS = 3000;
+export const PREP_MS = 4000;
 
 export interface Answer {
   choice: number;

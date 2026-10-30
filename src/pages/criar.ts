@@ -148,21 +148,29 @@ function mount(main: HTMLElement) {
   function secPerguntas(passo: Passo) {
     const n = q.perguntas.length;
     const cheio = n >= LIMITS.maxQuestions;
-    return `<section class="panel" aria-labelledby="h-perg">${passo('Perguntas', 'h-perg')}<p class="small" id="h-perg-n">${contagem()}</p>
+    return `<section class="panel" aria-labelledby="h-perg">${passo('Perguntas', 'h-perg')}
+      <div class="add-topo" role="group" aria-labelledby="h-add-topo">
+        <span class="add-topo-tit" id="h-add-topo"><span class="mais-ic" aria-hidden="true">+</span>Adicionar pergunta</span>
+        <div class="add-topo-ops">
+          <button class="btn sec" data-act="add" data-pos="topo"${cheio ? ' disabled' : ''}><b>Múltipla escolha</b><span>de 2 a 4 respostas, uma certa</span></button>
+          <button class="btn sec" data-act="addvf" data-pos="topo"${cheio ? ' disabled' : ''}><b>Verdadeiro ou falso</b><span>uma afirmação, duas respostas</span></button>
+        </div>
+      </div>
+      <p class="small" id="h-perg-n">${contagem()}</p>
       <div class="qlist">${q.perguntas.map((_, i) => editorPergunta(i, n)).join('')}</div>
-      <div class="tag">Adicionar</div>
+      <div class="tag">Adicionar pergunta no fim</div>
       <div class="add-tipos">
-        <button class="btn sec" data-act="add"${cheio ? ' disabled' : ''}><b>Pergunta</b><span>de 2 a 4 respostas, uma certa</span></button>
+        <button class="btn sec" data-act="add"${cheio ? ' disabled' : ''}><b>Múltipla escolha</b><span>de 2 a 4 respostas, uma certa</span></button>
         <button class="btn sec" data-act="addvf"${cheio ? ' disabled' : ''}><b>Verdadeiro ou falso</b><span>uma afirmação, duas respostas</span></button>
       </div>
       <button class="toggle" data-act="dobro" aria-pressed="${!!q.dobroUltima}"><span class="chave" aria-hidden="true"></span><span><b>A última pergunta vale o dobro</b><br><small>Dá chance de virada no fim. Vale para a última pergunta com resposta certa.</small></span></button>
     </section>`;
   }
 
-  const nomeTipo = (p: Quiz['perguntas'][number]) => (p.vf ? 'Verdadeiro ou falso' : p.tipo === 'opiniao' ? 'Enquete' : p.tipo === 'quem' ? 'Quem é mais provável' : 'Pergunta');
+  const nomeTipo = (p: Quiz['perguntas'][number]) => (p.vf ? 'Verdadeiro ou falso' : p.tipo === 'opiniao' ? 'Enquete' : p.tipo === 'quem' ? 'Quem é mais provável' : 'Múltipla escolha');
   const titulo = (i: number) => `${nomeTipo(q.perguntas[i])} ${i + 1}${isReady(q.perguntas[i]) ? '' : ' · falta completar'}`;
 
-  const contagem = () => `${prontas()} de ${q.perguntas.length} prontas. Marque a resposta certa de cada uma (no celular, toque na letra).`;
+  const contagem = () => `${prontas()} de ${q.perguntas.length} prontas.${q.perguntas.length <= 2 ? ' As 2 primeiras são só modelos: edite ou remova.' : ''} Marque a resposta certa de cada uma (no celular, toque na letra).`;
 
   function editorPergunta(i: number, n: number) {
     const p = q.perguntas[i];
@@ -309,19 +317,22 @@ function mount(main: HTMLElement) {
         persist();
         return render('[data-act="dobro"]');
       case 'addvf':
-        q.perguntas.push({ t: '', o: ['Verdadeiro', 'Falso'], c: 0, tl: q.tempo, vf: true });
+      case 'add': {
+        // o "+" de cima põe a pergunta nova no topo da lista; os botões de baixo, no fim
+        const nova = a === 'addvf' ? { t: '', o: ['Verdadeiro', 'Falso'], c: 0, tl: q.tempo, vf: true } : { t: '', o: ['', '', '', ''], c: 0, tl: q.tempo };
+        const topo = b.dataset.pos === 'topo';
+        if (topo) q.perguntas.unshift(nova);
+        else q.perguntas.push(nova);
         persist();
         render();
-        return main.querySelector<HTMLElement>(`textarea[data-i="${q.perguntas.length - 1}"]`)?.focus();
+        const el = main.querySelector<HTMLElement>(`textarea[data-i="${topo ? 0 : q.perguntas.length - 1}"]`);
+        el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        return el?.focus({ preventScroll: true });
+      }
       case 'semimg':
         delete p.img;
         persist();
         return render(`input[data-img="${i}"]`);
-      case 'add':
-        q.perguntas.push({ t: '', o: ['', '', '', ''], c: 0, tl: q.tempo });
-        persist();
-        render();
-        return main.querySelector<HTMLElement>(`textarea[data-i="${q.perguntas.length - 1}"]`)?.focus();
       case 'up':
       case 'down': {
         const j = a === 'up' ? i - 1 : i + 1;

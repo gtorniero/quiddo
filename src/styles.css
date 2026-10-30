@@ -4908,3 +4908,101 @@ svg.av.vivo .corpo {
   font: 700 14px var(--text);
   color: var(--fg2);
 }
+
+/* Corporativo: a opção escolhida fica cheia, na cor do modo (ou da marca), com texto claro e um ✓ */
+[data-tema='corp'] .tema[aria-pressed='true'],
+[data-tema='corp'] .visual-op[aria-pressed='true'],
+[data-tema='corp'] .cmode button[aria-pressed='true'],
+[data-tema='corp'] .chips button[aria-pressed='true'] {
+  position: relative;
+  background: var(--acc);
+  color: var(--acc-ink);
+  border-color: var(--line);
+  box-shadow: var(--sh-sm);
+}
+[data-tema='corp'] .tema[aria-pressed='true'] span,
+[data-tema='corp'] .visual-op[aria-pressed='true'] .vtxt span {
+  color: inherit;
+  opacity: 0.9;
+}
+[data-tema='corp'] .tema[aria-pressed='true'] .sw i,
+[data-tema='corp'] .visual-op[aria-pressed='true'] .sw i,
+[data-tema='corp'] .cmode button[aria-pressed='true'] i {
+  box-shadow: 0 0 0 2px var(--acc-ink);
+}
+[data-tema='corp'] .visual-op[aria-pressed='true'] b small {
+  background: var(--acc-ink);
+  color: var(--acc);
+}
+[data-tema='corp'] .tema[aria-pressed='true']::after,
+[data-tema='corp'] .visual-op[aria-pressed='true']::after {
+  content: '✓';
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--acc-ink);
+  color: var(--acc);
+  font: 900 16px/1 var(--text);
+}
+[data-tema='corp'] .visual-op[aria-pressed='true'] .mini-visual {
+  background: #fff;
+  border-radius: 50%;
+}
+
+/* editor: "+" bem à vista no topo das perguntas, com os dois tipos lado a lado */
+.add-topo {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: var(--bw) solid var(--line);
+  border-radius: 18px;
+  background: var(--acc-soft);
+  box-shadow: var(--sh-sm);
+}
+.add-topo-tit {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font: 900 22px/1.1 var(--disp);
+}
+.add-topo .mais-ic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 900 30px/1 var(--text);
+  background: var(--amarelo);
+  color: #0e2a22;
+  border: 3px solid #0e2a22;
+  flex: none;
+}
+.add-topo-ops {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 480px) {
+  .add-topo-ops {
+    grid-template-columns: 1fr;
+  }
+}
+.add-topo-ops .btn {
+  display: grid;
+  justify-items: start;
+  justify-content: start;
+  padding: 10px 20px;
+  text-align: left;
+  gap: 2px;
+  font-size: 17px;
+  min-height: 60px;
+}
+.add-topo-ops .btn span {
+  font: 700 13px var(--text);
+  color: var(--fg2);
+}

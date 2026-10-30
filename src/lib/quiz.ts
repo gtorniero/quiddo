@@ -36,12 +36,15 @@ export function novoQuiz(tema: Theme = 'corp'): Quiz {
 
 const TEMPOS = LIMITS.times as readonly number[];
 const PADRAO = ['Quiz da equipe', 'Quiz da turma', 'Quiz da galera'];
+/** Perguntas do pacote antigo (8 a 10 por modo). Quiz que ainda tem só elas, sem mexer, troca pelas 2 de modelo. */
+const PACOTE_ANTIGO = new Set(['Em que ano o Pix foi lançado no Brasil?','O que significa a sigla KPI?','Qual é a jornada semanal padrão pela CLT?','Em que ano a CLT foi criada?','Qual empresa criou o Excel?','Como se chama o símbolo @ em português?','Numa planilha, a célula C7 fica em qual coluna?','Qual destas redes sociais é focada em carreira?','Qual destas é uma fruta típica do Cerrado?','Quantos jogadores um time de futebol tem em campo?','Em que ano o Brasil ganhou o penta?','Qual drinque leva cachaça, limão, açúcar e gelo?','Em que ano o homem pisou na Lua pela primeira vez?','Qual é o maior animal do mundo?','Quantos dias tem um ano bissexto?','Qual é o maior estado do Brasil em área?','Qual planeta é conhecido como planeta vermelho?','De que país vem a pizza margherita?','Qual é a capital do Brasil?','Quanto é 7 × 8?','Qual é o maior planeta do Sistema Solar?','Quem escreveu "Dom Casmurro"?','Em que ano o Brasil declarou a independência?','Qual é o plural de "pão"?','A água ferve a quantos graus Celsius, ao nível do mar?','Qual é o maior rio do Brasil em volume de água?']);
 
 /** Quizzes salvos por versões antigas não têm `tempo`: usa o da primeira pergunta. */
 function normalizar(q: Quiz): Quiz {
   if (!TEMPOS.includes(q.tempo)) q.tempo = TEMPOS.includes(q.perguntas[0]?.tl) ? q.perguntas[0].tl : 15;
   if (q.tema !== 'festa' && q.tema !== 'escola') q.tema = 'corp';
   q.visual = visualDoModo(q.tema, q.visual);
+  if (q.perguntas.length > 2 && q.perguntas.every((p) => PACOTE_ANTIGO.has(p.t) && !p.img)) q.perguntas = pacote(q.tema);
   // versões antigas tinham o nome da empresa ou do evento num campo à parte: agora ele vira o nome do quiz
   if (q.marca?.name && !q.titulo.includes(q.marca.name)) q.titulo = !q.titulo || PADRAO.includes(q.titulo) ? q.marca.name : `${q.titulo} · ${q.marca.name}`;
   if (q.marca) q.marca.name = '';

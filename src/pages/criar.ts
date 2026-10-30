@@ -51,10 +51,10 @@ function mount(main: HTMLElement) {
     applyTheme(q.tema, temMarca ? q.marca.color : '');
     store.set('tema', q.tema);
     const y = window.scrollY;
-    // os passos são numerados na ordem em que aparecem; a marca só existe em Corporativo e Escola
+    // os passos são numerados na ordem em que aparecem; a marca (cor e logo) só existe em Corporativo e Escola
     let n = 0;
     const passo = (titulo: string, id: string) => `<h2 class="passo" id="${id}"><span aria-hidden="true">${++n}</span>${titulo}</h2>`;
-    main.innerHTML = [secMeus(), secTema(passo), secVisual(passo), secTempo(passo), temMarca ? secMarca(passo) : '', secPerguntas(passo), secAbrir()].join('');
+    main.innerHTML = [secMeus(), secNome(passo, temMarca), secTema(passo), secVisual(passo), secTempo(passo), secPerguntas(passo), secAbrir()].join('');
     window.scrollTo(0, y);
     if (focusSel) main.querySelector<HTMLElement>(focusSel)?.focus({ preventScroll: true });
   }
@@ -69,7 +69,7 @@ function mount(main: HTMLElement) {
       <div class="quizzes">${todos
         .map(
           (x) =>
-            `<div class="q${x.id === q.id ? ' on' : ''}"><b>${esc(x.titulo || 'Sem título')}</b><span class="small">${x.perguntas.length} perguntas · ${new Date(x.atualizado).toLocaleDateString('pt-BR')}</span>${
+            `<div class="q${x.id === q.id ? ' on' : ''}"><b>${esc(x.titulo || 'Sem título')}</b><span class="small">${x.perguntas.length} ${x.perguntas.length === 1 ? 'pergunta' : 'perguntas'} · ${new Date(x.atualizado).toLocaleDateString('pt-BR')}</span>${
               x.id === q.id ? '<span class="small"><b>Editando</b></span>' : `<button class="btn sec small auto" data-act="abrirquiz" data-v="${x.id}">Abrir</button>`
             }<button class="linkbtn" data-act="excluirquiz" data-v="${x.id}" aria-label="Excluir ${esc(x.titulo)}">Excluir</button></div>`,
         )
@@ -81,7 +81,6 @@ function mount(main: HTMLElement) {
       </div>
       <p class="small">Os quizzes ficam guardados neste navegador. Exporte o arquivo para levar para outro computador.</p>
       <p class="err" role="status">${esc(msg)}</p>
-      <label for="titulo">Nome do quiz<input type="text" id="titulo" maxlength="60" value="${esc(q.titulo)}"></label>
       <a class="btn sec small ir-abrir" href="#abrir-sala">Tudo pronto? Ir para “Abrir a sala” ↓</a>
     </section>`;
   }
@@ -104,7 +103,7 @@ function mount(main: HTMLElement) {
         const t = TEMAS[k];
         return `<button class="tema" data-act="tema" data-v="${k}" aria-pressed="${k === q.tema}"><span class="sw">${t.cores.map((c) => `<i style="background:${c}"></i>`).join('')}</span><b>${esc(t.nome)}</b><span>${esc(t.desc)}</span></button>`;
       })
-      .join('')}</div><p class="small">O modo é o tipo de evento: escolhe o pacote de perguntas e os visuais que aparecem logo abaixo. ${q.tema === 'festa' ? 'Em Amigos & família o jogo fica sem marca.' : 'Neste modo dá para colocar o nome, a cor e o logo da empresa ou da escola.'}</p></section>`;
+      .join('')}</div><p class="small">O modo é o tipo de evento: define as perguntas de modelo e os visuais que aparecem logo abaixo. ${q.tema === 'festa' ? 'Em Amigos & família o jogo fica sem marca.' : 'Neste modo dá para colocar a cor e o logo da empresa ou da escola, no passo 1.'}</p></section>`;
   }
 
   function secTempo(passo: Passo) {
@@ -113,11 +112,20 @@ function mount(main: HTMLElement) {
       <p class="small">Vale para todas as perguntas. Quem acerta ganha de 500 a 1.000 pontos: quanto mais rápido, mais pontos. ${q.tempo <= 10 ? 'Bom para perguntas curtas e respostas de uma palavra.' : q.tempo >= 30 ? 'Bom para perguntas longas ou que pedem conta.' : 'O ritmo mais equilibrado.'}</p></section>`;
   }
 
-  function secMarca(passo: Passo) {
+  /** Nome do quiz (que também é o nome da empresa, da turma ou do evento) e, em Corporativo e Escola, a marca. */
+  function secNome(passo: Passo, temMarca: boolean) {
+    const ex = q.tema === 'corp' ? 'Quiz da Convenção de Vendas 2027' : q.tema === 'escola' ? 'Revisão do 7º ano B' : 'Quiz do aniversário da Bia';
+    return `<section class="panel" aria-labelledby="h-nome">${passo('Nome do quiz', 'h-nome')}
+      <input type="text" id="titulo" aria-labelledby="h-nome" maxlength="${LIMITS.brandName}" value="${esc(q.titulo)}" placeholder="${ex}" aria-describedby="titulo-dica">
+      <p class="small" id="titulo-dica">Junte o nome do quiz com ${q.tema === 'escola' ? 'a escola, a turma ou o evento' : q.tema === 'corp' ? 'a empresa ou o evento' : 'a ocasião'}. Ex.: ${ex}.${temMarca ? ' Aparece na tela principal e nos celulares.' : ''}</p>
+      ${temMarca ? marcaCampos() : ''}
+    </section>`;
+  }
+
+  function marcaCampos() {
     const mc = q.marca.color;
     const ult = q.marca.ultima || CORES_MARCA[1][0];
-    return `<section class="panel" aria-labelledby="h-marca">${passo('Sua marca <small>(opcional)</small>', 'h-marca')}
-      <label for="bN">${q.tema === 'escola' ? 'Nome da escola, da turma ou do evento' : 'Nome da empresa ou do evento'}<input type="text" id="bN" maxlength="${LIMITS.brandName}" value="${esc(q.marca.name)}" placeholder="${q.tema === 'corp' ? 'Convenção de Vendas 2027' : 'Revisão do 7º ano B'}"></label>
+    return `<h3 class="sub-marca" id="h-marca">Sua marca <small>(opcional)</small></h3>
       <div class="tag" id="h-cor">Cor principal</div>
       <div class="cmode" role="group" aria-labelledby="h-cor">
         <button data-act="cmode" data-v="tema" aria-pressed="${!mc}"><i style="background:${THEME_ACC[q.tema]}"></i>Cor do modo</button>
@@ -134,8 +142,7 @@ function mount(main: HTMLElement) {
       }
       <div class="tag">Logo</div>
       <div class="logoprev">${q.logo ? `<img src="${esc(q.logo)}" alt="Seu logo">` : ''}<span class="btn sec small auto filebtn">${q.logo ? 'Trocar logo' : 'Enviar logo'}<input type="file" id="bL" accept="image/png,image/jpeg,image/svg+xml,image/webp" aria-label="${q.logo ? 'Trocar logo' : 'Enviar logo'}"></span>${q.logo ? '<button class="btn sec small auto" data-act="semlogo">Remover logo</button>' : ''}</div>
-      <p class="small">O nome, a cor e o logo aparecem na tela principal e nos celulares de todo mundo. PNG com fundo transparente fica melhor.</p>
-    </section>`;
+      <p class="small">A cor e o logo aparecem na tela principal e nos celulares de todo mundo. PNG com fundo transparente fica melhor.</p>`;
   }
 
   function secPerguntas(passo: Passo) {
@@ -206,7 +213,7 @@ function mount(main: HTMLElement) {
       .map((p, i) => compactQuestion({ ...p, tl: q.tempo, dobro: i === ultimaQuiz }))
       .filter((p): p is NonNullable<typeof p> => !!p);
     const festa = q.tema === 'festa';
-    const body: CreateRoomBody = { questions, theme: q.tema, visual: visualDoModo(q.tema, q.visual), brand: festa ? { name: '', color: '' } : { name: q.marca.name, color: q.marca.color }, logo: festa ? '' : q.logo };
+    const body: CreateRoomBody = { questions, theme: q.tema, visual: visualDoModo(q.tema, q.visual), brand: festa ? { name: '', color: '' } : { name: q.titulo.trim(), color: q.marca.color }, logo: festa ? '' : q.logo };
     abrindo = true;
     erro = '';
     render();
@@ -386,8 +393,12 @@ function mount(main: HTMLElement) {
       persist();
       return refreshCounts(i);
     }
-    if (t.id === 'titulo') q.titulo = t.value;
-    else if (t.id === 'bN') q.marca.name = t.value;
+    if (t.id === 'titulo') {
+      q.titulo = t.value;
+      // o nome também muda na lista de "Meus quizzes"
+      const item = main.querySelector('.quizzes .q.on b');
+      if (item) item.textContent = t.value || 'Sem título';
+    }
     else if (t.id === 'bC') {
       q.marca.color = t.value.toUpperCase();
       q.marca.ultima = q.marca.color;

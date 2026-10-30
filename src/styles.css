@@ -1743,3 +1743,131 @@ body:has(main.tv) .btw-txt small {
     display: none;
   }
 }
+
+/* ---------- lobby: contador e quem chega ---------- */
+.contador {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.contador b {
+  font: 900 clamp(56px, 9vw, 96px) / 1 var(--disp);
+  font-variant-numeric: tabular-nums;
+}
+.contador span {
+  font: 800 clamp(20px, 3vw, 28px) var(--text);
+  color: var(--fg2);
+}
+.contador.pequeno {
+  justify-content: center;
+}
+.contador.pequeno b {
+  font-size: 48px;
+}
+.contador.pequeno span {
+  font-size: 18px;
+}
+.jogadores {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 12px;
+}
+.jogador {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 12px 6px 4px;
+  border-radius: 18px;
+  border: var(--bw) solid var(--line);
+  background: var(--card);
+  box-shadow: var(--sh-sm);
+  text-align: center;
+}
+.jogador b {
+  font-size: 17px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.jogador .linkbtn {
+  font-size: 12px;
+  min-height: 36px;
+  padding: 4px 8px;
+}
+.jogador.off {
+  opacity: 0.5;
+}
+.jogador.chegou {
+  animation: chega 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+  background: var(--amarelo);
+}
+@keyframes chega {
+  from {
+    transform: scale(0.3) rotate(-8deg);
+    opacity: 0;
+  }
+}
+.esperando {
+  font-size: 20px;
+  font-weight: 800;
+}
+.entrou {
+  position: fixed;
+  left: 50%;
+  top: 18px;
+  z-index: 75;
+  transform: translate(-50%, -160%);
+  background: var(--amarelo);
+  color: #0e2a22;
+  border: 3px solid #0e2a22;
+  box-shadow: 0 5px 0 #0e2a22;
+  border-radius: 999px;
+  padding: 10px 26px;
+  font: 900 clamp(22px, 3vw, 32px) var(--disp);
+  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+  pointer-events: none;
+}
+.entrou.on {
+  transform: translate(-50%, 0);
+}
+/* imagem da pergunta: grande na TV, menor no celular */
+.qimg {
+  display: block;
+  width: 100%;
+  max-height: 46vh;
+  object-fit: contain;
+  border-radius: 16px;
+  border: var(--bw) solid var(--line);
+  background: #fff;
+}
+main:not(.tv) .qimg {
+  max-height: 30vh;
+}
+.qimg-ed {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.qimg-ed img {
+  max-height: 120px;
+  max-width: 220px;
+  border-radius: 10px;
+  border: 2px solid var(--line);
+}
+.opt-ed input[readonly] {
+  background: var(--bg);
+}
+.qed > .filebtn {
+  justify-self: start;
+}
+@media (min-width: 700px) {
+  .temas {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.tv .qimg {
+  max-height: 30vh;
+}

@@ -9,6 +9,8 @@ export const LIMITS = {
   nick: 18,
   brandName: 40,
   logoBytes: 400_000, // tamanho máximo da data URL do logo
+  imgBytes: 260_000, // tamanho máximo da data URL de cada imagem de pergunta
+  imgTotal: 8_000_000, // soma das imagens de um quiz
   times: [10, 15, 20, 30],
 } as const;
 
@@ -63,8 +65,12 @@ export function compactQuestion(q: Question): Question | null {
     if (i === q.c) c = o.length;
     o.push(ans.trim());
   });
-  return { t: q.t.trim(), o, c, tl: q.tl };
+  const out: Question = { t: q.t.trim(), o, c, tl: q.tl };
+  if (q.img) out.img = q.img;
+  return out;
 }
+
+export const IMG_RE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
@@ -79,10 +85,12 @@ export function validateCreate(body: unknown): CreateRoomBody {
     const o = Array.isArray(r.o) ? r.o.slice(0, 4).map((x) => cleanText(x, LIMITS.answerText)) : [];
     const tl = (LIMITS.times as readonly number[]).includes(Number(r.tl)) ? Number(r.tl) : 20;
     const c = Number.isInteger(r.c) && (r.c as number) >= 0 && (r.c as number) < o.length ? (r.c as number) : 0;
-    const q = compactQuestion({ t: cleanText(r.t, LIMITS.questionText), o, c, tl });
+    const img = typeof r.img === 'string' && r.img.length <= LIMITS.imgBytes && IMG_RE.test(r.img) ? r.img : undefined;
+    const q = compactQuestion({ t: cleanText(r.t, LIMITS.questionText), o, c, tl, img });
     if (q) questions.push(q);
   }
   if (!questions.length) throw new Error('Nenhuma pergunta pronta.');
+  if (questions.reduce((n, q) => n + (q.img ? q.img.length : 0), 0) > LIMITS.imgTotal) throw new Error('Imagens demais neste quiz. Tire algumas e tente de novo.');
   const rb = (b.brand || {}) as Partial<Brand>;
   const brand: Brand = {
     name: cleanText(rb.name, LIMITS.brandName),
@@ -95,7 +103,7 @@ export function validateCreate(body: unknown): CreateRoomBody {
     brand.color = '';
     logo = '';
   }
-  if (logo && (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(logo) || logo.length > LIMITS.logoBytes)) {
+  if (logo && (!IMG_RE.test(logo) || logo.length > LIMITS.logoBytes)) {
     throw new Error('Logo inválido ou grande demais.');
   }
   return { questions, theme, brand, logo };

@@ -238,7 +238,7 @@ function base(room: Room, now: number) {
     phase: room.phase,
     qIndex: room.qIndex,
     total: room.questions.length,
-    question: q ? { t: q.t, o: q.o, tl: q.tl } : null,
+    question: q ? { t: q.t, o: q.o, tl: q.tl, img: q.img ? room.createdAt : 0 } : null,
     endsAt: room.endsAt,
     serverNow: now,
     answeredCount: Object.keys(room.answers).length,

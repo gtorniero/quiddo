@@ -4,7 +4,7 @@ import type { CreateRoomBody, CreateRoomResult, Theme } from '../../shared/proto
 import { LIMITS, compactQuestion, isReady } from '../../shared/rules';
 import { CORES_MARCA, TEMAS } from '../data/pacotes';
 import { LETRAS, esc } from '../lib/dom';
-import { readLogo } from '../lib/logo';
+import { readFoto, readLogo } from '../lib/logo';
 import { navigate } from '../lib/nav';
 import { type Quiz, atual, excluir, exportar, importar, listar, novoQuiz, salvar } from '../lib/quiz';
 import { store } from '../lib/storage';
@@ -121,9 +121,11 @@ function mount(main: HTMLElement) {
     const n = q.perguntas.length;
     return `<section class="panel" aria-labelledby="h-perg">${passo('Perguntas', 'h-perg')}<p class="small" id="h-perg-n">${contagem()}</p>
       <div class="qlist">${q.perguntas.map((_, i) => editorPergunta(i, n)).join('')}</div>
-      <div class="btnrow"><button class="btn sec" data-act="add"${n >= LIMITS.maxQuestions ? ' disabled' : ''}>Adicionar pergunta</button></div>
+      <div class="btnrow"><button class="btn sec" data-act="add"${n >= LIMITS.maxQuestions ? ' disabled' : ''}>Adicionar pergunta</button><button class="btn sec" data-act="addvf"${n >= LIMITS.maxQuestions ? ' disabled' : ''}>Adicionar verdadeiro ou falso</button></div>
     </section>`;
   }
+
+  const titulo = (i: number) => `${q.perguntas[i].vf ? 'Verdadeiro ou falso' : 'Pergunta'} ${i + 1}${isReady(q.perguntas[i]) ? '' : ' · falta completar'}`;
 
   const contagem = () => `${prontas()} de ${q.perguntas.length} prontas. Marque a resposta certa de cada uma.`;
 
@@ -132,21 +134,26 @@ function mount(main: HTMLElement) {
     const ok = isReady(p);
     const num = i + 1;
     return `<div class="qed${ok ? '' : ' inc'}" data-i="${i}">
-      <div class="hd"><span id="qh${i}">Pergunta ${num}${ok ? '' : ' · falta completar'}</span><span class="tools">
+      <div class="hd"><span id="qh${i}">${titulo(i)}</span><span class="tools">
         <button data-act="up" data-i="${i}" aria-label="Subir a pergunta ${num}"${i === 0 ? ' disabled' : ''}>↑</button>
         <button data-act="down" data-i="${i}" aria-label="Descer a pergunta ${num}"${i === n - 1 ? ' disabled' : ''}>↓</button>
         <button data-act="dup" data-i="${i}" aria-label="Duplicar a pergunta ${num}"${n >= LIMITS.maxQuestions ? ' disabled' : ''}>Duplicar</button>
         <button data-act="del" data-i="${i}" aria-label="Remover a pergunta ${num}">Remover</button></span></div>
-      <textarea data-i="${i}" data-f="t" maxlength="${LIMITS.questionText}" aria-label="Texto da pergunta ${num}" placeholder="Escreva a pergunta">${esc(p.t)}</textarea>
+      <textarea data-i="${i}" data-f="t" maxlength="${LIMITS.questionText}" aria-label="Texto da pergunta ${num}" placeholder="${p.vf ? 'Escreva uma afirmação. Ex.: O Brasil tem 26 estados e o Distrito Federal.' : 'Escreva a pergunta'}">${esc(p.t)}</textarea>
+      ${
+        p.img
+          ? `<div class="qimg-ed"><img src="${esc(p.img)}" alt="Imagem da pergunta ${num}"><button class="btn sec small auto" data-act="semimg" data-i="${i}">Remover imagem</button></div>`
+          : `<span class="btn sec small auto filebtn">Adicionar imagem<input type="file" data-img="${i}" accept="image/png,image/jpeg,image/webp,image/gif" aria-label="Adicionar imagem à pergunta ${num}"></span>`
+      }
       ${p.o
         .map(
           (o, k) => `<div class="opt-ed${p.c === k ? ' certa' : ''}"><span class="lt c${k}" aria-hidden="true">${LETRAS[k]}</span>
-        <input type="text" data-i="${i}" data-f="o" data-k="${k}" maxlength="${LIMITS.answerText}" value="${esc(o)}" placeholder="Resposta ${LETRAS[k]}" aria-label="Resposta ${LETRAS[k]} da pergunta ${num}">
+        <input type="text" data-i="${i}" data-f="o" data-k="${k}" maxlength="${LIMITS.answerText}" value="${esc(o)}" placeholder="Resposta ${LETRAS[k]}" aria-label="Resposta ${LETRAS[k]} da pergunta ${num}"${p.vf ? ' readonly' : ''}>
         <label class="marca-certa"><input type="radio" name="c${i}" data-i="${i}" data-f="c" data-k="${k}"${p.c === k ? ' checked' : ''}><span>${p.c === k ? 'Certa' : 'certa'}</span></label>
-        ${p.o.length > 2 ? `<button class="x" data-act="delopt" data-i="${i}" data-k="${k}" aria-label="Tirar a resposta ${LETRAS[k]} da pergunta ${num}">×</button>` : '<span></span>'}</div>`,
+        ${p.o.length > 2 && !p.vf ? `<button class="x" data-act="delopt" data-i="${i}" data-k="${k}" aria-label="Tirar a resposta ${LETRAS[k]} da pergunta ${num}">×</button>` : '<span></span>'}</div>`,
         )
         .join('')}
-      ${p.o.length < 4 ? `<button class="linkbtn" style="justify-self:start" data-act="addopt" data-i="${i}">Adicionar resposta</button>` : ''}
+      ${p.o.length < 4 && !p.vf ? `<button class="linkbtn" style="justify-self:start" data-act="addopt" data-i="${i}">Adicionar resposta</button>` : ''}
     </div>`;
   }
 
@@ -241,6 +248,15 @@ function mount(main: HTMLElement) {
         q.logo = '';
         persist();
         return render('#bL');
+      case 'addvf':
+        q.perguntas.push({ t: '', o: ['Verdadeiro', 'Falso'], c: 0, tl: q.tempo, vf: true });
+        persist();
+        render();
+        return main.querySelector<HTMLElement>(`textarea[data-i="${q.perguntas.length - 1}"]`)?.focus();
+      case 'semimg':
+        delete p.img;
+        persist();
+        return render(`input[data-img="${i}"]`);
       case 'add':
         q.perguntas.push({ t: '', o: ['', '', '', ''], c: 0, tl: q.tempo });
         persist();
@@ -295,7 +311,7 @@ function mount(main: HTMLElement) {
       const ok = isReady(q.perguntas[i]);
       if (box) box.classList.toggle('inc', !ok);
       const h = main.querySelector(`#qh${i}`);
-      if (h) h.textContent = `Pergunta ${i + 1}${ok ? '' : ' · falta completar'}`;
+      if (h) h.textContent = titulo(i);
     }
     const n = prontas();
     const tag = main.querySelector('#h-perg-n');
@@ -346,6 +362,18 @@ function mount(main: HTMLElement) {
         if (lab) lab.textContent = j === k ? 'Certa' : 'certa';
       });
       return refreshCounts(i);
+    }
+    if (t.dataset.img != null && t.files && t.files[0]) {
+      const i = Number(t.dataset.img);
+      try {
+        q.perguntas[i].img = await readFoto(t.files[0]);
+        persist(true);
+        msg = '';
+      } catch (err) {
+        msg = err instanceof Error ? err.message : 'Não deu para ler essa imagem.';
+        alert(msg);
+      }
+      return render(`[data-act="semimg"][data-i="${i}"]`);
     }
     if (t.id === 'bL' && t.files && t.files[0]) {
       try {

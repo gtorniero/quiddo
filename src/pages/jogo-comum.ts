@@ -15,7 +15,9 @@ export function questionHead(s: BaseState) {
   const q = s.question!;
   return `<div class="meta"><span class="pill">Pergunta ${s.qIndex + 1} de ${s.total}</span>${
     s.phase === 'question' ? `<span class="timer" aria-hidden="true">${OLHO}<b id="tempo">${q.tl}</b></span>` : ''
-  }</div>${s.phase === 'question' ? '<div class="bar" aria-hidden="true"><i id="barra"></i></div>' : ''}<div class="qt">${esc(q.t)}</div>`;
+  }</div>${s.phase === 'question' ? '<div class="bar" aria-hidden="true"><i id="barra"></i></div>' : ''}<div class="qt">${esc(q.t)}</div>${
+    q.img ? `<img class="qimg" src="/api/salas/${s.code}/img/${s.qIndex}?v=${q.img}" alt="Imagem da pergunta">` : ''
+  }`;
 }
 
 /** Atualiza o cronômetro. `now` já no relógio do servidor. */

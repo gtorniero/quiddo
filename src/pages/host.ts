@@ -25,6 +25,8 @@ function mount(main: HTMLElement, code: string) {
   let passo = 4; // suspense do pódio: 0 a 4 (ver PASSOS_PODIO)
   let passoTimers: number[] = [];
   let lastHtml = '';
+  const vistos = new Set<string>(); // quem já apareceu no lobby (para animar só quem acabou de entrar)
+  let avisoTimer = 0;
 
   main.classList.add('tv');
   if (!hostKey) {
@@ -67,6 +69,7 @@ function mount(main: HTMLElement, code: string) {
 
   function render() {
     if (!s) return;
+    const novos = s.phase === 'lobby' ? s.players.filter((p) => !vistos.has(p.id)) : [];
     const screens = { lobby, question: pergunta, reveal: pergunta, ranking, final };
     const html = brandBar(s) + screens[s.phase](s);
     // não redesenha se nada mudou: preserva as animações do ranking e do pódio
@@ -74,7 +77,28 @@ function mount(main: HTMLElement, code: string) {
       lastHtml = html;
       patch(main, html);
     }
+    for (const p of s.players) vistos.add(p.id);
+    if (s.phase !== 'lobby') document.getElementById('entrou')?.classList.remove('on');
+    if (novos.length) avisoEntrada(novos.length === 1 ? `${novos[0].nick} entrou!` : `${novos.length} pessoas entraram!`);
     tick(s, sock.now());
+  }
+
+  /** Aviso grande "Bia entrou!" no alto da TV, por 2 segundos. */
+  function avisoEntrada(txt: string) {
+    let el = document.getElementById('entrou');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'entrou';
+      el.className = 'entrou';
+      el.setAttribute('role', 'status');
+      document.body.appendChild(el);
+    }
+    el.textContent = txt;
+    el.classList.remove('on');
+    void el.offsetWidth;
+    el.classList.add('on');
+    clearTimeout(avisoTimer);
+    avisoTimer = window.setTimeout(() => el && el.classList.remove('on'), 2200);
   }
 
   function suspense() {
@@ -112,13 +136,16 @@ function mount(main: HTMLElement, code: string) {
         </div>
         <div class="qr">${qrSvg(link)}</div>
       </div></section>
-      <section class="panel"><div class="tag" aria-live="polite">Na sala · ${n} ${n === 1 ? 'pessoa' : 'pessoas'}</div>
+      <section class="panel"><div class="contador"><b>${n}</b><span>${n === 1 ? 'pessoa na sala' : 'pessoas na sala'}</span></div>
         ${
           n
-            ? `<div class="people">${s.players
-                .map((p) => `<span class="${p.connected ? '' : 'off'}">${avatarSvg(p.avatar, 36)}${esc(p.nick)}<button data-act="kick" data-v="${p.id}" data-focus="k${p.id}" aria-label="Remover ${esc(p.nick)}">Remover</button></span>`)
+            ? `<div class="jogadores">${s.players
+                .map(
+                  (p) =>
+                    `<div class="jogador${p.connected ? '' : ' off'}${vistos.has(p.id) ? '' : ' chegou'}">${avatarSvg(p.avatar, 72)}<b>${esc(p.nick)}</b><button class="linkbtn" data-act="kick" data-v="${p.id}" data-focus="k${p.id}" aria-label="Remover ${esc(p.nick)}">Remover</button></div>`,
+                )
                 .join('')}</div>`
-            : '<p class="small">Esperando a turma entrar…</p>'
+            : '<p class="muted esperando">Esperando a turma entrar<span class="dots"></span></p>'
         }
         <div class="btnrow"><button class="btn" data-act="start" data-focus="start">${n ? 'Começar o quiz' : 'Começar sem jogadores (teste)'}</button><button class="btn sec" data-act="close" data-focus="close">Encerrar sala</button></div>
       </section>`;
@@ -286,6 +313,7 @@ function mount(main: HTMLElement, code: string) {
     pararSuspense(4);
     modoFoto(false);
     document.removeEventListener('fullscreenchange', onFull);
+    document.getElementById('entrou')?.remove();
     main.removeEventListener('click', onClick);
     document.removeEventListener('keydown', onKey);
     document.removeEventListener('visibilitychange', wake);

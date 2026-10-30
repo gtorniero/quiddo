@@ -149,6 +149,14 @@ describe('sorteio', () => {
 });
 
 describe('visões', () => {
+  it('a pergunta com imagem avisa a versão; o texto da imagem nunca vai no estado', () => {
+    const r = G.newRoom({ code: 'ABCD', hostKey: 'k', theme: 'corp', brand: { name: '', color: '' }, questions: [{ t: 'V ou F?', o: ['Verdadeiro', 'Falso'], c: 1, tl: 10, img: '1' }], hasLogo: false, now: 77 });
+    G.join(r, 'p1', 'Ana', 1);
+    G.start(r, 100);
+    const v = G.playerView(r, 'p1', 100)!;
+    expect(v.question).toEqual({ t: 'V ou F?', o: ['Verdadeiro', 'Falso'], tl: 10, img: 77 });
+  });
+
   it('o jogador nunca recebe a resposta certa antes da revelação', () => {
     G.start(room, T0);
     const v = G.playerView(room, 'p1', T0)!;

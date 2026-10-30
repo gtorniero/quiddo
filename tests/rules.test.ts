@@ -49,6 +49,24 @@ describe('perguntas', () => {
     expect(festa.brand).toEqual({ name: '', color: '' });
     expect(festa.logo).toBe('');
     expect(() => validateCreate({ questions: [] })).toThrow();
+  });
+  it('aceita imagem válida na pergunta e descarta o que não é imagem', () => {
+    const img = 'data:image/jpeg;base64,' + 'A'.repeat(1000);
+    const r = validateCreate({
+      questions: [
+        { t: 'Com foto', o: ['1', '2'], c: 0, tl: 10, img },
+        { t: 'Sem foto', o: ['1', '2'], c: 0, tl: 10, img: 'javascript:alert(1)' },
+        { t: 'Foto grande', o: ['1', '2'], c: 0, tl: 10, img: 'data:image/jpeg;base64,' + 'A'.repeat(300_000) },
+      ],
+    });
+    expect(r.questions[0].img).toBe(img);
+    expect(r.questions[1].img).toBeUndefined();
+    expect(r.questions[2].img).toBeUndefined();
+  });
+  it('recusa quiz com imagens demais', () => {
+    const img = 'data:image/jpeg;base64,' + 'A'.repeat(250_000);
+    const questions = Array.from({ length: 40 }, () => ({ t: 'Q', o: ['1', '2'], c: 0, tl: 10, img }));
+    expect(() => validateCreate({ questions })).toThrow(/Imagens demais/);
     expect(() => validateCreate({ questions: [{ t: 'a', o: ['1', '2'], c: 0, tl: 10 }], logo: 'javascript:1' })).toThrow();
   });
 });

@@ -10,6 +10,7 @@ export interface Question {
   o: string[]; // 2 a 4 respostas
   c: number; // índice da certa
   tl: number; // tempo em segundos: 10, 15, 20 ou 30
+  img?: string; // imagem opcional: data URL ao abrir a sala; na sala vira '1' (guardada à parte)
 }
 
 export interface Brand {
@@ -49,6 +50,7 @@ export interface PublicQuestion {
   t: string;
   o: string[];
   tl: number;
+  img: number; // 0 = sem imagem; senão a versão para montar /api/salas/{CODIGO}/img/{qIndex}?v=
 }
 
 export interface RankRow {

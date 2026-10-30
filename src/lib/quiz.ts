@@ -1,8 +1,11 @@
 // "Meus quizzes": guardados no navegador do anfitrião. Importar e exportar em JSON.
 import type { Brand, Question, Theme } from '../../shared/protocol';
-import { LIMITS, cleanText } from '../../shared/rules';
+import { IMG_RE, LIMITS, cleanText } from '../../shared/rules';
 import { pacote } from '../data/pacotes';
 import { store, uid } from './storage';
+
+/** Pergunta no editor. `vf` marca as de verdadeiro ou falso (respostas fixas). */
+export type Pergunta = Question & { vf?: boolean };
 
 export interface Quiz {
   id: string;
@@ -11,7 +14,7 @@ export interface Quiz {
   tempo: number; // segundos de cada pergunta, o mesmo para todas: 10, 15, 20 ou 30
   marca: Brand & { ultima?: string };
   logo: string;
-  perguntas: Question[];
+  perguntas: Pergunta[];
   atualizado: number;
 }
 
@@ -88,7 +91,14 @@ export function importar(texto: string): Quiz {
     while (o.length < 2) o.push('');
     const c = Number.isInteger(p?.c) && p.c >= 0 && p.c < o.length ? p.c : 0;
     const tl = TEMPOS.includes(p?.tl) ? p.tl : 20;
-    return { t: String(p?.t ?? '').slice(0, LIMITS.questionText), o, c, tl };
+    const out: Pergunta = { t: String(p?.t ?? '').slice(0, LIMITS.questionText), o, c, tl };
+    if (p?.vf) {
+      out.vf = true;
+      out.o = ['Verdadeiro', 'Falso'];
+      out.c = p.c === 1 ? 1 : 0;
+    }
+    if (typeof p?.img === 'string' && p.img.length <= LIMITS.imgBytes && IMG_RE.test(p.img)) out.img = p.img;
+    return out;
   });
   q.tempo = TEMPOS.includes(Number(d.tempo)) ? Number(d.tempo) : 0;
   return normalizar(q);

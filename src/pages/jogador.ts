@@ -191,7 +191,7 @@ function mount(main: HTMLElement, code: string) {
 
   function lobby(s: PlayerState) {
     return `<section class="stage center"><div class="tag">Você está na sala ${code}</div>${avatarSvg(s.me.avatar, 132, true)}<div class="big">${esc(s.me.nick)}</div>
-      <p class="muted">Prontinho! Olhe para a tela: seu bicho já apareceu lá e o quiz vai começar.</p><p class="small">${s.playerCount} ${s.playerCount === 1 ? 'pessoa' : 'pessoas'} na sala</p></section>`;
+      <p class="muted">Prontinho! Olhe para a tela: seu bicho já apareceu lá e o quiz vai começar.</p><div class="contador pequeno"><b>${s.playerCount}</b><span>${s.playerCount === 1 ? 'pessoa na sala' : 'pessoas na sala'}</span></div></section>`;
   }
 
   function question(s: PlayerState) {

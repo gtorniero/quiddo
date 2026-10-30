@@ -44,6 +44,8 @@ Cada jogador escolhe um bicho do Brasil com até dois itens (cabeça e rosto) e 
 
 Pontos: errou ou não respondeu, 0. Acertou: `round(500 + 500 × max(0, 1 − tempo / limite))`, de 500 a 1000. O tempo é medido no servidor e o anfitrião escolhe um tempo único para todas as perguntas: 10, 15, 20 ou 30 segundos (padrão 20). A rapidez sempre vale ponto.
 
+Cada pergunta pode ser de múltipla escolha (2 a 4 respostas) ou de verdadeiro ou falso, e pode ter uma imagem (reduzida no navegador para até 960×540; aparece na TV e nos celulares).
+
 Depois de cada pergunta o ranking mostra as moedinhas entrando, o placar subindo e quem trocou de posição. No fim, o pódio é revelado do 3º para o 1º lugar, com suspense, e o "modo foto" deixa só o pódio na tela.
 
 Limites: até 200 jogadores por sala, 50 perguntas por quiz, apelido de até 18 letras.

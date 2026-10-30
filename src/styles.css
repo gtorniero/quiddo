@@ -2413,3 +2413,191 @@ body.modo-foto .palco {
 .toggle[aria-pressed='true'] .chave::after {
   left: 24px;
 }
+
+/* ================= celular: editor e telas estreitas ================= */
+.ir-abrir {
+  display: none;
+}
+@media (max-width: 640px) {
+  main {
+    padding: 6px 10px 32px;
+    gap: 14px;
+  }
+  .panel,
+  .stage {
+    padding: 14px;
+    border-radius: 18px;
+  }
+  /* "Abrir a sala" deixa de ficar presa no rodapé; um atalho no topo leva até ela */
+  .sticky {
+    position: static;
+    box-shadow: var(--sh);
+  }
+  .ir-abrir {
+    display: flex;
+  }
+  .qed {
+    padding: 10px;
+    gap: 8px;
+  }
+  .qed .hd {
+    flex-wrap: nowrap;
+  }
+  .qed .hd .tools {
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+  .qed .hd .tools button {
+    padding: 0 8px;
+    font-size: 13px;
+  }
+  /* resposta ocupa a linha toda: letra, texto, botão de "certa" (só o círculo) e o x */
+  .opt-ed {
+    grid-template-columns: 30px minmax(0, 1fr) 44px 36px;
+    gap: 6px;
+  }
+  .opt-ed .lt {
+    width: 30px;
+    height: 30px;
+  }
+  .opt-ed input[type='text'] {
+    padding: 10px 12px;
+    font-size: 17px;
+  }
+  .opt-ed .marca-certa {
+    justify-content: center;
+    min-width: 44px;
+  }
+  .opt-ed .marca-certa span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .opt-ed input[type='radio'] {
+    width: 28px;
+    height: 28px;
+  }
+  .opt-ed.certa .marca-certa {
+    background: var(--good);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+  }
+  .opt-ed.certa input[type='radio'] {
+    accent-color: #fff;
+  }
+  .opt-ed .x {
+    min-width: 36px;
+    font-size: 20px;
+  }
+  .qed > .filebtn,
+  .qed .qimg-ed .btn {
+    font-size: 14px;
+    min-height: 40px;
+    padding: 6px 12px;
+  }
+  .passo {
+    font-size: 24px;
+  }
+  .passo > span {
+    width: 34px;
+    height: 34px;
+    font-size: 17px;
+  }
+  .chips.big button {
+    flex: 1 1 calc(50% - 6px);
+  }
+  .add-tipos {
+    grid-template-columns: 1fr 1fr;
+  }
+  .add-tipos .btn {
+    font-size: 15px;
+    padding: 10px 12px;
+  }
+  .add-tipos .btn span {
+    font-size: 12px;
+  }
+  .quizzes .q {
+    padding: 8px 10px;
+  }
+  .btnrow {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  /* a bolinha da letra vira o botão de "certa": toque na letra e ela fica verde com ✓ */
+  .opt-ed {
+    grid-template-columns: 44px minmax(0, 1fr) 34px;
+  }
+  .opt-ed > .lt {
+    display: none;
+  }
+  .opt-ed > span:empty {
+    display: none;
+  }
+  .opt-ed .marca-certa {
+    grid-column: 1;
+    grid-row: 1;
+    position: relative;
+    width: 44px;
+    height: 44px;
+    min-width: 0;
+    border-radius: 50%;
+    background: var(--cor);
+    border: 2px solid #0e2a22;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .opt-ed .marca-certa::before {
+    content: attr(data-letra);
+    font: 900 18px var(--text);
+    color: #fff;
+  }
+  .opt-ed .marca-certa input[type='radio'] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .opt-ed .marca-certa:focus-within {
+    outline: 3px solid var(--fg);
+    outline-offset: 2px;
+  }
+  .opt-ed.certa .marca-certa {
+    background: var(--good);
+    width: 44px;
+    height: 44px;
+    box-shadow: 0 0 0 3px #e3f6ec, 0 0 0 5px var(--good);
+  }
+  .opt-ed.certa .marca-certa::before {
+    content: '✓';
+    font-size: 22px;
+  }
+  .opt-ed input[type='text'] {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .opt-ed .x {
+    grid-column: 3;
+    grid-row: 1;
+    min-width: 34px;
+  }
+  .qed .hd {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+  .qed .hd > span:first-child {
+    white-space: nowrap;
+  }
+}
+.personalizar {
+  font-size: 22px;
+  margin-top: 8px;
+}

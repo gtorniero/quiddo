@@ -72,6 +72,7 @@ function mount(main: HTMLElement) {
       <p class="small">Os quizzes ficam guardados neste navegador. Exporte o arquivo para levar para outro computador.</p>
       <p class="err" role="status">${esc(msg)}</p>
       <label for="titulo">Nome do quiz<input type="text" id="titulo" maxlength="60" value="${esc(q.titulo)}"></label>
+      <a class="btn sec small ir-abrir" href="#abrir-sala">Tudo pronto? Ir para “Abrir a sala” ↓</a>
     </section>`;
   }
 
@@ -136,7 +137,7 @@ function mount(main: HTMLElement) {
   const nomeTipo = (p: Quiz['perguntas'][number]) => (p.vf ? 'Verdadeiro ou falso' : p.tipo === 'opiniao' ? 'Enquete' : p.tipo === 'quem' ? 'Quem é mais provável' : 'Pergunta');
   const titulo = (i: number) => `${nomeTipo(q.perguntas[i])} ${i + 1}${isReady(q.perguntas[i]) ? '' : ' · falta completar'}`;
 
-  const contagem = () => `${prontas()} de ${q.perguntas.length} prontas. Marque a resposta certa de cada uma.`;
+  const contagem = () => `${prontas()} de ${q.perguntas.length} prontas. Marque a resposta certa de cada uma (no celular, toque na letra).`;
 
   function editorPergunta(i: number, n: number) {
     const p = q.perguntas[i];
@@ -162,7 +163,7 @@ function mount(main: HTMLElement) {
         .map(
           (o, k) => `<div class="opt-ed${p.c === k && !p.tipo ? ' certa' : ''}"><span class="lt c${k}" aria-hidden="true">${LETRAS[k]}</span>
         <input type="text" data-i="${i}" data-f="o" data-k="${k}" maxlength="${LIMITS.answerText}" value="${esc(o)}" placeholder="${p.tipo === 'opiniao' ? 'Opção' : 'Resposta'} ${LETRAS[k]}" aria-label="${p.tipo === 'opiniao' ? 'Opção' : 'Resposta'} ${LETRAS[k]} da pergunta ${num}"${p.vf ? ' readonly' : ''}>
-        ${p.tipo === 'opiniao' ? '<span></span>' : `<label class="marca-certa"><input type="radio" name="c${i}" data-i="${i}" data-f="c" data-k="${k}"${p.c === k ? ' checked' : ''}><span>${p.c === k ? 'Certa' : 'certa'}</span></label>`}
+        ${p.tipo === 'opiniao' ? '<span></span>' : `<label class="marca-certa" data-letra="${LETRAS[k]}" style="--cor:var(--a${k + 1})"><input type="radio" name="c${i}" data-i="${i}" data-f="c" data-k="${k}"${p.c === k ? ' checked' : ''} aria-label="Resposta ${LETRAS[k]} é a certa"><span>${p.c === k ? 'Certa' : 'certa'}</span></label>`}
         ${p.o.length > 2 && !p.vf ? `<button class="x" data-act="delopt" data-i="${i}" data-k="${k}" aria-label="Tirar a resposta ${LETRAS[k]} da pergunta ${num}">×</button>` : '<span></span>'}</div>`,
         )
         .join('')}
@@ -172,7 +173,7 @@ function mount(main: HTMLElement) {
 
   function secAbrir() {
     const n = prontas();
-    return `<section class="panel sticky"><button class="btn" data-act="abrir"${n && !abrindo ? '' : ' disabled'}>${abrindo ? 'Abrindo a sala…' : n ? `Abrir a sala com ${n} ${n === 1 ? 'pergunta' : 'perguntas'}` : 'Complete ao menos uma pergunta'}</button>
+    return `<section class="panel sticky" id="abrir-sala"><button class="btn" data-act="abrir"${n && !abrindo ? '' : ' disabled'}>${abrindo ? 'Abrindo a sala…' : n ? `Abrir a sala com ${n} ${n === 1 ? 'pergunta' : 'perguntas'}` : 'Complete ao menos uma pergunta'}</button>
       <p class="err" role="alert">${esc(erro)}</p>
       <p class="small">Abra a sala no computador ligado à TV ou ao projetor. A turma joga pelo celular.</p></section>`;
   }

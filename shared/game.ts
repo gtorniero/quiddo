@@ -2,10 +2,12 @@
 // O Durable Object guarda um `Room`, chama estas funções e manda as visões para cada um.
 import type { Brand, Drawn, DrawMode, HostState, Phase, PlayerState, Question, RankRow, Scoring, Theme } from './protocol';
 import { LIMITS, cleanNick, points } from './rules';
+import { AVATAR_PADRAO, cleanAvatar, uniqueAvatar } from './avatar';
 
 export interface Player {
   id: string;
   nick: string;
+  avatar?: string; // salas antigas não tinham
   score: number;
   delta: number;
   prevRank: number;
@@ -64,8 +66,8 @@ export function newRoom(o: { code: string; hostKey: string; theme: Theme; scorin
 
 export type JoinResult = { ok: true; player: Player } | { ok: false; code: 'started' | 'full' | 'kicked' | 'bad_nick' };
 
-/** Entrada ou volta de um jogador. Quem já estava na sala volta com os pontos, mesmo com o jogo andando. */
-export function join(room: Room, playerId: string, rawNick: string, now: number): JoinResult {
+/** Entrada ou volta de um jogador. Quem já estava na sala volta com os pontos e o personagem, mesmo com o jogo andando. */
+export function join(room: Room, playerId: string, rawNick: string, now: number, rawAvatar: unknown = ''): JoinResult {
   const id = String(playerId || '').slice(0, 64);
   if (!id) return { ok: false, code: 'bad_nick' };
   if (room.kicked.includes(id)) return { ok: false, code: 'kicked' };
@@ -78,10 +80,16 @@ export function join(room: Room, playerId: string, rawNick: string, now: number)
   if (!nick) return { ok: false, code: 'bad_nick' };
   if (room.phase !== 'lobby') return { ok: false, code: 'started' };
   if (Object.keys(room.players).length >= LIMITS.maxPlayers) return { ok: false, code: 'full' };
-  const player: Player = { id, nick: uniqueNick(room, nick), score: 0, delta: 0, prevRank: 0, joinedAt: now, connected: true };
+  const avatar = uniqueAvatar(
+    cleanAvatar(rawAvatar),
+    Object.values(room.players).map((p) => avatarOf(p)),
+  );
+  const player: Player = { id, nick: uniqueNick(room, nick), avatar, score: 0, delta: 0, prevRank: 0, joinedAt: now, connected: true };
   room.players[id] = player;
   return { ok: true, player };
 }
+
+export const avatarOf = (p: Player) => p.avatar || AVATAR_PADRAO;
 
 function uniqueNick(room: Room, nick: string): string {
   const taken = new Set(Object.values(room.players).map((p) => p.nick.toLowerCase()));
@@ -199,7 +207,7 @@ export function draw(room: Room, mode: DrawMode, rand: () => number = Math.rando
   const pool = Object.values(room.players).filter((p) => !out.has(p.id) && (mode === 'all' || p.score > 0));
   if (!pool.length) return null;
   const win = pool[Math.floor(rand() * pool.length)];
-  const d = { id: win.id, nick: win.nick };
+  const d = { id: win.id, nick: win.nick, avatar: avatarOf(win) };
   room.drawn.push(d);
   return d;
 }
@@ -209,7 +217,7 @@ export function draw(room: Room, mode: DrawMode, rand: () => number = Math.rando
 export function ranking(room: Room): RankRow[] {
   return Object.values(room.players)
     .sort((a, b) => b.score - a.score || a.joinedAt - b.joinedAt)
-    .map((p, i) => ({ id: p.id, nick: p.nick, score: p.score, delta: p.delta, rank: i + 1, prevRank: p.prevRank }));
+    .map((p, i) => ({ id: p.id, nick: p.nick, avatar: avatarOf(p), score: p.score, delta: p.delta, rank: i + 1, prevRank: p.prevRank }));
 }
 
 function rankMap(room: Room): Record<string, number> {
@@ -251,7 +259,7 @@ export function hostView(room: Room, now: number, rk: RankRow[] = ranking(room))
     podium: room.phase === 'final' ? rk.slice(0, 3) : [],
     players: Object.values(room.players)
       .sort((a, b) => a.joinedAt - b.joinedAt)
-      .map((p) => ({ id: p.id, nick: p.nick, connected: p.connected, answered: !!room.answers[p.id] })),
+      .map((p) => ({ id: p.id, nick: p.nick, avatar: avatarOf(p), connected: p.connected, answered: !!room.answers[p.id] })),
     ranking: room.phase === 'final' ? rk : room.phase === 'ranking' || room.phase === 'reveal' ? rk.slice(0, 8) : [],
   };
 }
@@ -266,7 +274,7 @@ export function playerView(room: Room, playerId: string, now: number, rk: RankRo
     ...base(room, now),
     role: 'player',
     podium: room.phase === 'final' ? rk.slice(0, 3) : [],
-    me: { id: p.id, nick: p.nick, score: p.score, delta: p.delta, rank: mine ? mine.rank : 0, choice: a ? a.choice : null },
+    me: { id: p.id, nick: p.nick, avatar: avatarOf(p), score: p.score, delta: p.delta, rank: mine ? mine.rank : 0, choice: a ? a.choice : null },
     ranking: showRank ? rk.slice(0, 5) : [],
   };
 }

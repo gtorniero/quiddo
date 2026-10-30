@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Quiddo"><title>Quiddo</title>
+<rect width="512" height="512" rx="112" fill="#FFC83D"/>
+<g transform="translate(76 66) scale(3.6) rotate(8 50 50)">
+<circle cx="50" cy="50" r="44" fill="#13A07A" stroke="#0E2A22" stroke-width="7"/>
+<circle cx="50" cy="50" r="26" fill="#5BC0EB" stroke="#0E2A22" stroke-width="5"/>
+<circle cx="50" cy="50" r="14" fill="#FFFFFF"/><circle cx="54" cy="53" r="8.5" fill="#0E2A22"/><circle cx="57" cy="49" r="3" fill="#FFFFFF"/></g></svg>

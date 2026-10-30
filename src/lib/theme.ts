@@ -1,7 +1,7 @@
 // Tema (corp/festa) e cor da marca. A cor da marca substitui a cor principal do tema.
 import type { Theme } from '../../shared/protocol';
 
-export const THEME_ACC: Record<Theme, string> = { corp: '#18181B', festa: '#FF4F8B' };
+export const THEME_ACC: Record<Theme, string> = { corp: '#0E2A22', festa: '#13A07A' };
 
 const HEX = /^#([0-9a-f]{6})$/i;
 
@@ -41,7 +41,7 @@ function readable(c: string, bg: string): string {
 
 /** Branco ou preto, o que tiver mais contraste com a cor do botão. */
 export function inkFor(c: string): string {
-  return contrast(c, '#ffffff') >= contrast(c, '#111111') ? '#FFFFFF' : '#111111';
+  return contrast(c, '#ffffff') >= contrast(c, '#0e2a22') ? '#FFFFFF' : '#0E2A22';
 }
 
 export function applyTheme(theme: Theme, brandColor = '') {
@@ -51,7 +51,7 @@ export function applyTheme(theme: Theme, brandColor = '') {
   for (const k of ['--acc', '--acc-ink', '--acc-text', '--acc-soft']) st.removeProperty(k);
   const c = rgb(brandColor);
   if (!c) return;
-  const bg = theme === 'festa' ? '#ffffff' : '#f5f5f4';
+  const bg = '#ffffff'; // texto com a cor da marca aparece sobre os cartões brancos
   st.setProperty('--acc', brandColor);
   st.setProperty('--acc-ink', inkFor(brandColor));
   st.setProperty('--acc-text', readable(brandColor, bg));

@@ -1,12 +1,13 @@
 // Cabeçalho, navegação e aviso de conexão, iguais em todas as páginas.
+// Logo do Quiddo: colorido nas páginas claras, negativo (creme) na tela da TV.
 const MARCA =
-  '<svg viewBox="0 0 100 100" aria-hidden="true"><rect x="6" y="8" width="80" height="66" rx="20" fill="var(--acc)"/><path d="M28 74 L22 94 L46 74Z" fill="var(--acc)"/><path d="M36 32 Q36 20 47 20 Q58 20 58 31 Q58 39 47 43 V50" fill="none" stroke="var(--acc-ink)" stroke-width="8" stroke-linecap="round"/><circle cx="47" cy="61" r="5" fill="var(--acc-ink)"/></svg>';
+  '<img class="logo-cor" src="/marca/quiddo-cor.svg" alt="Quiddo" width="132" height="40"><img class="logo-neg" src="/marca/quiddo-negativo.svg" alt="Quiddo" width="132" height="40">';
 
 export function header(path: string, compact = false) {
   const el = document.getElementById('topo')!;
   const cur = (p: string) => (path === p || path.startsWith(p + '/') ? ' aria-current="page"' : '');
   el.innerHTML =
-    `<a class="logo" href="/" data-link>${MARCA}<span>quiddo</span></a>` +
+    `<a class="logo" href="/" data-link aria-label="Quiddo, página inicial">${MARCA}</a>` +
     (compact
       ? ''
       : `<nav class="nav" aria-label="Principal"><a href="/criar" data-link${cur('/criar')}>Criar meu quiz</a><a href="/entrar" data-link${cur('/entrar')}>Entrar com código</a><a href="/guias" data-link${cur('/guias')}>Guias</a></nav>`);

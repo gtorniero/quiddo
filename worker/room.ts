@@ -88,7 +88,7 @@ export class Room extends DurableObject<Env> {
     }
 
     if (msg.type === 'join') {
-      const res = G.join(room, msg.playerId, msg.nick, now);
+      const res = G.join(room, msg.playerId, msg.nick, now, msg.avatar);
       if (!res.ok) {
         this.send(ws, { type: 'error', code: res.code });
         return ws.close(4000, res.code);

@@ -1,0 +1,74 @@
+/* Quiddo — tokens de marca
+   Importar uma vez no CSS global. Fontes: ver <link> no BRAND.md. */
+:root {
+  /* Cores das letras (paleta principal) */
+  --q-verde:    #13A07A; /* Q  · tucano · ação principal */
+  --q-laranja:  #FF7A1A; /* u  · capivara · destaque */
+  --q-amarelo:  #FFC83D; /* i  · onça · pódio 1º, alertas positivos */
+  --q-vermelho: #E5383B; /* d  · arara · erro, tempo acabando */
+  --q-azul:     #1E7FD6; /* d  · links, informação */
+  --q-ceu:      #5BC0EB; /* íris do olho · apoio */
+
+  /* Base */
+  --q-tinta:    #0E2A22; /* texto, contornos, sombras duras */
+  --q-creme:    #FFF6E6; /* fundo principal */
+  --q-mata:     #0B5D45; /* fundo escuro / negativo */
+  --q-branco:   #FFFFFF; /* cartões */
+  --q-texto-2:  #4A5E56; /* texto secundário */
+  --q-linha:    #D9D2C3; /* bordas suaves */
+
+  /* Cores de resposta (as 4 alternativas do quiz) */
+  --q-resp-1: var(--q-vermelho); /* Flor  · texto branco */
+  --q-resp-2: var(--q-azul);     /* Gota  · texto branco */
+  --q-resp-3: var(--q-amarelo);  /* Sol   · texto tinta  */
+  --q-resp-4: var(--q-verde);    /* Folha · texto branco */
+
+  /* Fundos dos avatares (mesma ordem de CORES no avatar.js) */
+  --q-av-0: #DDF5EC; --q-av-1: #FCE7D2; --q-av-2: #FFF0CC; --q-av-3: #EFE6D8; --q-av-4: #FDE2E1;
+  --q-av-5: #DCEBFA; --q-av-6: #E9E2FB; --q-av-7: #E3F2C8; --q-av-8: #FFE3D1; --q-av-9: #D7F0F7;
+
+  /* Tipografia */
+  --q-font-display: 'Fraunces', Georgia, serif;   /* peso 900 — títulos, placar, números */
+  --q-font-body:    'Nunito', system-ui, sans-serif; /* 600 texto, 800 botões e rótulos */
+  --q-font-leitura: 'Atkinson Hyperlegible', 'Nunito', sans-serif; /* modo acessível e perguntas longas */
+  --q-font-artigo:  'Literata', Georgia, serif; /* blog e guias */
+
+  /* Forma: contorno grosso + sombra dura, nunca sombra borrada */
+  --q-borda: 3px solid var(--q-tinta);
+  --q-sombra: 0 6px 0 var(--q-tinta);
+  --q-sombra-sm: 0 3px 0 var(--q-tinta);
+  --q-raio: 22px;
+  --q-raio-sm: 14px;
+  --q-raio-pill: 999px;
+}
+
+/* Botão padrão da marca */
+.q-btn {
+  font: 800 1.05rem/1 var(--q-font-body);
+  background: var(--q-verde);
+  color: var(--q-branco);
+  border: var(--q-borda);
+  border-radius: var(--q-raio-pill);
+  box-shadow: var(--q-sombra);
+  padding: 16px 26px;
+  cursor: pointer;
+  transition: transform .08s, box-shadow .08s;
+}
+.q-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--q-tinta); }
+
+/* Título com o jeito do letreiro (contorno + sombra) */
+.q-titulo {
+  font: 900 clamp(2.4rem, 7vw, 4.5rem)/1 var(--q-font-display);
+  color: var(--q-amarelo);
+  -webkit-text-stroke: 4px var(--q-tinta);
+  paint-order: stroke fill;
+  text-shadow: 0 5px 0 var(--q-tinta);
+}
+
+/* Cartão */
+.q-card {
+  background: var(--q-branco);
+  border: var(--q-borda);
+  border-radius: var(--q-raio);
+  box-shadow: var(--q-sombra);
+}

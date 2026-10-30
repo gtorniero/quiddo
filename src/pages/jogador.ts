@@ -8,11 +8,22 @@ import { navigate } from '../lib/nav';
 import { RoomSocket } from '../lib/socket';
 import { store, uid } from '../lib/storage';
 import { applyTheme } from '../lib/theme';
+import { BICHOS, CABECA, CORES_N, ROSTO, avatarName, encodeAvatar, parseAvatar, randomAvatar } from '../../shared/avatar';
+import type { Avatar, Bicho, ItemCabeca, ItemRosto } from '../../shared/avatar';
+import { CORES_AVATAR, avatarSvg } from '../lib/avatar-art';
+import { simbolo } from '../lib/simbolos';
 import { answersStatic, brandBar, errorScreen, podium, questionHead, rankList, tick } from './jogo-comum';
 
 interface Seat {
   pid: string;
   nick: string;
+  avatar?: string;
+}
+
+/** Nome sugerido que cabe no apelido: "Capivara de Boné" ou só "Capivara". */
+function sugestao(v: Avatar) {
+  const n = avatarName(v);
+  return n.length <= LIMITS.nick ? n : BICHOS[v.a];
 }
 
 export function page(code: string): Page {
@@ -27,20 +38,57 @@ function mount(main: HTMLElement, code: string) {
   let revealDrawAt = 0; // o sorteio aparece no celular depois da roleta da TV
   let drawTimer = 0;
   let clock = 0;
+  let av: Avatar = parseAvatar(store.get('avatar', '')) || randomAvatar();
+  let sugerido = ''; // o apelido que o site sugeriu; se a pessoa não mexeu, ele acompanha o visual
 
   const sair = () => {
     store.del('jog:' + code);
     navigate('/');
   };
 
+  function picker() {
+    const btn = (k: string, v: string | number, on: boolean, inner: string, label: string) =>
+      `<button type="button" data-act="av" data-k="${k}" data-v="${v}" data-focus="av-${k}-${v}" aria-pressed="${on}" aria-label="${esc(label)}">${inner}</button>`;
+    const bichos = (Object.keys(BICHOS) as Bicho[])
+      .map((a) => btn('a', a, av.a === a, avatarSvg({ a, h: null, f: null, c: av.c }, 48), BICHOS[a]))
+      .join('');
+    const cab = [btn('h', '-', !av.h, 'Nada', 'Nada na cabeça')]
+      .concat((Object.keys(CABECA) as ItemCabeca[]).map((h) => btn('h', h, av.h === h, esc(CABECA[h]), CABECA[h])))
+      .join('');
+    const ros = [btn('f', '-', !av.f, 'Nada', 'Nada no rosto')]
+      .concat((Object.keys(ROSTO) as ItemRosto[]).map((f) => btn('f', f, av.f === f, esc(ROSTO[f]), ROSTO[f])))
+      .join('');
+    const cores = Array.from({ length: CORES_N }, (_, c) => btn('c', c, av.c === c, `<i style="background:${CORES_AVATAR[c]}"></i>`, `Fundo ${c + 1}`)).join('');
+    return `<div class="avprev">${avatarSvg(av, 120, true)}<button type="button" class="btn sec auto" data-act="sortear" data-focus="sortear">Sortear</button></div>
+      <fieldset class="avset"><legend>Escolha o bicho</legend><div class="avgrid">${bichos}</div></fieldset>
+      <fieldset class="avset"><legend>Na cabeça</legend><div class="chips">${cab}</div></fieldset>
+      <fieldset class="avset"><legend>No rosto</legend><div class="chips">${ros}</div></fieldset>
+      <fieldset class="avset"><legend>Cor de fundo</legend><div class="avcores">${cores}</div></fieldset>`;
+  }
+
+  /** Atualiza o personagem e, se a pessoa não escreveu outro apelido, a sugestão de nome. */
+  function setAv(next: Avatar) {
+    av = next;
+    const box = main.querySelector<HTMLElement>('#avp');
+    if (box) patch(box, picker());
+    const nick = main.querySelector<HTMLInputElement>('#nick');
+    if (nick && (!nick.value.trim() || nick.value === sugerido)) {
+      sugerido = sugestao(av);
+      nick.value = sugerido;
+    }
+  }
+
   function form(err = '') {
-    main.innerHTML = `<section class="panel"><div class="tag">Sala ${code}</div><h1>Qual é o seu apelido?</h1>
-      <form id="fj" novalidate style="display:grid;gap:12px">
-        <label for="nick">Seu apelido<input type="text" id="nick" maxlength="${LIMITS.nick}" value="${esc(store.get('nick', ''))}" autocomplete="nickname" placeholder="Como vai aparecer no ranking" aria-describedby="nick-err"></label>
+    const saved = store.get('nick', '');
+    sugerido = saved ? '' : sugestao(av);
+    main.innerHTML = `<section class="panel"><div class="tag">Sala ${code}</div><h1>Quem é você hoje?</h1>
+      <form id="fj" novalidate style="display:grid;gap:14px">
+        <div id="avp" class="avpick">${picker()}</div>
+        <label for="nick">Seu apelido<input type="text" id="nick" maxlength="${LIMITS.nick}" value="${esc(saved || sugerido)}" autocomplete="nickname" placeholder="Como vai aparecer no ranking" aria-describedby="nick-err"></label>
         <button class="btn" type="submit">Entrar na sala</button>
       </form><p class="err" id="nick-err" role="alert">${esc(err)}</p>
-      <p class="small">Sem cadastro. Seu apelido só aparece nesta rodada.</p></section>`;
-    main.querySelector<HTMLInputElement>('#nick')!.focus();
+      <p class="small">Sem cadastro. Seu bicho e seu apelido só aparecem nesta rodada.</p></section>`;
+    if (err) main.querySelector<HTMLInputElement>('#nick')!.focus();
   }
 
   function connect() {
@@ -48,7 +96,7 @@ function mount(main: HTMLElement, code: string) {
     const me = seat!;
     sock = new RoomSocket({
       code,
-      hello: () => ({ type: 'join', nick: me.nick, playerId: me.pid }),
+      hello: () => ({ type: 'join', nick: me.nick, playerId: me.pid, avatar: me.avatar }),
       onStatus: (on) => banner(on ? '' : 'A conexão caiu, reconectando…'),
       onMessage,
     });
@@ -92,8 +140,8 @@ function mount(main: HTMLElement, code: string) {
   // ---------- telas ----------
 
   function lobby(s: PlayerState) {
-    return `<section class="stage center"><div class="tag">Você está na sala ${code}</div><div class="big">${esc(s.me.nick)}</div>
-      <p class="muted">Prontinho! Olhe para a tela: o quiz já vai começar.</p><p class="small">${s.playerCount} ${s.playerCount === 1 ? 'pessoa' : 'pessoas'} na sala</p></section>`;
+    return `<section class="stage center"><div class="tag">Você está na sala ${code}</div>${avatarSvg(s.me.avatar, 132, true)}<div class="big">${esc(s.me.nick)}</div>
+      <p class="muted">Prontinho! Olhe para a tela: seu bicho já apareceu lá e o quiz vai começar.</p><p class="small">${s.playerCount} ${s.playerCount === 1 ? 'pessoa' : 'pessoas'} na sala</p></section>`;
   }
 
   function question(s: PlayerState) {
@@ -104,7 +152,7 @@ function mount(main: HTMLElement, code: string) {
         (o, k) =>
           `<button class="ans c${k}${chosen != null && chosen !== k ? ' dim' : ''}${chosen === k ? ' mine' : ''}" data-act="ans" data-v="${k}" data-focus="a${k}"${chosen != null ? ' disabled' : ''}${
             chosen === k ? ' aria-pressed="true"' : ''
-          }><span class="lt">${LETRAS[k]}</span><span>${esc(o)}</span><span></span></button>`,
+          }>${simbolo(k)}<span class="lt">${LETRAS[k]}</span><span>${esc(o)}</span><span></span></button>`,
       )
       .join('');
     return `<section class="stage">${questionHead(s)}<div class="answers" role="group" aria-label="Respostas">${buttons}</div>
@@ -114,7 +162,7 @@ function mount(main: HTMLElement, code: string) {
   function reveal(s: PlayerState) {
     const answered = s.me.choice != null;
     const ok = answered && s.me.choice === s.correct;
-    return `<section class="stage">${questionHead(s)}<div class="verdict ${ok ? 'ok' : 'no'}" role="status">${answered ? (ok ? `Acertou! +${fmt(s.me.delta)}` : 'Errou') : 'Não respondeu'}</div>
+    return `<section class="stage">${questionHead(s)}<div class="verdict ${ok ? 'ok' : 'no'}" role="status">${answered ? (ok ? `Mandou bem! +${fmt(s.me.delta)}` : 'Quase!') : 'Não respondeu'}</div>
       ${answersStatic(s, s.me.choice)}
       <p class="hint" style="font-size:19px">Você está em <b>${s.me.rank}º</b> de ${s.playerCount}, com ${fmt(s.me.score)} pontos.</p></section>`;
   }
@@ -145,8 +193,10 @@ function mount(main: HTMLElement, code: string) {
     e.preventDefault();
     const nick = cleanNick(main.querySelector<HTMLInputElement>('#nick')!.value);
     if (!nick) return form('Escreva seu apelido para aparecer no ranking.');
-    store.set('nick', nick);
-    seat = { pid: uid(), nick };
+    store.set('nick', nick === sugerido ? '' : nick);
+    const avatar = encodeAvatar(av);
+    store.set('avatar', avatar);
+    seat = { pid: uid(), nick, avatar };
     store.set('jog:' + code, seat);
     connect();
   };
@@ -154,6 +204,17 @@ function mount(main: HTMLElement, code: string) {
   const onClick = (e: Event) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-act]');
     if (!b || b.disabled) return;
+    if (b.dataset.act === 'sortear') return setAv(randomAvatar());
+    if (b.dataset.act === 'av') {
+      const k = b.dataset.k as keyof Avatar;
+      const v = b.dataset.v!;
+      const next = { ...av };
+      if (k === 'a') next.a = v as Bicho;
+      if (k === 'h') next.h = v === '-' ? null : (v as ItemCabeca);
+      if (k === 'f') next.f = v === '-' ? null : (v as ItemRosto);
+      if (k === 'c') next.c = Number(v);
+      return setAv(next);
+    }
     if (b.dataset.act === 'sair') {
       if (confirm('Sair da sala? Você perde a vaga nesta rodada.')) sair();
       return;

@@ -35,7 +35,7 @@ export interface CreateRoomResult {
 // ---------- navegador → servidor ----------
 export type ClientMsg =
   | { type: 'host'; hostKey: string }
-  | { type: 'join'; nick: string; playerId: string }
+  | { type: 'join'; nick: string; playerId: string; avatar?: string } // avatar: "bicho.cabeca.rosto.cor" (shared/avatar.ts)
   | { type: 'answer'; qIndex: number; choice: number }
   | { type: 'start' }
   | { type: 'reveal' }
@@ -57,6 +57,7 @@ export interface PublicQuestion {
 export interface RankRow {
   id: string;
   nick: string;
+  avatar: string;
   score: number;
   delta: number; // pontos da última pergunta
   rank: number; // 1 = primeiro
@@ -66,6 +67,7 @@ export interface RankRow {
 export interface Drawn {
   id: string;
   nick: string;
+  avatar?: string;
 }
 
 export interface BaseState {
@@ -90,7 +92,7 @@ export interface BaseState {
 
 export interface HostState extends BaseState {
   role: 'host';
-  players: { id: string; nick: string; connected: boolean; answered: boolean }[];
+  players: { id: string; nick: string; avatar: string; connected: boolean; answered: boolean }[];
   ranking: RankRow[]; // completo na fase final; top 8 na fase de ranking
 }
 
@@ -99,6 +101,7 @@ export interface PlayerState extends BaseState {
   me: {
     id: string;
     nick: string;
+    avatar: string;
     score: number;
     delta: number;
     rank: number;

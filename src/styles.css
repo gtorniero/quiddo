@@ -1136,3 +1136,95 @@ button.ans:focus-visible {
     transition: none !important;
   }
 }
+
+/* ---------- personagens ---------- */
+svg.av {
+  flex: none;
+  display: inline-block;
+  max-width: none;
+}
+.rank .who svg.av {
+  vertical-align: middle;
+  margin: -6px 10px -6px 0;
+}
+.people span svg.av {
+  margin-left: -10px;
+  margin-right: 4px;
+}
+.podium svg.av {
+  justify-self: center;
+  margin-top: -44px;
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.18));
+}
+.podium {
+  padding-top: 40px;
+}
+.stage.center > svg.av {
+  margin: 4px auto 0;
+}
+.avpick {
+  display: grid;
+  gap: 14px;
+}
+.avprev {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.avprev .btn {
+  width: auto;
+}
+.avset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+.avset legend {
+  font-weight: 800;
+  font-size: 15px;
+  padding: 0;
+  margin-bottom: 8px;
+}
+.avgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 6px;
+}
+.avgrid button,
+.avcores button {
+  border: 3px solid transparent;
+  background: none;
+  border-radius: 999px;
+  padding: 2px;
+  min-width: 48px;
+  min-height: 48px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.avgrid button[aria-pressed='true'],
+.avcores button[aria-pressed='true'] {
+  border-color: var(--acc);
+  background: var(--acc-soft);
+}
+.avcores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.avcores i {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #0e2a22;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .avprev svg.av {
+    animation: pop 0.25s ease-out;
+  }
+}

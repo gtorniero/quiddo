@@ -31,6 +31,10 @@ Para testar com o celular na mesma rede Wi-Fi: `npm run dev -- --host` e abra no
 
 Na tela do anfitrião, a seta para a direita, Page Down ou espaço avançam o jogo. Isso faz o passador de slides funcionar.
 
+## Personagens
+
+Cada jogador escolhe um bicho do Brasil com até dois itens (cabeça e rosto) e uma cor de fundo. Veja `docs/personagens.md`. O guia de identidade visual está em `docs/marca/BRAND.md`.
+
 ## Como é feito
 
 - **Site**: Vite + TypeScript, sem framework. `src/`

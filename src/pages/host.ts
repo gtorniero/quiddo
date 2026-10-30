@@ -8,6 +8,7 @@ import { qrSvg } from '../lib/qr';
 import { RoomSocket } from '../lib/socket';
 import { store } from '../lib/storage';
 import { applyTheme } from '../lib/theme';
+import { avatarSvg } from '../lib/avatar-art';
 import { animateRank, answersStatic, brandBar, errorScreen, podium, questionHead, rankList, tick } from './jogo-comum';
 
 export function page(code: string): Page {
@@ -84,7 +85,7 @@ function mount(main: HTMLElement, code: string) {
         ${
           n
             ? `<div class="people">${s.players
-                .map((p) => `<span class="${p.connected ? '' : 'off'}">${esc(p.nick)}<button data-act="kick" data-v="${p.id}" data-focus="k${p.id}" aria-label="Remover ${esc(p.nick)}">Remover</button></span>`)
+                .map((p) => `<span class="${p.connected ? '' : 'off'}">${avatarSvg(p.avatar, 36)}${esc(p.nick)}<button data-act="kick" data-v="${p.id}" data-focus="k${p.id}" aria-label="Remover ${esc(p.nick)}">Remover</button></span>`)
                 .join('')}</div>`
             : '<p class="small">Esperando a turma entrar…</p>'
         }

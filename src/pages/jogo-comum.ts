@@ -1,6 +1,7 @@
 // Pedaços de tela usados pelo anfitrião e pelo jogador.
 import type { BaseState, RankRow } from '../../shared/protocol';
 import { LETRAS, esc, fmt } from '../lib/dom';
+import { avatarSvg } from '../lib/avatar-art';
 
 export function brandBar(s: BaseState) {
   const logo = s.brand.logo ? `<img src="/api/salas/${s.code}/logo?v=${s.brand.logo}" alt="Logo de ${esc(s.brand.name || 'quem organiza')}">` : '';
@@ -42,7 +43,7 @@ export function rankList(rows: RankRow[], me = '', animate = false) {
   return `<div class="rank${animate ? ' anim' : ''}">${rows
     .map(
       (r) =>
-        `<div class="${r.id === me ? 'me' : ''}" data-rank="${r.rank}" data-prev="${r.prevRank}"><i>${r.rank}</i><span class="who">${esc(r.nick)}${r.id === me ? ' (você)' : ''}${
+        `<div class="${r.id === me ? 'me' : ''}" data-rank="${r.rank}" data-prev="${r.prevRank}"><i>${r.rank}</i><span class="who">${avatarSvg(r.avatar, 36)}${esc(r.nick)}${r.id === me ? ' (você)' : ''}${
           r.prevRank && r.prevRank > r.rank ? `<span class="up" aria-label="subiu ${r.prevRank - r.rank}">▲${r.prevRank - r.rank}</span>` : ''
         }</span><em>${r.delta ? '+' + fmt(r.delta) : ''}</em><b>${fmt(r.score)}</b></div>`,
     )
@@ -69,7 +70,7 @@ export function podium(rows: RankRow[]) {
   const cls = ['p2', 'p1', 'p3'];
   const pos = [2, 1, 3];
   return `<div class="podium">${order
-    .map((r, i) => (r ? `<div class="${cls[i]}"><i>${pos[i]}º</i><b>${esc(r.nick)}</b><span>${fmt(r.score)} pts</span></div>` : '<div></div>'))
+    .map((r, i) => (r ? `<div class="${cls[i]}">${avatarSvg(r.avatar, i === 1 ? 84 : 64)}<i>${pos[i]}º</i><b>${esc(r.nick)}</b><span>${fmt(r.score)} pts</span></div>` : '<div></div>'))
     .join('')}</div>`;
 }
 

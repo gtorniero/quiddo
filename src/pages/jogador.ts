@@ -11,9 +11,9 @@ import { applyTheme } from '../lib/theme';
 import { palco } from '../lib/podio';
 import { BICHOS, CABECA, CORES_N, ROSTO, avatarName, encodeAvatar, parseAvatar, randomAvatar, startAvatar } from '../../shared/avatar';
 import type { Avatar, Bicho, ItemCabeca, ItemRosto } from '../../shared/avatar';
-import { CORES_AVATAR, avatarSvg } from '../lib/avatar-art';
+import { CORES_AVATAR, avatarSvg, comMoldura } from '../lib/avatar-art';
 import { simbolo } from '../lib/simbolos';
-import { MOEDA, PASSOS_PODIO, answersStatic, prepare, preparando, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick } from './jogo-comum';
+import { FOGO, MOEDA, PASSOS_PODIO, answersStatic, aplaude, prepare, preparando, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick } from './jogo-comum';
 
 interface Seat {
   pid: string;
@@ -206,7 +206,7 @@ function mount(main: HTMLElement, code: string) {
   // ---------- telas ----------
 
   function lobby(s: PlayerState) {
-    return `<section class="stage center"><div class="tag">Você está na sala ${code}</div>${avatarSvg(s.me.avatar, 132, true)}<div class="big">${esc(s.me.nick)}</div>
+    return `<section class="stage center"><div class="tag">Você está na sala ${code}</div><span class="fig grande" style="--r:-4deg">${avatarSvg(s.me.avatar, 132, true, { vivo: true })}</span><div class="big">${esc(s.me.nick)}</div>
       <p class="muted">Prontinho! Olhe para a tela: seu bicho já apareceu lá e o quiz vai começar.</p><div class="contador pequeno"><b>${s.playerCount}</b><span>${s.playerCount === 1 ? 'pessoa na sala' : 'pessoas na sala'}</span></div></section>`;
   }
 
@@ -246,14 +246,16 @@ function mount(main: HTMLElement, code: string) {
       return `<section class="stage">${questionHead(s)}<div class="verdict voto-feito" role="status">${answered ? 'Voto contado!' : 'Não votou'}</div>${answersStatic(s, s.me.choice)}</section>`;
     }
     const ok = answered && s.me.choice === s.correct;
-    return `<section class="stage">${questionHead(s)}<div class="verdict ${ok ? 'ok' : 'no'}" role="status">${answered ? (ok ? `Mandou bem! +${fmt(s.me.delta)}` : 'Quase!') : 'Não respondeu'}</div>
+    const fogo = ok && s.me.streak >= FOGO ? `<div class="fogo-selo">${comMoldura(avatarSvg(s.me.avatar, 56), 'fogo')}<span><b>${s.me.streak} acertos seguidos!</b> Você está pegando fogo.</span></div>` : '';
+    return `<section class="stage revelada">${questionHead(s)}<div class="verdict ${ok ? 'ok' : 'no'}" role="status">${answered ? (ok ? `Mandou bem! +${fmt(s.me.delta)}` : 'Quase!') : 'Não respondeu'}</div>${fogo}
       ${answersStatic(s, s.me.choice)}
       <p class="hint" style="font-size:19px">Você está em <b>${s.me.rank}º</b> de ${s.playerCount}, com ${fmt(s.me.score)} pontos.</p></section>`;
   }
 
   function ranking(s: PlayerState) {
     const subiu = s.me.prevRank && s.me.prevRank > s.me.rank ? `<p class="subiu">▲ Subiu ${s.me.prevRank - s.me.rank} ${s.me.prevRank - s.me.rank === 1 ? 'posição' : 'posições'}</p>` : '';
-    return `<section class="stage center"><div class="tag">Ranking</div><div class="big">${s.me.rank}º</div>${subiu}<p class="muted">de ${s.playerCount}</p>
+    const mold = s.me.streak >= FOGO ? 'fogo' : s.me.rank === 1 && s.me.score > 0 ? 'lider' : null;
+    return `<section class="stage center"><div class="tag">Ranking</div><span class="eu-mold">${comMoldura(avatarSvg(s.me.avatar, 88), mold)}</span><div class="big">${s.me.rank}º</div>${subiu}<p class="muted">de ${s.playerCount}</p>
       <p class="placar"><b class="meus-pts">${fmt(s.me.score)}</b> pontos${s.me.delta ? ` <span class="ganho">${MOEDA}+${fmt(s.me.delta)}</span>` : ''}</p></section>
       <section class="panel"><div class="tag">Os primeiros</div>${rankList(s.ranking, s.me.id)}</section>`;
   }
@@ -263,8 +265,9 @@ function mount(main: HTMLElement, code: string) {
     const last = showDraw ? s.drawn[s.drawn.length - 1] : null;
     const euSorteado = s.drawn.some((d) => d.id === s.me.id) && (last?.id !== s.me.id || showDraw);
     const novo = [0, 3, 2, 0, 1][passo];
-    const meu = passo >= 4 ? `<div class="big">${s.me.rank}º lugar</div><p class="muted">${fmt(s.me.score)} pontos</p>` : '<p class="muted">Olhe para a tela…</p>';
-    return `<section class="stage center"><div class="tag">Fim do quiz</div><div class="big pequeno" aria-live="polite">${podiumTitle(s.podium, passo)}</div>${s.podium.length ? palco(s.podium, s.theme, passo, novo) : ''}${meu}</section>
+    const palmas = passo >= 4 && s.me.rank > 3 ? `${aplaude(s.me.avatar)}<p class="muted">Palmas para o pódio!</p>` : '';
+    const meu = passo >= 4 ? `${palmas}<div class="big">${s.me.rank}º lugar</div><p class="muted">${fmt(s.me.score)} pontos</p>` : '<p class="muted">Olhe para a tela…</p>';
+    return `<section class="stage center"><div class="tag">Fim do quiz</div><div class="big pequeno" aria-live="polite">${podiumTitle(s.podium, passo)}</div>${s.podium.length ? palco(s.podium, s.theme, passo, novo, s.code) : ''}${meu}</section>
       ${
         last
           ? `<section class="stage center" role="status"><div class="tag">Sorteio de prêmios</div><div class="sorteio">${last.id === s.me.id ? 'Você foi sorteado!' : esc(last.nick)}</div>${

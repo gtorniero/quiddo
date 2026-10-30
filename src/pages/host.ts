@@ -10,7 +10,11 @@ import { store } from '../lib/storage';
 import { applyTheme } from '../lib/theme';
 import { palco } from '../lib/podio';
 import { avatarSvg } from '../lib/avatar-art';
-import { PASSOS_PODIO, animateRank, answersStatic, prepare, preparando, brandBar, confete, errorScreen, fotoCabeca, podiumTitle, questionHead, rankList, tick } from './jogo-comum';
+import { PASSOS_PODIO, animateRank, answersStatic, prepare, preparando, brandBar, confete, cortina, errorScreen, fogoFaixa, fotoCabeca, podiumTitle, questionHead, rankColunas, rankList, rankPista, revelacaoTv, tick } from './jogo-comum';
+import type { RankRow } from '../../shared/protocol';
+
+/** Rotação das figurinhas na sala de espera: o jeito solto do logo. */
+const GIRO = ['-5deg', '4deg', '-2deg', '6deg', '-4deg', '2deg', '-6deg', '3deg'];
 
 export function page(code: string): Page {
   return { title: `Sala ${code}`, wide: true, compact: true, mount: (main) => mount(main, code) };
@@ -28,6 +32,7 @@ function mount(main: HTMLElement, code: string) {
   let lastHtml = '';
   let prepTimer = 0;
   const vistos = new Set<string>(); // quem já apareceu no lobby (para animar só quem acabou de entrar)
+  let ultimoRk: RankRow[] = []; // último ranking visto: os 3 primeiros aparecem nervosos antes da última pergunta
   let avisoTimer = 0;
 
   main.classList.add('tv');
@@ -56,6 +61,8 @@ function mount(main: HTMLElement, code: string) {
     const prev = s;
     s = m;
     applyTheme(s.theme, s.brand.color);
+    if (s.phase === 'lobby') ultimoRk = [];
+    else if (s.ranking.length) ultimoRk = s.ranking;
     const phaseChanged = !prev || prev.phase !== s.phase || prev.qIndex !== s.qIndex;
     if (s.phase === 'final' && s.drawn.length > shownDrawn && prev && prev.phase === 'final') return spin();
     if (s.phase === 'final') shownDrawn = s.drawn.length;
@@ -69,6 +76,8 @@ function mount(main: HTMLElement, code: string) {
     if (phaseChanged) {
       window.scrollTo(0, 0);
       if (s.phase === 'ranking') animateRank(main);
+      // cortina de folhas na troca de pergunta
+      if (prev && s.phase === 'question' && prev.phase !== 'question') cortina();
     }
   }
 
@@ -146,8 +155,8 @@ function mount(main: HTMLElement, code: string) {
           n
             ? `<div class="jogadores">${s.players
                 .map(
-                  (p) =>
-                    `<div class="jogador${p.connected ? '' : ' off'}${vistos.has(p.id) ? '' : ' chegou'}">${avatarSvg(p.avatar, 72)}<b>${esc(p.nick)}</b><button class="linkbtn" data-act="kick" data-v="${p.id}" data-focus="k${p.id}" aria-label="Remover ${esc(p.nick)}">Remover</button></div>`,
+                  (p, i) =>
+                    `<div class="jogador${p.connected ? '' : ' off'}${vistos.has(p.id) ? '' : ' chegou'}"><span class="fig" style="--r:${GIRO[i % GIRO.length]}">${avatarSvg(p.avatar, 72, false, { vivo: true })}</span><b>${esc(p.nick)}</b><button class="linkbtn" data-act="kick" data-v="${p.id}" data-focus="k${p.id}" aria-label="Remover ${esc(p.nick)}">Remover</button></div>`,
                 )
                 .join('')}</div>`
             : '<p class="muted esperando">Esperando a turma entrar<span class="dots"></span></p>'
@@ -161,7 +170,7 @@ function mount(main: HTMLElement, code: string) {
     const live = s.players.filter((p) => p.connected).length;
     const opiniao = s.question!.tipo !== 'quiz';
     const last = s.qIndex >= s.total - 1;
-    if (!rev && preparando(s, sock.now())) return prepare(s) + `<section class="panel"><div class="btnrow"><button class="btn sec" data-act="close" data-focus="close">Encerrar</button></div></section>`;
+    if (!rev && preparando(s, sock.now())) return prepare(s, ultimoRk.slice(0, 3)) + `<section class="panel"><div class="btnrow"><button class="btn sec" data-act="close" data-focus="close">Encerrar</button></div></section>`;
     const status = rev
       ? opiniao
         ? `${s.answeredCount} ${s.answeredCount === 1 ? 'voto' : 'votos'}`
@@ -173,16 +182,19 @@ function mount(main: HTMLElement, code: string) {
       : opiniao
         ? `<button class="btn" data-act="next" data-focus="go">${last ? 'Ver o pódio' : 'Próxima pergunta'}</button>`
         : '<button class="btn" data-act="showRanking" data-focus="go">Ver o ranking</button>';
-    return `<section class="stage">${questionHead(s)}${answersStatic(s)}
+    const extras = rev && !opiniao && s.correct != null ? revelacaoTv(s.acertaram, s.counts ? s.counts[s.correct] : s.acertaram.length) : '';
+    return `<section class="stage${rev ? ' revelada' : ''}">${questionHead(s)}${answersStatic(s)}${extras}
       <div class="meta"><span aria-live="polite">${status}</span></div></section>
       <section class="panel"><div class="btnrow">${avancar}<button class="btn sec" data-act="close" data-focus="close">Encerrar</button></div><p class="small">Dica: a seta para a direita do teclado ou o passador de slides também avançam.</p></section>`;
   }
 
   function ranking(s: HostState) {
     const last = s.qIndex >= s.total - 1;
-    return `<section class="stage"><div class="tag">Ranking depois da pergunta ${s.qIndex + 1} de ${s.total}</div>${
-      s.ranking.length ? rankList(s.ranking, '', true) : '<p class="small">Ninguém jogando ainda.</p>'
-    }</section><section class="panel"><div class="btnrow"><button class="btn" data-act="next" data-focus="go">${last ? 'Ver o pódio' : 'Próxima pergunta'}</button><button class="btn sec" data-act="close" data-focus="close">Encerrar</button></div></section>`;
+    // o placar alterna entre a pista (quem corre até a bandeira) e as colunas (quem está mais alto)
+    const rapido = s.acertaram[0]?.id || '';
+    const colunas = s.qIndex % 2 === 1 && s.ranking.length > 1;
+    const placar = !s.ranking.length ? '<p class="small">Ninguém jogando ainda.</p>' : colunas ? rankColunas(s.ranking, rapido) + `<div class="sr">${rankList(s.ranking)}</div>` : rankPista(s.ranking, rapido);
+    return `<section class="stage"><div class="tag">${colunas ? 'Como está a disputa' : 'Ranking'} depois da pergunta ${s.qIndex + 1} de ${s.total}</div>${fogoFaixa(s.ranking)}${placar}</section><section class="panel"><div class="btnrow"><button class="btn" data-act="next" data-focus="go">${last ? 'Ver o pódio' : 'Próxima pergunta'}</button><button class="btn sec" data-act="close" data-focus="close">Encerrar</button></div></section>`;
   }
 
   function final(s: HostState) {
@@ -191,7 +203,7 @@ function mount(main: HTMLElement, code: string) {
     const anyLeft = s.ranking.some((r) => !s.drawn.some((d) => d.id === r.id));
     const novo = [0, 3, 2, 0, 1][passo];
     const card = `<section class="stage center foto" id="foto">${fotoCabeca(s)}<div class="big" aria-live="polite">${podiumTitle(s.podium, passo)}</div>${
-      s.podium.length ? palco(s.podium, s.theme, passo, novo) : ''
+      s.podium.length ? palco(s.podium, s.theme, passo, novo, s.code) : ''
     }<p class="foto-pe">${esc(location.host)} · quiz ao vivo</p></section>`;
     if (passo < 4) return card + `<section class="panel center"><button class="btn sec auto" data-act="pular" data-focus="pular">Pular o suspense</button></section>`;
     return `${card}

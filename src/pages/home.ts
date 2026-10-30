@@ -21,9 +21,9 @@ import { codeForm, bindCodeForm } from './entrar';
 const DEMO = { t: 'Qual destes bichos é o símbolo do Quiddo?', o: ['Arara', 'Tucano', 'Capivara', 'Onça'], c: 1, tl: 10 };
 
 const EXEMPLO: RankRow[] = [
-  { id: 'a', nick: 'Bia', avatar: 'arara.coroa.-.4', score: 4120, delta: 960, rank: 1, prevRank: 2 },
-  { id: 'b', nick: 'Leo', avatar: 'capivara.bone.-.1', score: 3980, delta: 0, rank: 2, prevRank: 1 },
-  { id: 'c', nick: 'Duda', avatar: 'sapo.festa.-.7', score: 3410, delta: 880, rank: 3, prevRank: 4 },
+  { id: 'a', nick: 'Bia', avatar: 'arara.coroa.-.4', score: 4120, delta: 960, rank: 1, prevRank: 2, streak: 3 },
+  { id: 'b', nick: 'Leo', avatar: 'capivara.bone.-.1', score: 3980, delta: 0, rank: 2, prevRank: 1, streak: 0 },
+  { id: 'c', nick: 'Duda', avatar: 'sapo.festa.-.7', score: 3410, delta: 880, rank: 3, prevRank: 4, streak: 1 },
 ];
 
 const SALA = ['tucano.coroa.-.0', 'capivara.laranja.-.1', 'onca.-.escuros.2', 'sapo.festa.-.7', 'arara.flor.-.4', 'caramelo.bone.-.5', 'gato.-.coracao.6', 'coruja.cartola.-.3', 'jabuti.palha.-.8', 'boto.gorro.-.9', 'mico.fone.-.2', 'preguica.-.redondos.5'];

@@ -149,22 +149,25 @@ function mount(main: HTMLElement) {
     const n = q.perguntas.length;
     const cheio = n >= LIMITS.maxQuestions;
     return `<section class="panel" aria-labelledby="h-perg">${passo('Perguntas', 'h-perg')}
-      <div class="add-topo" role="group" aria-label="Adicionar pergunta no topo da lista">
-        <button class="btn mais" data-act="add" data-pos="topo"${cheio ? ' disabled' : ''}><span class="mais-ic" aria-hidden="true">+</span>Adicionar pergunta</button>
-        <button class="btn mais sec" data-act="addvf" data-pos="topo"${cheio ? ' disabled' : ''}><span class="mais-ic" aria-hidden="true">+</span>Verdadeiro ou falso</button>
+      <div class="add-topo" role="group" aria-labelledby="h-add-topo">
+        <span class="add-topo-tit" id="h-add-topo"><span class="mais-ic" aria-hidden="true">+</span>Adicionar pergunta</span>
+        <div class="add-topo-ops">
+          <button class="btn sec" data-act="add" data-pos="topo"${cheio ? ' disabled' : ''}><b>Múltipla escolha</b><span>de 2 a 4 respostas, uma certa</span></button>
+          <button class="btn sec" data-act="addvf" data-pos="topo"${cheio ? ' disabled' : ''}><b>Verdadeiro ou falso</b><span>uma afirmação, duas respostas</span></button>
+        </div>
       </div>
       <p class="small" id="h-perg-n">${contagem()}</p>
       <div class="qlist">${q.perguntas.map((_, i) => editorPergunta(i, n)).join('')}</div>
-      <div class="tag">Adicionar</div>
+      <div class="tag">Adicionar pergunta no fim</div>
       <div class="add-tipos">
-        <button class="btn sec" data-act="add"${cheio ? ' disabled' : ''}><b>Pergunta</b><span>de 2 a 4 respostas, uma certa</span></button>
+        <button class="btn sec" data-act="add"${cheio ? ' disabled' : ''}><b>Múltipla escolha</b><span>de 2 a 4 respostas, uma certa</span></button>
         <button class="btn sec" data-act="addvf"${cheio ? ' disabled' : ''}><b>Verdadeiro ou falso</b><span>uma afirmação, duas respostas</span></button>
       </div>
       <button class="toggle" data-act="dobro" aria-pressed="${!!q.dobroUltima}"><span class="chave" aria-hidden="true"></span><span><b>A última pergunta vale o dobro</b><br><small>Dá chance de virada no fim. Vale para a última pergunta com resposta certa.</small></span></button>
     </section>`;
   }
 
-  const nomeTipo = (p: Quiz['perguntas'][number]) => (p.vf ? 'Verdadeiro ou falso' : p.tipo === 'opiniao' ? 'Enquete' : p.tipo === 'quem' ? 'Quem é mais provável' : 'Pergunta');
+  const nomeTipo = (p: Quiz['perguntas'][number]) => (p.vf ? 'Verdadeiro ou falso' : p.tipo === 'opiniao' ? 'Enquete' : p.tipo === 'quem' ? 'Quem é mais provável' : 'Múltipla escolha');
   const titulo = (i: number) => `${nomeTipo(q.perguntas[i])} ${i + 1}${isReady(q.perguntas[i]) ? '' : ' · falta completar'}`;
 
   const contagem = () => `${prontas()} de ${q.perguntas.length} prontas.${q.perguntas.length <= 2 ? ' As 2 primeiras são só modelos: edite ou remova.' : ''} Marque a resposta certa de cada uma (no celular, toque na letra).`;

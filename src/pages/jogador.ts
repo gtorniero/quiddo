@@ -13,7 +13,7 @@ import { BICHOS, CABECA, CORES_N, ROSTO, avatarName, encodeAvatar, parseAvatar, 
 import type { Avatar, Bicho, ItemCabeca, ItemRosto } from '../../shared/avatar';
 import { CORES_AVATAR, avatarSvg, comMoldura } from '../lib/avatar-art';
 import { simbolo } from '../lib/simbolos';
-import { FOGO, MOEDA, PASSOS_PODIO, answersStatic, aplaude, prepare, preparando, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick } from './jogo-comum';
+import { FOGO, MOEDA, PASSOS_PODIO, answersStatic, aplaude, prepare, preparando, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick, top10 } from './jogo-comum';
 
 interface Seat {
   pid: string;
@@ -128,7 +128,7 @@ function mount(main: HTMLElement, code: string) {
     if (m.type !== 'state' || m.role !== 'player') return;
     const prev = s;
     s = m;
-    applyTheme(s.theme, s.brand.color);
+    applyTheme(s.theme, s.brand.color, s.visual);
     if (s.me.choice != null || s.phase !== 'question') sending = null;
     if (s.phase === 'final' && s.drawn.length && (!prev || prev.drawn.length < s.drawn.length)) {
       // espera a roleta da TV (~1,5 s) para não estragar a surpresa
@@ -179,7 +179,7 @@ function mount(main: HTMLElement, code: string) {
         window.setTimeout(() => {
           passo = i;
           render();
-          if (i === 4 && s && s.me.rank <= 3) confete(s.theme === 'corp');
+          if (i === 4 && s && s.me.rank <= 3) confete(s.theme === 'corp' && s.visual === 'floresta');
         }, ms),
       );
     });
@@ -267,7 +267,9 @@ function mount(main: HTMLElement, code: string) {
     const novo = [0, 3, 2, 0, 1][passo];
     const palmas = passo >= 4 && s.me.rank > 3 ? `${aplaude(s.me.avatar)}<p class="muted">Palmas para o pódio!</p>` : '';
     const meu = passo >= 4 ? `${palmas}<div class="big">${s.me.rank}º lugar</div><p class="muted">${fmt(s.me.score)} pontos</p>` : '<p class="muted">Olhe para a tela…</p>';
-    return `<section class="stage center"><div class="tag">Fim do quiz</div><div class="big pequeno" aria-live="polite">${podiumTitle(s.podium, passo)}</div>${s.podium.length ? palco(s.podium, s.theme, passo, novo, s.code) : ''}${meu}</section>
+    // depois do pódio, os 10 primeiros, como na TV
+    const lista = passo >= 4 ? top10(s.ranking, s.me.id) : '';
+    return `<section class="stage center"><div class="tag">Fim do quiz</div><div class="big pequeno" aria-live="polite">${podiumTitle(s.podium, passo, s.visual)}</div>${s.podium.length ? palco(s.podium, s.theme, passo, novo, s.code, s.visual) : ''}${meu}</section>${lista}
       ${
         last
           ? `<section class="stage center" role="status"><div class="tag">Sorteio de prêmios</div><div class="sorteio">${last.id === s.me.id ? 'Você foi sorteado!' : esc(last.nick)}</div>${

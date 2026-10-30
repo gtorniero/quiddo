@@ -1,5 +1,5 @@
 // Tema (corp, festa, escola) e cor da marca. A cor da marca substitui a cor principal do tema (só corp e escola).
-import type { Theme } from '../../shared/protocol';
+import type { Theme, Visual } from '../../shared/protocol';
 
 export const THEME_ACC: Record<Theme, string> = { corp: '#0E2A22', festa: '#13A07A', escola: '#2B59C3' };
 
@@ -44,9 +44,12 @@ export function inkFor(c: string): string {
   return contrast(c, '#ffffff') >= contrast(c, '#0e2a22') ? '#FFFFFF' : '#0E2A22';
 }
 
-export function applyTheme(theme: Theme, brandColor = '') {
+/** Aplica o modo (data-tema), o visual do jogo (data-visual, só na sala) e a cor da marca. */
+export function applyTheme(theme: Theme, brandColor = '', visual?: Visual) {
   const root = document.documentElement;
   root.setAttribute('data-tema', theme);
+  if (visual && visual !== 'floresta') root.setAttribute('data-visual', visual);
+  else root.removeAttribute('data-visual');
   const st = root.style;
   for (const k of ['--acc', '--acc-ink', '--acc-text', '--acc-soft']) st.removeProperty(k);
   const c = rgb(brandColor);

@@ -1,7 +1,8 @@
-// /criar: editor do quiz e configuração do anfitrião (tema, tempo, marca, perguntas) e abertura da sala.
+// /criar: editor do quiz e configuração do anfitrião (modo, visual, tempo, marca, perguntas) e abertura da sala.
+// O visual só aparece depois do modo e lista apenas os visuais daquele modo. Floresta é o padrão.
 import type { Page } from '../main';
-import type { CreateRoomBody, CreateRoomResult, Theme } from '../../shared/protocol';
-import { LIMITS, compactQuestion, isReady } from '../../shared/rules';
+import type { CreateRoomBody, CreateRoomResult, Theme, Visual } from '../../shared/protocol';
+import { LIMITS, VISUAIS_DO_MODO, compactQuestion, isReady, visualDoModo } from '../../shared/rules';
 import { CORES_MARCA, TEMAS } from '../data/pacotes';
 import { LETRAS, esc } from '../lib/dom';
 import { readFoto, readLogo } from '../lib/logo';
@@ -9,6 +10,8 @@ import { navigate } from '../lib/nav';
 import { type Quiz, atual, excluir, exportar, importar, listar, novoQuiz, salvar } from '../lib/quiz';
 import { store } from '../lib/storage';
 import { THEME_ACC, applyTheme } from '../lib/theme';
+import { VISUAIS } from '../data/visuais';
+import { miniVisual } from '../lib/visuais-arte';
 
 export function page(): Page {
   return { title: 'Criar meu quiz', mount };
@@ -16,9 +19,12 @@ export function page(): Page {
 
 function mount(main: HTMLElement) {
   let q: Quiz = atual();
-  // veio da vitrine de temas da home: aplica o tema escolhido
+  // veio da vitrine de modos da home: aplica o modo escolhido (o visual volta para Floresta se não existir nele)
   const temaNovo = store.get<string>('temaNovo', '');
-  if (temaNovo === 'corp' || temaNovo === 'festa' || temaNovo === 'escola') q.tema = temaNovo;
+  if (temaNovo === 'corp' || temaNovo === 'festa' || temaNovo === 'escola') {
+    q.tema = temaNovo;
+    q.visual = visualDoModo(q.tema, q.visual);
+  }
   store.del('temaNovo');
   let msg = ''; // aviso geral (importação, espaço cheio)
   let erro = ''; // erro ao abrir a sala
@@ -48,7 +54,7 @@ function mount(main: HTMLElement) {
     // os passos são numerados na ordem em que aparecem; a marca só existe em Corporativo e Escola
     let n = 0;
     const passo = (titulo: string, id: string) => `<h2 class="passo" id="${id}"><span aria-hidden="true">${++n}</span>${titulo}</h2>`;
-    main.innerHTML = [secMeus(), secTema(passo), secTempo(passo), temMarca ? secMarca(passo) : '', secPerguntas(passo), secAbrir()].join('');
+    main.innerHTML = [secMeus(), secTema(passo), secVisual(passo), secTempo(passo), temMarca ? secMarca(passo) : '', secPerguntas(passo), secAbrir()].join('');
     window.scrollTo(0, y);
     if (focusSel) main.querySelector<HTMLElement>(focusSel)?.focus({ preventScroll: true });
   }
@@ -82,13 +88,23 @@ function mount(main: HTMLElement) {
 
   type Passo = (titulo: string, id: string) => string;
 
+  function secVisual(passo: Passo) {
+    const atualV = q.visual || 'floresta';
+    return `<section class="panel" aria-labelledby="h-visual">${passo(`Visual do jogo <small>(${esc(TEMAS[q.tema].nome)})</small>`, 'h-visual')}<div class="visuais" role="group" aria-labelledby="h-visual">${VISUAIS_DO_MODO[q.tema]
+      .map((v) => {
+        const t = VISUAIS[v];
+        return `<button class="visual-op v-${v}" data-act="visual" data-v="${v}" aria-pressed="${v === atualV}">${miniVisual(v)}<span class="vtxt"><b>${esc(t.nome)}${v === 'floresta' ? ' <small>padrão</small>' : ''}</b><span>${esc(t.desc)}</span></span><span class="sw">${t.cores.map((c) => `<i style="background:${c}"></i>`).join('')}</span></button>`;
+      })
+      .join('')}</div><p class="small">O visual muda a tela principal, os celulares, a contagem antes de cada pergunta, a troca de pergunta e o pódio. As regras do jogo são as mesmas.</p></section>`;
+  }
+
   function secTema(passo: Passo) {
-    return `<section class="panel" aria-labelledby="h-tema">${passo('Tema', 'h-tema')}<div class="temas" role="group" aria-labelledby="h-tema">${(Object.keys(TEMAS) as Theme[])
+    return `<section class="panel" aria-labelledby="h-tema">${passo('Modo', 'h-tema')}<div class="temas" role="group" aria-labelledby="h-tema">${(Object.keys(TEMAS) as Theme[])
       .map((k) => {
         const t = TEMAS[k];
         return `<button class="tema" data-act="tema" data-v="${k}" aria-pressed="${k === q.tema}"><span class="sw">${t.cores.map((c) => `<i style="background:${c}"></i>`).join('')}</span><b>${esc(t.nome)}</b><span>${esc(t.desc)}</span></button>`;
       })
-      .join('')}</div><p class="small">O tema muda o visual da tela principal e dos celulares de todo mundo. ${q.tema === 'festa' ? 'Em Amigos & família o jogo fica com as cores do Quiddo, sem marca.' : 'Neste tema dá para colocar o nome, a cor e o logo da empresa ou da escola.'}</p></section>`;
+      .join('')}</div><p class="small">O modo é o tipo de evento: escolhe o pacote de perguntas e os visuais que aparecem logo abaixo. ${q.tema === 'festa' ? 'Em Amigos & família o jogo fica sem marca.' : 'Neste modo dá para colocar o nome, a cor e o logo da empresa ou da escola.'}</p></section>`;
   }
 
   function secTempo(passo: Passo) {
@@ -104,7 +120,7 @@ function mount(main: HTMLElement) {
       <label for="bN">${q.tema === 'escola' ? 'Nome da escola, da turma ou do evento' : 'Nome da empresa ou do evento'}<input type="text" id="bN" maxlength="${LIMITS.brandName}" value="${esc(q.marca.name)}" placeholder="${q.tema === 'corp' ? 'Convenção de Vendas 2027' : 'Revisão do 7º ano B'}"></label>
       <div class="tag" id="h-cor">Cor principal</div>
       <div class="cmode" role="group" aria-labelledby="h-cor">
-        <button data-act="cmode" data-v="tema" aria-pressed="${!mc}"><i style="background:${THEME_ACC[q.tema]}"></i>Cor do tema</button>
+        <button data-act="cmode" data-v="tema" aria-pressed="${!mc}"><i style="background:${THEME_ACC[q.tema]}"></i>Cor do modo</button>
         <button data-act="cmode" data-v="marca" aria-pressed="${!!mc}"><i style="background:${mc || ult}"></i>Cor da minha marca</button>
       </div>
       ${
@@ -192,7 +208,7 @@ function mount(main: HTMLElement) {
       .map((p, i) => compactQuestion({ ...p, tl: q.tempo, dobro: i === ultimaQuiz }))
       .filter((p): p is NonNullable<typeof p> => !!p);
     const festa = q.tema === 'festa';
-    const body: CreateRoomBody = { questions, theme: q.tema, brand: festa ? { name: '', color: '' } : { name: q.marca.name, color: q.marca.color }, logo: festa ? '' : q.logo };
+    const body: CreateRoomBody = { questions, theme: q.tema, visual: visualDoModo(q.tema, q.visual), brand: festa ? { name: '', color: '' } : { name: q.marca.name, color: q.marca.color }, logo: festa ? '' : q.logo };
     abrindo = true;
     erro = '';
     render();
@@ -252,8 +268,13 @@ function mount(main: HTMLElement) {
       }
       case 'tema':
         q.tema = v as Theme;
+        q.visual = visualDoModo(q.tema, q.visual);
         persist();
         return render(`[data-act="tema"][data-v="${v}"]`);
+      case 'visual':
+        q.visual = visualDoModo(q.tema, v as Visual);
+        persist();
+        return render(`[data-act="visual"][data-v="${v}"]`);
       case 'cmode':
         if (v === 'marca') q.marca.color = q.marca.ultima || CORES_MARCA[1][0];
         else q.marca.color = '';

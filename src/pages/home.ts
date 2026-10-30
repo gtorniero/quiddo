@@ -26,7 +26,7 @@ export function page(): Page {
         .join('');
       main.innerHTML = `
         <section class="hero">
-                    <div class="bichos" aria-hidden="true">${['tucano.coroa.-.0', 'capivara.laranja.-.1', 'onca.-.escuros.2', 'perereca.festa.-.7', 'arara.flor.-.4', 'caramelo.bone.-.5'].map((a) => avatarSvg(a, 56)).join('')}</div>
+                    <div class="bichos" aria-hidden="true">${['tucano.coroa.-.0', 'capivara.laranja.-.1', 'onca.-.escuros.2', 'sapo.festa.-.7', 'arara.flor.-.4', 'caramelo.bone.-.5'].map((a) => avatarSvg(a, 56)).join('')}</div>
           <div class="tag">Quizz do seu jeito</div>
           <h1>Monte o seu quiz e jogue ao vivo com a turma</h1>
           <p>Você escreve as perguntas, abre uma sala e todo mundo joga pelo celular, cada um com o seu bicho. Quem acerta mais rápido ganha mais pontos, e o ranking aparece depois de cada pergunta.</p>

@@ -6,7 +6,7 @@ Cada jogador entra na sala como um **bicho do Brasil**, montado em segundos no c
 
 **Um bicho + até 1 item na cabeça + até 1 item no rosto + uma cor de fundo.**
 
-- **20 bichos:** tucano, capivara, onça, preguiça, arara, mico-leão, tamanduá, tatu, boto, jacaré, lobo-guará, quati, perereca, coruja, jabuti, papagaio, bem-te-vi, caramelo, gato, peixe-boi.
+- **20 bichos:** tucano, capivara, onça, preguiça, arara, mico-leão, tamanduá, tatu, boto, jacaré, lobo-guará, quati, sapo, coruja, jabuti, papagaio, bem-te-vi, caramelo, gato, peixe-boi.
 - **10 itens de cabeça:** boné, chapéu de palha, coroa, laranja, flor, fone, chapéu de festa, gorro, faixa, cartola.
 - **5 itens de rosto:** óculos escuros, óculos redondos, óculos de coração, bigode, adesivo de estrela.
 - **10 cores de fundo.**

@@ -8,7 +8,7 @@ import { navigate } from '../lib/nav';
 import { RoomSocket } from '../lib/socket';
 import { store, uid } from '../lib/storage';
 import { applyTheme } from '../lib/theme';
-import { BICHOS, CABECA, CORES_N, ROSTO, avatarName, encodeAvatar, parseAvatar, randomAvatar } from '../../shared/avatar';
+import { BICHOS, CABECA, CORES_N, ROSTO, avatarName, encodeAvatar, parseAvatar, randomAvatar, startAvatar } from '../../shared/avatar';
 import type { Avatar, Bicho, ItemCabeca, ItemRosto } from '../../shared/avatar';
 import { CORES_AVATAR, avatarSvg } from '../lib/avatar-art';
 import { simbolo } from '../lib/simbolos';
@@ -38,7 +38,7 @@ function mount(main: HTMLElement, code: string) {
   let revealDrawAt = 0; // o sorteio aparece no celular depois da roleta da TV
   let drawTimer = 0;
   let clock = 0;
-  let av: Avatar = parseAvatar(store.get('avatar', '')) || randomAvatar();
+  let av: Avatar = parseAvatar(store.get('avatar', '')) || startAvatar();
   let sugerido = ''; // o apelido que o site sugeriu; se a pessoa não mexeu, ele acompanha o visual
 
   const sair = () => {

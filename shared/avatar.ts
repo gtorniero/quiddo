@@ -15,7 +15,7 @@ export const BICHOS = {
   jacare: 'Jacaré',
   loboguara: 'Lobo-guará',
   quati: 'Quati',
-  perereca: 'Perereca',
+  sapo: 'Sapo',
   coruja: 'Coruja',
   jabuti: 'Jabuti',
   papagaio: 'Papagaio',
@@ -68,7 +68,8 @@ const has = (o: object, k: string) => Object.prototype.hasOwnProperty.call(o, k)
 export function parseAvatar(raw: unknown): Avatar | null {
   const parts = String(raw ?? '').split('.');
   if (parts.length !== 4) return null;
-  const [a, h, f, cs] = parts;
+  const [a0, h, f, cs] = parts;
+  const a = a0 === 'perereca' ? 'sapo' : a0; // nome antigo, guardado em celulares de quem já jogou
   if (!has(BICHOS, a)) return null;
   if (h !== '-' && !has(CABECA, h)) return null;
   if (f !== '-' && !has(ROSTO, f)) return null;
@@ -102,6 +103,11 @@ export function uniqueAvatar(code: string, taken: Iterable<string>): string {
     if (!used.has(cand)) return cand;
   }
   return encodeAvatar(v); // todas as cores ocupadas: repete, o apelido diferencia
+}
+
+/** Visual inicial de quem chega: bicho e cor sorteados, sem nada na cabeça nem no rosto. A pessoa inclui se quiser. */
+export function startAvatar(rand: () => number = Math.random): Avatar {
+  return { ...randomAvatar(rand), h: null, f: null };
 }
 
 /** Sorteia um visual. `rand` entra como parâmetro para os testes. */

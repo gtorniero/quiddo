@@ -134,22 +134,6 @@ export function animateRank(root: HTMLElement) {
   });
 }
 
-/** Pódio. `step` revela do 3º para o 1º: 0 nenhum, 1 terceiro, 2 segundo, 3 suspense, 4 primeiro. */
-export function podium(rows: RankRow[], step = 4, novo = -1) {
-  const order = [rows[1], rows[0], rows[2]];
-  const cls = ['p2', 'p1', 'p3'];
-  const pos = [2, 1, 3];
-  const shown = (place: number) => (place === 3 ? step >= 1 : place === 2 ? step >= 2 : step >= 4);
-  return `<div class="podium">${order
-    .map((r, i) => {
-      if (!r) return '<div class="vazio"></div>';
-      const place = pos[i];
-      if (!shown(place)) return `<div class="${cls[i]} oculto${place === 1 && step === 3 ? ' tremendo' : ''}"><span class="q" aria-hidden="true">?</span><i>${place}º</i></div>`;
-      return `<div class="${cls[i]}${place === novo ? ' novo' : ''}">${avatarSvg(r.avatar, i === 1 ? 96 : 72)}<i>${place}º</i><b>${esc(r.nick)}</b><span>${fmt(r.score)} pts</span></div>`;
-    })
-    .join('')}</div>`;
-}
-
 /** Topo do cartão de foto: logo do Quiddo, nome do evento e data. */
 export function fotoCabeca(s: BaseState) {
   const data = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -168,9 +152,9 @@ export function podiumTitle(rows: RankRow[], step: number) {
 export const PASSOS_PODIO = [0, 1800, 3800, 5800, 8200];
 
 /** Confete em cima da tela, por ~3 s. */
-export function confete() {
+export function confete(sobrio = false) {
   if (calmo()) return;
-  const cores = ['#13A07A', '#FF7A1A', '#FFC83D', '#E5383B', '#1E7FD6', '#7B4FD6'];
+  const cores = sobrio ? ['#d9b45a', '#e8d9a8', '#ffffff', '#c7ced6'] : ['#13A07A', '#FF7A1A', '#FFC83D', '#E5383B', '#1E7FD6', '#7B4FD6'];
   const box = document.createElement('div');
   box.className = 'confete';
   box.setAttribute('aria-hidden', 'true');

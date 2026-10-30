@@ -8,11 +8,12 @@ import { navigate } from '../lib/nav';
 import { RoomSocket } from '../lib/socket';
 import { store, uid } from '../lib/storage';
 import { applyTheme } from '../lib/theme';
+import { palco } from '../lib/podio';
 import { BICHOS, CABECA, CORES_N, ROSTO, avatarName, encodeAvatar, parseAvatar, randomAvatar, startAvatar } from '../../shared/avatar';
 import type { Avatar, Bicho, ItemCabeca, ItemRosto } from '../../shared/avatar';
 import { CORES_AVATAR, avatarSvg } from '../lib/avatar-art';
 import { simbolo } from '../lib/simbolos';
-import { MOEDA, PASSOS_PODIO, answersStatic, brandBar, coins, confete, countUp, errorScreen, podium, podiumTitle, questionHead, rankList, tick } from './jogo-comum';
+import { MOEDA, PASSOS_PODIO, answersStatic, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick } from './jogo-comum';
 
 interface Seat {
   pid: string;
@@ -163,7 +164,7 @@ function mount(main: HTMLElement, code: string) {
         window.setTimeout(() => {
           passo = i;
           render();
-          if (i === 4 && s && s.me.rank <= 3) confete();
+          if (i === 4 && s && s.me.rank <= 3) confete(s.theme === 'corp');
         }, ms),
       );
     });
@@ -230,7 +231,7 @@ function mount(main: HTMLElement, code: string) {
     const euSorteado = s.drawn.some((d) => d.id === s.me.id) && (last?.id !== s.me.id || showDraw);
     const novo = [0, 3, 2, 0, 1][passo];
     const meu = passo >= 4 ? `<div class="big">${s.me.rank}º lugar</div><p class="muted">${fmt(s.me.score)} pontos</p>` : '<p class="muted">Olhe para a tela…</p>';
-    return `<section class="stage center"><div class="tag">Fim do quiz</div><div class="big pequeno" aria-live="polite">${podiumTitle(s.podium, passo)}</div>${s.podium.length ? podium(s.podium, passo, novo) : ''}${meu}</section>
+    return `<section class="stage center"><div class="tag">Fim do quiz</div><div class="big pequeno" aria-live="polite">${podiumTitle(s.podium, passo)}</div>${s.podium.length ? palco(s.podium, s.theme, passo, novo) : ''}${meu}</section>
       ${
         last
           ? `<section class="stage center" role="status"><div class="tag">Sorteio de prêmios</div><div class="sorteio">${last.id === s.me.id ? 'Você foi sorteado!' : esc(last.nick)}</div>${

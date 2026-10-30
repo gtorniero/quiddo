@@ -8,8 +8,9 @@ import { qrSvg } from '../lib/qr';
 import { RoomSocket } from '../lib/socket';
 import { store } from '../lib/storage';
 import { applyTheme } from '../lib/theme';
+import { palco } from '../lib/podio';
 import { avatarSvg } from '../lib/avatar-art';
-import { PASSOS_PODIO, animateRank, answersStatic, brandBar, confete, errorScreen, fotoCabeca, podium, podiumTitle, questionHead, rankList, tick } from './jogo-comum';
+import { PASSOS_PODIO, animateRank, answersStatic, brandBar, confete, errorScreen, fotoCabeca, podiumTitle, questionHead, rankList, tick } from './jogo-comum';
 
 export function page(code: string): Page {
   return { title: `Sala ${code}`, wide: true, compact: true, mount: (main) => mount(main, code) };
@@ -109,7 +110,7 @@ function mount(main: HTMLElement, code: string) {
         window.setTimeout(() => {
           passo = i;
           render();
-          if (i === 4) confete();
+          if (i === 4) confete(s?.theme === 'corp');
         }, ms),
       );
     });
@@ -174,7 +175,7 @@ function mount(main: HTMLElement, code: string) {
     const anyLeft = s.ranking.some((r) => !s.drawn.some((d) => d.id === r.id));
     const novo = [0, 3, 2, 0, 1][passo];
     const card = `<section class="stage center foto" id="foto">${fotoCabeca(s)}<div class="big" aria-live="polite">${podiumTitle(s.podium, passo)}</div>${
-      s.podium.length ? podium(s.podium, passo, novo) : ''
+      s.podium.length ? palco(s.podium, s.theme, passo, novo) : ''
     }<p class="foto-pe">${esc(location.host)} · quiz ao vivo</p></section>`;
     if (passo < 4) return card + `<section class="panel center"><button class="btn sec auto" data-act="pular" data-focus="pular">Pular o suspense</button></section>`;
     return `${card}

@@ -1678,7 +1678,7 @@ body.modo-foto .podium .p3 {
 }
 .sair-foto {
   position: fixed;
-  top: 12px;
+  bottom: 12px;
   right: 12px;
   z-index: 80;
   border: 2px solid rgba(255, 255, 255, 0.5);
@@ -1870,4 +1870,288 @@ main:not(.tv) .qimg {
 }
 .tv .qimg {
   max-height: 30vh;
+}
+
+/* ================= pódio em camadas ================= */
+.palco {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  min-height: 300px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: var(--bw) solid var(--line);
+  isolation: isolate;
+}
+@media (max-width: 640px) {
+  .palco {
+    aspect-ratio: 4 / 5;
+  }
+}
+.palco .cenario {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  z-index: 0;
+}
+.palco .sol {
+  transform-origin: 980px 120px;
+  animation: gira 40s linear infinite;
+}
+.palco .nuvens {
+  animation: nuvem 18s ease-in-out infinite alternate;
+}
+.palco .holofote {
+  transform-origin: 50% 0;
+  animation: holofote 6s ease-in-out infinite alternate;
+}
+.palco .holofote.h2 {
+  animation-delay: -3s;
+}
+@keyframes gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes nuvem {
+  to {
+    transform: translateX(60px);
+  }
+}
+@keyframes holofote {
+  from {
+    transform: skewX(-8deg);
+  }
+  to {
+    transform: skewX(8deg);
+  }
+}
+/* chuva de festa, sem parar, atrás dos degraus */
+.chuva {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.chuva i {
+  position: absolute;
+  top: -8%;
+  width: 10px;
+  height: 14px;
+  background: var(--c);
+  border-radius: 2px;
+  animation-name: chove;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.chuva i.folha {
+  width: 16px;
+  height: 10px;
+  border-radius: 0 100% 0 100%;
+  background: #3e8e41;
+}
+.chuva i.estrela {
+  width: 16px;
+  height: 16px;
+  border-radius: 0;
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+.chuva i.fita {
+  width: 4px;
+  height: 26px;
+  border-radius: 2px;
+  opacity: 0.75;
+}
+@keyframes chove {
+  0% {
+    transform: translate(0, 0) rotate(0);
+  }
+  50% {
+    transform: translate(18px, 55vh) rotate(260deg);
+  }
+  100% {
+    transform: translate(-12px, 110vh) rotate(540deg);
+  }
+}
+/* degraus */
+.degraus {
+  position: absolute;
+  z-index: 2;
+  left: 7%;
+  right: 7%;
+  bottom: 5%;
+  display: grid;
+  grid-template-columns: 1fr 1.12fr 1fr;
+  align-items: end;
+  gap: 0;
+}
+.degrau {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+.boneco {
+  width: 62%;
+  margin-bottom: -6%;
+  position: relative;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+}
+.boneco svg.corpo {
+  width: 100%;
+  height: auto;
+  max-width: none;
+  overflow: visible;
+}
+.d1 .boneco {
+  width: 70%;
+}
+.boneco.campeao svg.corpo {
+  animation: pula 1.1s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
+.boneco.novo {
+  animation: entra 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.35) both;
+}
+.boneco.oculto {
+  aspect-ratio: 132 / 214;
+  align-content: center;
+}
+.boneco.oculto span {
+  width: 64%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border: 4px dashed var(--line);
+  font: 900 clamp(34px, 6vw, 64px) var(--disp);
+  color: var(--fg2);
+}
+.boneco.tremendo {
+  animation: treme 0.25s ease-in-out infinite;
+}
+@keyframes pula {
+  0%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+  40% {
+    transform: translateY(-8%) scaleY(1.03);
+  }
+  55% {
+    transform: translateY(0) scaleY(0.96);
+  }
+}
+@keyframes entra {
+  from {
+    transform: translateY(-60%) scale(0.6);
+    opacity: 0;
+  }
+}
+.bloco {
+  width: 100%;
+  position: relative;
+}
+.bloco .tampa {
+  height: clamp(10px, 1.6vw, 18px);
+  margin: 0 4%;
+  background: var(--tampa);
+  border: 3px solid #0e2a22;
+  border-bottom: 0;
+  clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%);
+}
+.bloco .frente {
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 2px;
+  padding: 6px 4px 10px;
+  border: 3px solid #0e2a22;
+  border-radius: 6px 6px 0 0;
+  color: #0e2a22;
+  text-align: center;
+  background-color: var(--cor);
+  /* textura: listras diagonais leves e brilho no topo */
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 30%, rgba(0, 0, 0, 0.12)),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.14) 0 10px, rgba(255, 255, 255, 0) 10px 22px);
+  box-shadow: inset 0 -8px 0 rgba(0, 0, 0, 0.12);
+}
+.d1 .frente {
+  height: clamp(110px, 17vw, 190px);
+}
+.d2 .frente {
+  height: clamp(80px, 12vw, 135px);
+}
+.d3 .frente {
+  height: clamp(60px, 9vw, 100px);
+}
+.d1 {
+  --cor: #ffc83d;
+  --tampa: #ffe08a;
+}
+.d2 {
+  --cor: #d7dee6;
+  --tampa: #eef2f6;
+}
+.d3 {
+  --cor: #e08a4f;
+  --tampa: #f2b088;
+}
+.frente .num {
+  font: 900 clamp(26px, 4.4vw, 54px) / 1 var(--disp);
+  text-shadow: 0 3px 0 rgba(255, 255, 255, 0.45);
+}
+.frente b {
+  font: 900 clamp(13px, 1.8vw, 22px) / 1.1 var(--disp);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.frente small {
+  font-size: clamp(11px, 1.3vw, 15px);
+  font-weight: 800;
+}
+.degrau.vazio {
+  visibility: hidden;
+}
+/* Corporativo: sóbrio, grafite com faixa metálica */
+.palco-corp .bloco .frente {
+  background-color: #2b3532;
+  color: #fff6e6;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 40%), repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 6px);
+  border-top: 6px solid var(--cor);
+}
+.palco-corp .bloco .tampa {
+  background: #3d4a46;
+}
+.palco-corp .frente .num {
+  color: var(--cor);
+  text-shadow: none;
+}
+.palco-corp .d2 {
+  --cor: #c7ced6;
+}
+.palco-corp .d1 {
+  --cor: #d9b45a;
+}
+.palco-corp .d3 {
+  --cor: #c98a5a;
+}
+.palco-corp .boneco.campeao svg.corpo {
+  animation-duration: 2.2s;
+}
+/* modo foto: palco maior */
+body.modo-foto .palco {
+  aspect-ratio: 16 / 8;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chuva {
+    display: none;
+  }
 }

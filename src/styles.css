@@ -4953,3 +4953,31 @@ svg.av.vivo .corpo {
   background: #fff;
   border-radius: 50%;
 }
+
+/* editor: "+" bem à vista no topo das perguntas */
+.add-topo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.add-topo .btn.mais {
+  flex: 1 1 220px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 60px;
+  font-size: 18px;
+}
+.add-topo .mais-ic {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 900 30px/1 var(--text);
+  background: var(--amarelo);
+  color: #0e2a22;
+  border: 3px solid #0e2a22;
+  flex: none;
+}

@@ -70,7 +70,7 @@ export function page(): Page {
         </section>
 
         <section class="h-faixa" aria-label="Para quem é">
-          <span>Reuniões comerciais</span><span>Sala de aula</span><span>Confraternização</span><span>Convenção de vendas</span><span>Treinamento</span><span>Aniversário</span><span>Natal em família</span><span>Churrasco</span><span>Chá bar</span>
+          <span>Reuniões</span><span>Sala de aula</span><span>Confraternização</span><span>Convenção de vendas</span><span>Treinamento</span><span>Aniversário</span><span>Natal em família</span><span>Chá bar</span>
         </section>
 
         <section class="h-bloco">

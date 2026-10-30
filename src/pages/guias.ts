@@ -1,26 +1,19 @@
 import type { Page } from '../main';
-import { GUIAS } from '../data/guias';
+import { GRUPOS_GUIAS, GUIAS } from '../data/guias';
 import { esc } from '../lib/dom';
-
-const GRUPOS: [string, string][] = [
-  ['todos', 'Para qualquer quiz'],
-  ['empresas', 'Empresas e eventos'],
-  ['festas', 'Festas e família'],
-];
 
 export function lista(): Page {
   return {
     title: 'Guias',
     mount(main) {
-      const prontos = GUIAS.filter((g) => g.corpo);
       main.innerHTML =
-        `<section class="hero"><h1>Guias</h1><p>Ideias e roteiros para o seu quiz render: na empresa, na escola, no evento ou na festa.</p></section>` +
-        GRUPOS.map(([k, nome]) => {
-          const gs = prontos.filter((g) => g.publico === k);
+        `<section class="hero"><h1>Guias</h1><p>Dicas de perguntas, de como montar o quiz e de como animar a turma: na festa, na despedida, na empresa ou na escola.</p></section>` +
+        GRUPOS_GUIAS.map(([pubs, nome, sub]) => {
+          const gs = GUIAS.filter((g) => g.corpo && pubs.includes(g.publico));
           if (!gs.length) return '';
-          return `<section class="panel"><h2>${esc(nome)}</h2><div class="guias">${gs.map((g) => `<a href="/guias/${g.slug}" data-link><b>${esc(g.titulo)}</b><span>${esc(g.resumo)}</span></a>`).join('')}</div></section>`;
+          return `<section class="panel"><h2>${esc(nome)}</h2><p class="small">${esc(sub)}</p><div class="guias">${gs.map((g) => `<a href="/guias/${g.slug}" data-link><b>${esc(g.titulo)}</b><span>${esc(g.resumo)}</span></a>`).join('')}</div></section>`;
         }).join('') +
-        `<section class="panel"><p class="muted">Mais guias chegam em breve: convenção de vendas, integração de novos funcionários, aniversário, Natal em família e outros.</p><a class="btn auto" href="/criar" data-link>Criar meu quiz</a></section>`;
+        `<section class="panel"><h2>Pronto para jogar?</h2><a class="btn auto" href="/criar" data-link>Criar meu quiz</a></section>`;
     },
   };
 }

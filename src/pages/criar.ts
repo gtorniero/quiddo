@@ -1,12 +1,12 @@
-// /criar: editor do quiz e configuração do anfitrião (tema, nomes, marca, perguntas) e abertura da sala.
+// /criar: editor do quiz e configuração do anfitrião (tema, tempo, marca, perguntas) e abertura da sala.
 import type { Page } from '../main';
-import type { CreateRoomBody, CreateRoomResult, Scoring, Theme } from '../../shared/protocol';
+import type { CreateRoomBody, CreateRoomResult, Theme } from '../../shared/protocol';
 import { LIMITS, compactQuestion, isReady } from '../../shared/rules';
-import { CORES_MARCA, TEMAS, pacote } from '../data/pacotes';
+import { CORES_MARCA, TEMAS } from '../data/pacotes';
 import { LETRAS, esc } from '../lib/dom';
 import { readLogo } from '../lib/logo';
 import { navigate } from '../lib/nav';
-import { type Quiz, atual, excluir, exportar, importar, listar, novoQuiz, preencher, salvar } from '../lib/quiz';
+import { type Quiz, atual, excluir, exportar, importar, listar, novoQuiz, salvar } from '../lib/quiz';
 import { store } from '../lib/storage';
 import { THEME_ACC, applyTheme } from '../lib/theme';
 
@@ -37,10 +37,14 @@ function mount(main: HTMLElement) {
   const prontas = () => q.perguntas.filter(isReady).length;
 
   function render(focusSel?: string) {
-    applyTheme(q.tema, q.marca.color);
+    const temMarca = q.tema !== 'festa';
+    applyTheme(q.tema, temMarca ? q.marca.color : '');
     store.set('tema', q.tema);
     const y = window.scrollY;
-    main.innerHTML = [secMeus(), secTema(), secNomes(), secMarca(), secPerguntas(), secAbrir()].join('');
+    // os passos são numerados na ordem em que aparecem; a marca só existe em Corporativo e Escola
+    let n = 0;
+    const passo = (titulo: string, id: string) => `<h2 class="passo" id="${id}"><span aria-hidden="true">${++n}</span>${titulo}</h2>`;
+    main.innerHTML = [secMeus(), secTema(passo), secTempo(passo), temMarca ? secMarca(passo) : '', secPerguntas(passo), secAbrir()].join('');
     window.scrollTo(0, y);
     if (focusSel) main.querySelector<HTMLElement>(focusSel)?.focus({ preventScroll: true });
   }
@@ -71,26 +75,28 @@ function mount(main: HTMLElement) {
     </section>`;
   }
 
-  function secTema() {
-    return `<section class="panel"><div class="tag">1 · Tema</div><div class="temas" role="group" aria-label="Tema">${(Object.keys(TEMAS) as Theme[])
+  type Passo = (titulo: string, id: string) => string;
+
+  function secTema(passo: Passo) {
+    return `<section class="panel" aria-labelledby="h-tema">${passo('Tema', 'h-tema')}<div class="temas" role="group" aria-labelledby="h-tema">${(Object.keys(TEMAS) as Theme[])
       .map((k) => {
         const t = TEMAS[k];
         return `<button class="tema" data-act="tema" data-v="${k}" aria-pressed="${k === q.tema}"><span class="sw">${t.cores.map((c) => `<i style="background:${c}"></i>`).join('')}</span><b>${esc(t.nome)}</b><span>${esc(t.desc)}</span></button>`;
       })
-      .join('')}</div><p class="small">O tema muda o visual da TV e dos celulares de todo mundo. As suas perguntas continuam as mesmas; para usar as do tema, toque em “Carregar o pacote do tema”, lá embaixo.</p></section>`;
+      .join('')}</div><p class="small">O tema muda o visual da TV e dos celulares de todo mundo. ${q.tema === 'festa' ? 'Em Amigos & família o jogo fica com as cores do Quiddo, sem marca.' : 'Neste tema dá para colocar o nome, a cor e o logo da empresa ou da escola.'}</p></section>`;
   }
 
-  function secNomes() {
-    return `<details class="panel"${q.tema === 'festa' || q.nomes[0] || q.nomes[1] ? ' open' : ''}><summary class="tag" style="cursor:pointer;min-height:44px;display:flex;align-items:center">Tem aniversariante ou homenageado? (opcional)</summary>
-      <div class="row"><label for="nA">Nome 1<input type="text" id="nA" maxlength="${LIMITS.nick}" value="${esc(q.nomes[0])}" placeholder="Bia"></label><label for="nB">Nome 2<input type="text" id="nB" maxlength="${LIMITS.nick}" value="${esc(q.nomes[1])}" placeholder="Leo"></label></div>
-      <p class="small">Escreva {A} ou {B} numa pergunta e o nome entra no lugar. Aniversário: só o Nome 1. Casal ou dupla homenageada: os dois.</p></details>`;
+  function secTempo(passo: Passo) {
+    return `<section class="panel" aria-labelledby="h-tempo">${passo('Tempo de cada pergunta', 'h-tempo')}
+      <div class="chips big" role="group" aria-labelledby="h-tempo">${LIMITS.times.map((t) => `<button data-act="tempo" data-v="${t}" aria-pressed="${q.tempo === t}">${t} segundos</button>`).join('')}</div>
+      <p class="small">Vale para todas as perguntas. Quem acerta ganha de 500 a 1.000 pontos: quanto mais rápido, mais pontos. ${q.tempo <= 10 ? 'Bom para perguntas curtas e respostas de uma palavra.' : q.tempo >= 30 ? 'Bom para perguntas longas ou que pedem conta.' : 'O ritmo mais equilibrado.'}</p></section>`;
   }
 
-  function secMarca() {
+  function secMarca(passo: Passo) {
     const mc = q.marca.color;
     const ult = q.marca.ultima || CORES_MARCA[1][0];
-    return `<section class="panel"><div class="tag">2 · Sua marca (opcional)</div>
-      <label for="bN">Nome da empresa ou do evento<input type="text" id="bN" maxlength="${LIMITS.brandName}" value="${esc(q.marca.name)}" placeholder="${q.tema === 'corp' ? 'Convenção de Vendas 2027' : 'Aniversário da Bia'}"></label>
+    return `<section class="panel" aria-labelledby="h-marca">${passo('Sua marca <small>(opcional)</small>', 'h-marca')}
+      <label for="bN">${q.tema === 'escola' ? 'Nome da escola, da turma ou do evento' : 'Nome da empresa ou do evento'}<input type="text" id="bN" maxlength="${LIMITS.brandName}" value="${esc(q.marca.name)}" placeholder="${q.tema === 'corp' ? 'Convenção de Vendas 2027' : 'Revisão do 7º ano B'}"></label>
       <div class="tag" id="h-cor">Cor principal</div>
       <div class="cmode" role="group" aria-labelledby="h-cor">
         <button data-act="cmode" data-v="tema" aria-pressed="${!mc}"><i style="background:${THEME_ACC[q.tema]}"></i>Cor do tema</button>
@@ -111,19 +117,15 @@ function mount(main: HTMLElement) {
     </section>`;
   }
 
-  function secPerguntas() {
+  function secPerguntas(passo: Passo) {
     const n = q.perguntas.length;
-    const pts = q.pontuacao || 'speed';
-    return `<section class="panel" aria-labelledby="h-perg"><div class="tag" id="h-perg">3 · Perguntas · ${prontas()} de ${n} prontas</div>
-      <div class="cmode" role="group" aria-label="Como contam os pontos">
-        <button data-act="pontos" data-v="speed" aria-pressed="${pts === 'speed'}">Rapidez vale ponto<br>de 500 a 1.000</button>
-        <button data-act="pontos" data-v="fixed" aria-pressed="${pts === 'fixed'}">Sem pressa<br>acertou, 1.000</button>
-      </div>
-      <p class="small">${pts === 'speed' ? 'Quem acerta ganha 500 pontos, mais até 500 pela rapidez. Bom para festas e eventos.' : 'Quem acerta ganha 1.000, não importa o tempo. Bom para sala de aula e treinamento.'}</p>
+    return `<section class="panel" aria-labelledby="h-perg">${passo('Perguntas', 'h-perg')}<p class="small" id="h-perg-n">${contagem()}</p>
       <div class="qlist">${q.perguntas.map((_, i) => editorPergunta(i, n)).join('')}</div>
-      <div class="btnrow"><button class="btn sec" data-act="add"${n >= LIMITS.maxQuestions ? ' disabled' : ''}>Adicionar pergunta</button><button class="btn sec" data-act="pacote">Carregar o pacote do tema</button></div>
+      <div class="btnrow"><button class="btn sec" data-act="add"${n >= LIMITS.maxQuestions ? ' disabled' : ''}>Adicionar pergunta</button></div>
     </section>`;
   }
+
+  const contagem = () => `${prontas()} de ${q.perguntas.length} prontas. Marque a resposta certa de cada uma.`;
 
   function editorPergunta(i: number, n: number) {
     const p = q.perguntas[i];
@@ -138,14 +140,13 @@ function mount(main: HTMLElement) {
       <textarea data-i="${i}" data-f="t" maxlength="${LIMITS.questionText}" aria-label="Texto da pergunta ${num}" placeholder="Escreva a pergunta">${esc(p.t)}</textarea>
       ${p.o
         .map(
-          (o, k) => `<div class="opt-ed"><span class="lt c${k}" aria-hidden="true">${LETRAS[k]}</span>
+          (o, k) => `<div class="opt-ed${p.c === k ? ' certa' : ''}"><span class="lt c${k}" aria-hidden="true">${LETRAS[k]}</span>
         <input type="text" data-i="${i}" data-f="o" data-k="${k}" maxlength="${LIMITS.answerText}" value="${esc(o)}" placeholder="Resposta ${LETRAS[k]}" aria-label="Resposta ${LETRAS[k]} da pergunta ${num}">
-        <label><input type="radio" name="c${i}" data-i="${i}" data-f="c" data-k="${k}"${p.c === k ? ' checked' : ''}>certa</label>
+        <label class="marca-certa"><input type="radio" name="c${i}" data-i="${i}" data-f="c" data-k="${k}"${p.c === k ? ' checked' : ''}><span>${p.c === k ? 'Certa' : 'certa'}</span></label>
         ${p.o.length > 2 ? `<button class="x" data-act="delopt" data-i="${i}" data-k="${k}" aria-label="Tirar a resposta ${LETRAS[k]} da pergunta ${num}">×</button>` : '<span></span>'}</div>`,
         )
         .join('')}
       ${p.o.length < 4 ? `<button class="linkbtn" style="justify-self:start" data-act="addopt" data-i="${i}">Adicionar resposta</button>` : ''}
-      <div class="chips" role="group" aria-label="Tempo da pergunta ${num}">Tempo:${LIMITS.times.map((s) => `<button data-act="tl" data-i="${i}" data-v="${s}" aria-pressed="${p.tl === s}">${s} s</button>`).join('')}</div>
     </div>`;
   }
 
@@ -161,9 +162,10 @@ function mount(main: HTMLElement) {
   async function abrirSala() {
     const questions = q.perguntas
       .filter(isReady)
-      .map((p) => compactQuestion({ ...p, t: preencher(q, p.t), o: p.o.map((o) => preencher(q, o)) }))
+      .map((p) => compactQuestion({ ...p, tl: q.tempo }))
       .filter((p): p is NonNullable<typeof p> => !!p);
-    const body: CreateRoomBody = { questions, theme: q.tema, scoring: q.pontuacao || 'speed', brand: { name: q.marca.name, color: q.marca.color }, logo: q.logo };
+    const festa = q.tema === 'festa';
+    const body: CreateRoomBody = { questions, theme: q.tema, brand: festa ? { name: '', color: '' } : { name: q.marca.name, color: q.marca.color }, logo: festa ? '' : q.logo };
     abrindo = true;
     erro = '';
     render();
@@ -240,15 +242,10 @@ function mount(main: HTMLElement) {
         persist();
         return render('#bL');
       case 'add':
-        q.perguntas.push({ t: '', o: ['', '', '', ''], c: 0, tl: 20 });
+        q.perguntas.push({ t: '', o: ['', '', '', ''], c: 0, tl: q.tempo });
         persist();
         render();
         return main.querySelector<HTMLElement>(`textarea[data-i="${q.perguntas.length - 1}"]`)?.focus();
-      case 'pacote':
-        if (!confirm(`Trocar as ${q.perguntas.length} perguntas pelo pacote do tema ${TEMAS[q.tema].nome}?`)) return;
-        q.perguntas = pacote(q.tema);
-        persist();
-        return render();
       case 'up':
       case 'down': {
         const j = a === 'up' ? i - 1 : i + 1;
@@ -280,14 +277,11 @@ function mount(main: HTMLElement) {
         persist();
         return render(`input[data-i="${i}"][data-f="o"][data-k="${Math.min(k, p.o.length - 1)}"]`);
       }
-      case 'pontos':
-        q.pontuacao = v as Scoring;
+      case 'tempo':
+        q.tempo = Number(v);
+        q.perguntas.forEach((x) => (x.tl = q.tempo));
         persist();
-        return render(`[data-act="pontos"][data-v="${v}"]`);
-      case 'tl':
-        p.tl = Number(v);
-        persist();
-        return render(`[data-act="tl"][data-i="${i}"][data-v="${v}"]`);
+        return render(`[data-act="tempo"][data-v="${v}"]`);
       case 'abrir':
         abrirSala();
         return;
@@ -304,8 +298,8 @@ function mount(main: HTMLElement) {
       if (h) h.textContent = `Pergunta ${i + 1}${ok ? '' : ' · falta completar'}`;
     }
     const n = prontas();
-    const tag = main.querySelector('#h-perg');
-    if (tag) tag.textContent = `3 · Perguntas · ${n} de ${q.perguntas.length} prontas`;
+    const tag = main.querySelector('#h-perg-n');
+    if (tag) tag.textContent = contagem();
     const btn = main.querySelector<HTMLButtonElement>('[data-act="abrir"]');
     if (btn && !abrindo) {
       btn.disabled = !n;
@@ -324,8 +318,6 @@ function mount(main: HTMLElement) {
       return refreshCounts(i);
     }
     if (t.id === 'titulo') q.titulo = t.value;
-    else if (t.id === 'nA') q.nomes[0] = t.value.trim();
-    else if (t.id === 'nB') q.nomes[1] = t.value.trim();
     else if (t.id === 'bN') q.marca.name = t.value;
     else if (t.id === 'bC') {
       q.marca.color = t.value.toUpperCase();
@@ -344,8 +336,15 @@ function mount(main: HTMLElement) {
     const t = e.target as HTMLInputElement;
     if (t.dataset.f === 'c') {
       const i = Number(t.dataset.i);
-      q.perguntas[i].c = Number(t.dataset.k);
+      const k = Number(t.dataset.k);
+      q.perguntas[i].c = k;
       persist();
+      // destaca a linha da resposta certa sem redesenhar (o foco continua no botão de opção)
+      main.querySelectorAll<HTMLElement>(`.qed[data-i="${i}"] .opt-ed`).forEach((row, j) => {
+        row.classList.toggle('certa', j === k);
+        const lab = row.querySelector('.marca-certa span');
+        if (lab) lab.textContent = j === k ? 'Certa' : 'certa';
+      });
       return refreshCounts(i);
     }
     if (t.id === 'bL' && t.files && t.files[0]) {

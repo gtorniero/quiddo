@@ -1,5 +1,5 @@
 // Regras do jogo que valem dos dois lados: limites, pontuação, códigos e validação.
-import type { Brand, CreateRoomBody, Question, Scoring, Theme } from './protocol';
+import type { Brand, CreateRoomBody, Question, Theme } from './protocol';
 
 export const LIMITS = {
   maxPlayers: 200,
@@ -29,9 +29,8 @@ export function normalizeCode(raw: string): string {
     .slice(0, 4);
 }
 
-/** Pontos de uma resposta certa: de 500 (no último instante) a 1000 (na hora). No modo "Sem pressa", sempre 1000. */
-export function points(ms: number, limitSeconds: number, scoring: Scoring = 'speed'): number {
-  if (scoring === 'fixed') return 1000;
+/** Pontos de uma resposta certa: de 500 (no último instante) a 1000 (na hora). A rapidez sempre vale ponto. */
+export function points(ms: number, limitSeconds: number): number {
   const limit = limitSeconds * 1000;
   return Math.round(500 + 500 * Math.max(0, 1 - Math.max(0, ms) / limit));
 }
@@ -72,8 +71,7 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 /** Valida o que o anfitrião manda para abrir a sala. Lança Error com mensagem em português. */
 export function validateCreate(body: unknown): CreateRoomBody {
   const b = (body || {}) as Partial<CreateRoomBody>;
-  const theme: Theme = b.theme === 'festa' ? 'festa' : 'corp';
-  const scoring: Scoring = b.scoring === 'fixed' ? 'fixed' : 'speed';
+  const theme: Theme = b.theme === 'festa' || b.theme === 'escola' ? b.theme : 'corp';
   if (!Array.isArray(b.questions)) throw new Error('Quiz sem perguntas.');
   const questions: Question[] = [];
   for (const raw of b.questions.slice(0, LIMITS.maxQuestions)) {
@@ -91,8 +89,14 @@ export function validateCreate(body: unknown): CreateRoomBody {
     color: HEX.test(String(rb.color || '')) ? String(rb.color) : '',
   };
   let logo = typeof b.logo === 'string' ? b.logo : '';
+  // Amigos & família não leva marca: nem nome, nem cor, nem logo
+  if (theme === 'festa') {
+    brand.name = '';
+    brand.color = '';
+    logo = '';
+  }
   if (logo && (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(logo) || logo.length > LIMITS.logoBytes)) {
     throw new Error('Logo inválido ou grande demais.');
   }
-  return { questions, theme, scoring, brand, logo };
+  return { questions, theme, brand, logo };
 }

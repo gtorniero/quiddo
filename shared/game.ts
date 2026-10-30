@@ -1,6 +1,6 @@
 // Motor do jogo: estado da sala e transições de fase, sem rede nem relógio próprio.
 // O Durable Object guarda um `Room`, chama estas funções e manda as visões para cada um.
-import type { Brand, Drawn, DrawMode, HostState, Phase, PlayerState, Question, RankRow, Scoring, Theme } from './protocol';
+import type { Brand, Drawn, DrawMode, HostState, Phase, PlayerState, Question, RankRow, Theme } from './protocol';
 import { LIMITS, cleanNick, points } from './rules';
 import { AVATAR_PADRAO, cleanAvatar, uniqueAvatar } from './avatar';
 
@@ -24,7 +24,6 @@ export interface Room {
   code: string;
   hostKey: string;
   theme: Theme;
-  scoring: Scoring;
   brand: Brand;
   logo: number; // versão do logo (0 = sem logo)
   questions: Question[];
@@ -41,12 +40,11 @@ export interface Room {
   endedAt: number; // 0 enquanto o jogo não acabou
 }
 
-export function newRoom(o: { code: string; hostKey: string; theme: Theme; scoring?: Scoring; brand: Brand; questions: Question[]; hasLogo: boolean; now: number }): Room {
+export function newRoom(o: { code: string; hostKey: string; theme: Theme; brand: Brand; questions: Question[]; hasLogo: boolean; now: number }): Room {
   return {
     code: o.code,
     hostKey: o.hostKey,
     theme: o.theme,
-    scoring: o.scoring || 'speed',
     brand: o.brand,
     logo: o.hasLogo ? o.now : 0,
     questions: o.questions,
@@ -173,7 +171,7 @@ export function reveal(room: Room): boolean {
   for (const p of Object.values(room.players)) {
     p.prevRank = before[p.id] || 0;
     const a = room.answers[p.id];
-    p.delta = a && a.choice === q.c ? points(a.ms, q.tl, room.scoring) : 0;
+    p.delta = a && a.choice === q.c ? points(a.ms, q.tl) : 0;
     p.score += p.delta;
     if (a) room.counts[a.choice]++;
   }
@@ -236,7 +234,6 @@ function base(room: Room, now: number) {
     type: 'state' as const,
     code: room.code,
     theme: room.theme,
-    scoring: room.scoring || 'speed',
     brand: { ...room.brand, logo: room.logo },
     phase: room.phase,
     qIndex: room.qIndex,
@@ -274,7 +271,7 @@ export function playerView(room: Room, playerId: string, now: number, rk: RankRo
     ...base(room, now),
     role: 'player',
     podium: room.phase === 'final' ? rk.slice(0, 3) : [],
-    me: { id: p.id, nick: p.nick, avatar: avatarOf(p), score: p.score, delta: p.delta, rank: mine ? mine.rank : 0, choice: a ? a.choice : null },
+    me: { id: p.id, nick: p.nick, avatar: avatarOf(p), score: p.score, delta: p.delta, rank: mine ? mine.rank : 0, prevRank: mine ? mine.prevRank : 0, choice: a ? a.choice : null },
     ranking: showRank ? rk.slice(0, 5) : [],
   };
 }

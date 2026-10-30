@@ -1,7 +1,7 @@
 // Cabeçalho, navegação e aviso de conexão, iguais em todas as páginas.
-// Logo do Quiddo: colorido nas páginas claras, negativo (creme) na tela da TV.
+// Logo do Quiddo: colorido nas páginas claras, de uma cor só no tema Corporativo, negativo (creme) na tela da TV.
 const MARCA =
-  '<img class="logo-cor" src="/marca/quiddo-cor.svg" alt="Quiddo" width="132" height="40"><img class="logo-neg" src="/marca/quiddo-negativo.svg" alt="Quiddo" width="132" height="40">';
+  '<img class="logo-cor" src="/marca/quiddo-cor.svg" alt="Quiddo" width="132" height="40"><img class="logo-mono" src="/marca/quiddo-mono.svg" alt="Quiddo" width="132" height="40"><img class="logo-neg" src="/marca/quiddo-negativo.svg" alt="Quiddo" width="132" height="40">';
 
 export function header(path: string, compact = false) {
   const el = document.getElementById('topo')!;

@@ -9,7 +9,7 @@ import { RoomSocket } from '../lib/socket';
 import { store } from '../lib/storage';
 import { applyTheme } from '../lib/theme';
 import { avatarSvg } from '../lib/avatar-art';
-import { animateRank, answersStatic, brandBar, errorScreen, podium, questionHead, rankList, tick } from './jogo-comum';
+import { PASSOS_PODIO, animateRank, answersStatic, brandBar, confete, errorScreen, fotoCabeca, podium, podiumTitle, questionHead, rankList, tick } from './jogo-comum';
 
 export function page(code: string): Page {
   return { title: `Sala ${code}`, wide: true, compact: true, mount: (main) => mount(main, code) };
@@ -22,6 +22,9 @@ function mount(main: HTMLElement, code: string) {
   let fatal = '';
   let spinning = false; // roleta do sorteio rodando
   let shownDrawn = 0; // quantos sorteados a tela já mostrou
+  let passo = 4; // suspense do pódio: 0 a 4 (ver PASSOS_PODIO)
+  let passoTimers: number[] = [];
+  let lastHtml = '';
 
   main.classList.add('tv');
   if (!hostKey) {
@@ -52,6 +55,9 @@ function mount(main: HTMLElement, code: string) {
     const phaseChanged = !prev || prev.phase !== s.phase || prev.qIndex !== s.qIndex;
     if (s.phase === 'final' && s.drawn.length > shownDrawn && prev && prev.phase === 'final') return spin();
     if (s.phase === 'final') shownDrawn = s.drawn.length;
+    // o suspense do pódio só roda quando o jogo acaba com a tela aberta; quem recarrega vê o pódio pronto
+    if (s.phase === 'final' && prev && prev.phase !== 'final') suspense();
+    if (s.phase !== 'final') pararSuspense(4);
     render();
     if (phaseChanged) {
       window.scrollTo(0, 0);
@@ -62,8 +68,33 @@ function mount(main: HTMLElement, code: string) {
   function render() {
     if (!s) return;
     const screens = { lobby, question: pergunta, reveal: pergunta, ranking, final };
-    patch(main, brandBar(s) + screens[s.phase](s));
+    const html = brandBar(s) + screens[s.phase](s);
+    // não redesenha se nada mudou: preserva as animações do ranking e do pódio
+    if (html !== lastHtml) {
+      lastHtml = html;
+      patch(main, html);
+    }
     tick(s, sock.now());
+  }
+
+  function suspense() {
+    pararSuspense(0);
+    PASSOS_PODIO.forEach((ms, i) => {
+      if (!i) return;
+      passoTimers.push(
+        window.setTimeout(() => {
+          passo = i;
+          render();
+          if (i === 4) confete();
+        }, ms),
+      );
+    });
+  }
+
+  function pararSuspense(to: number) {
+    passoTimers.forEach(clearTimeout);
+    passoTimers = [];
+    passo = to;
   }
 
   // ---------- telas ----------
@@ -111,11 +142,16 @@ function mount(main: HTMLElement, code: string) {
   }
 
   function final(s: HostState) {
-    const win = s.podium[0];
     const last = s.drawn[shownDrawn - 1];
     const scored = s.ranking.some((r) => r.score > 0 && !s.drawn.some((d) => d.id === r.id));
     const anyLeft = s.ranking.some((r) => !s.drawn.some((d) => d.id === r.id));
-    return `<section class="stage center"><div class="big">${win ? esc(win.nick) + ' venceu!' : 'Fim do quiz'}</div>${s.podium.length ? podium(s.podium) : ''}</section>
+    const novo = [0, 3, 2, 0, 1][passo];
+    const card = `<section class="stage center foto" id="foto">${fotoCabeca(s)}<div class="big" aria-live="polite">${podiumTitle(s.podium, passo)}</div>${
+      s.podium.length ? podium(s.podium, passo, novo) : ''
+    }<p class="foto-pe">${esc(location.host)} · quiz ao vivo</p></section>`;
+    if (passo < 4) return card + `<section class="panel center"><button class="btn sec auto" data-act="pular" data-focus="pular">Pular o suspense</button></section>`;
+    return `${card}
+      <section class="panel center"><button class="btn auto" data-act="foto" data-focus="foto">Modo foto: só o pódio na tela</button><p class="small">Deixa só o pódio na tela, para a turma tirar foto. Aperte Esc para voltar.</p></section>
       <section class="panel center"><h2>Sorteio de prêmios</h2>
         <div class="sorteio" id="sorteio" aria-live="polite">${last ? esc(last.nick) : ''}</div>
         ${shownDrawn > 1 ? `<p class="small">Já sorteados: ${s.drawn.slice(0, shownDrawn - 1).map((d) => esc(d.nick)).join(', ')}</p>` : ''}
@@ -161,6 +197,10 @@ function mount(main: HTMLElement, code: string) {
     if (s.phase === 'question') send({ type: 'reveal' });
     else if (s.phase === 'reveal') send({ type: 'showRanking' });
     else if (s.phase === 'ranking') send({ type: 'next' });
+    else if (s.phase === 'final' && passo < 4) {
+      pararSuspense(4);
+      render();
+    }
   }
 
   const onClick = (e: Event) => {
@@ -172,6 +212,11 @@ function mount(main: HTMLElement, code: string) {
     else if (a === 'reveal') send({ type: 'reveal' });
     else if (a === 'showRanking') send({ type: 'showRanking' });
     else if (a === 'next') send({ type: 'next' });
+    else if (a === 'pular') {
+      pararSuspense(4);
+      render();
+    } else if (a === 'foto') modoFoto(true);
+    else if (a === 'sairfoto') modoFoto(false);
     else if (a === 'restart') {
       if (confirm('Começar de novo com as mesmas pessoas? Os pontos serão zerados.')) send({ type: 'restart' });
     } else if (a === 'draw' && !spinning) send({ type: 'draw', mode: v === 'scored' ? 'scored' : 'all' });
@@ -183,8 +228,32 @@ function mount(main: HTMLElement, code: string) {
     }
   };
 
+  /** Modo foto: esconde tudo menos o cartão do pódio, em tela cheia se o navegador deixar. */
+  function modoFoto(on: boolean) {
+    document.body.classList.toggle('modo-foto', on);
+    let x = document.getElementById('sair-foto');
+    if (on && !x) {
+      x = document.createElement('button');
+      x.id = 'sair-foto';
+      x.className = 'sair-foto';
+      x.textContent = 'Sair do modo foto';
+      x.addEventListener('click', () => modoFoto(false));
+      document.body.appendChild(x);
+    }
+    if (!on && x) x.remove();
+    try {
+      if (on && !document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+      if (!on && document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+    } catch {}
+  }
+  const onFull = () => {
+    if (!document.fullscreenElement && document.body.classList.contains('modo-foto')) modoFoto(false);
+  };
+  document.addEventListener('fullscreenchange', onFull);
+
   // seta para a direita, Page Down e espaço avançam: funciona com passador de slides
   const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && document.body.classList.contains('modo-foto')) return modoFoto(false);
     const tag = (e.target as HTMLElement).tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON' || tag === 'A') return;
     if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
@@ -214,6 +283,9 @@ function mount(main: HTMLElement, code: string) {
   return () => {
     sock.stop();
     clearInterval(clock);
+    pararSuspense(4);
+    modoFoto(false);
+    document.removeEventListener('fullscreenchange', onFull);
     main.removeEventListener('click', onClick);
     document.removeEventListener('keydown', onKey);
     document.removeEventListener('visibilitychange', wake);

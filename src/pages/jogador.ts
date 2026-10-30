@@ -12,7 +12,7 @@ import { BICHOS, CABECA, CORES_N, ROSTO, avatarName, encodeAvatar, parseAvatar, 
 import type { Avatar, Bicho, ItemCabeca, ItemRosto } from '../../shared/avatar';
 import { CORES_AVATAR, avatarSvg } from '../lib/avatar-art';
 import { simbolo } from '../lib/simbolos';
-import { answersStatic, brandBar, errorScreen, podium, questionHead, rankList, tick } from './jogo-comum';
+import { MOEDA, PASSOS_PODIO, answersStatic, brandBar, coins, confete, countUp, errorScreen, podium, podiumTitle, questionHead, rankList, tick } from './jogo-comum';
 
 interface Seat {
   pid: string;
@@ -38,6 +38,9 @@ function mount(main: HTMLElement, code: string) {
   let revealDrawAt = 0; // o sorteio aparece no celular depois da roleta da TV
   let drawTimer = 0;
   let clock = 0;
+  let passo = 4; // suspense do pódio, no mesmo ritmo da TV
+  let passoTimers: number[] = [];
+  let lastHtml = '';
   let av: Avatar = parseAvatar(store.get('avatar', '')) || startAvatar();
   let sugerido = ''; // o apelido que o site sugeriu; se a pessoa não mexeu, ele acompanha o visual
 
@@ -123,17 +126,64 @@ function mount(main: HTMLElement, code: string) {
       clearTimeout(drawTimer);
       drawTimer = window.setTimeout(render, Math.max(0, revealDrawAt - Date.now()));
     }
+    if (s.phase === 'final' && prev && prev.phase !== 'final') suspense();
+    if (s.phase !== 'final') pararSuspense();
     render();
     if (!prev || prev.phase !== s.phase || prev.qIndex !== s.qIndex) {
       window.scrollTo(0, 0);
       if (s.phase === 'question') main.querySelector<HTMLElement>('button.ans')?.focus({ preventScroll: true });
+      if (prev) festejar(s.phase);
     }
+  }
+
+  /** Moedinhas: no acerto, saem do "Mandou bem!"; no ranking, voam para o placar enquanto ele sobe. */
+  function festejar(phase: string) {
+    if (!s || !s.me.delta) return;
+    if (phase === 'reveal') {
+      const v = main.querySelector('.verdict');
+      const alvo = main.querySelector('.hint b');
+      if (v && alvo) coins(v, alvo, 6, 300);
+    }
+    if (phase === 'ranking') {
+      const ganho = main.querySelector('.ganho');
+      const pts = main.querySelector<HTMLElement>('.meus-pts');
+      if (ganho && pts) {
+        countUp(pts, s.me.score - s.me.delta, s.me.score, 450, 1000);
+        coins(ganho, pts, 6, 200);
+      }
+    }
+  }
+
+  function suspense() {
+    pararSuspense();
+    passo = 0;
+    PASSOS_PODIO.forEach((ms, i) => {
+      if (!i) return;
+      passoTimers.push(
+        window.setTimeout(() => {
+          passo = i;
+          render();
+          if (i === 4 && s && s.me.rank <= 3) confete();
+        }, ms),
+      );
+    });
+  }
+
+  function pararSuspense() {
+    passoTimers.forEach(clearTimeout);
+    passoTimers = [];
+    passo = 4;
   }
 
   function render() {
     if (!s) return;
     const screens = { lobby, question, reveal, ranking, final };
-    patch(main, brandBar(s) + screens[s.phase](s) + `<p class="center small" style="display:grid"><button class="linkbtn" data-act="sair">Sair da sala</button></p>`);
+    const html = brandBar(s) + screens[s.phase](s) + `<p class="center small" style="display:grid"><button class="linkbtn" data-act="sair">Sair da sala</button></p>`;
+    // não redesenha se nada mudou: preserva as animações
+    if (html !== lastHtml) {
+      lastHtml = html;
+      patch(main, html);
+    }
     if (sock) tick(s, sock.now());
   }
 
@@ -156,7 +206,7 @@ function mount(main: HTMLElement, code: string) {
       )
       .join('');
     return `<section class="stage">${questionHead(s)}<div class="answers" role="group" aria-label="Respostas">${buttons}</div>
-      <p class="hint" role="status">${chosen != null ? (s.me.choice != null ? 'Resposta enviada. Espere a revelação.' : 'Enviando…') : s.scoring === 'fixed' ? 'Toque na sua resposta. Sem pressa: acertou, ganhou 1.000.' : 'Toque na sua resposta. Quanto mais rápido, mais pontos.'}</p></section>`;
+      <p class="hint" role="status">${chosen != null ? (s.me.choice != null ? 'Resposta enviada. Espere a revelação.' : 'Enviando…') : 'Toque na sua resposta. Quanto mais rápido, mais pontos.'}</p></section>`;
   }
 
   function reveal(s: PlayerState) {
@@ -168,7 +218,9 @@ function mount(main: HTMLElement, code: string) {
   }
 
   function ranking(s: PlayerState) {
-    return `<section class="stage center"><div class="tag">Ranking</div><div class="big">${s.me.rank}º</div><p class="muted">de ${s.playerCount} · ${fmt(s.me.score)} pontos${s.me.delta ? ` · +${fmt(s.me.delta)} nesta rodada` : ''}</p></section>
+    const subiu = s.me.prevRank && s.me.prevRank > s.me.rank ? `<p class="subiu">▲ Subiu ${s.me.prevRank - s.me.rank} ${s.me.prevRank - s.me.rank === 1 ? 'posição' : 'posições'}</p>` : '';
+    return `<section class="stage center"><div class="tag">Ranking</div><div class="big">${s.me.rank}º</div>${subiu}<p class="muted">de ${s.playerCount}</p>
+      <p class="placar"><b class="meus-pts">${fmt(s.me.score)}</b> pontos${s.me.delta ? ` <span class="ganho">${MOEDA}+${fmt(s.me.delta)}</span>` : ''}</p></section>
       <section class="panel"><div class="tag">Os primeiros</div>${rankList(s.ranking, s.me.id)}</section>`;
   }
 
@@ -176,7 +228,9 @@ function mount(main: HTMLElement, code: string) {
     const showDraw = s.drawn.length && Date.now() >= revealDrawAt;
     const last = showDraw ? s.drawn[s.drawn.length - 1] : null;
     const euSorteado = s.drawn.some((d) => d.id === s.me.id) && (last?.id !== s.me.id || showDraw);
-    return `<section class="stage center"><div class="tag">Fim do quiz</div><div class="big">${s.me.rank}º lugar</div><p class="muted">${fmt(s.me.score)} pontos</p>${s.podium.length ? podium(s.podium) : ''}</section>
+    const novo = [0, 3, 2, 0, 1][passo];
+    const meu = passo >= 4 ? `<div class="big">${s.me.rank}º lugar</div><p class="muted">${fmt(s.me.score)} pontos</p>` : '<p class="muted">Olhe para a tela…</p>';
+    return `<section class="stage center"><div class="tag">Fim do quiz</div><div class="big pequeno" aria-live="polite">${podiumTitle(s.podium, passo)}</div>${s.podium.length ? podium(s.podium, passo, novo) : ''}${meu}</section>
       ${
         last
           ? `<section class="stage center" role="status"><div class="tag">Sorteio de prêmios</div><div class="sorteio">${last.id === s.me.id ? 'Você foi sorteado!' : esc(last.nick)}</div>${
@@ -235,6 +289,7 @@ function mount(main: HTMLElement, code: string) {
   return () => {
     if (sock) sock.stop();
     clearInterval(clock);
+    pararSuspense();
     clearTimeout(drawTimer);
     main.removeEventListener('submit', onSubmit);
     main.removeEventListener('click', onClick);

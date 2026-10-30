@@ -1,11 +1,9 @@
 // Tipos compartilhados entre o navegador e o servidor (Worker + Durable Object).
 // Toda mensagem é JSON e tem `type`. O servidor manda sempre o estado absoluto.
 
-export type Theme = 'corp' | 'festa';
+export type Theme = 'corp' | 'festa' | 'escola';
 export type Phase = 'lobby' | 'question' | 'reveal' | 'ranking' | 'final';
 export type DrawMode = 'all' | 'scored';
-/** speed: de 500 a 1000, quanto mais rápido mais pontos. fixed: "Sem pressa", acertou vale 1000. */
-export type Scoring = 'speed' | 'fixed';
 
 export interface Question {
   t: string; // texto
@@ -22,8 +20,7 @@ export interface Brand {
 export interface CreateRoomBody {
   questions: Question[];
   theme: Theme;
-  scoring: Scoring;
-  brand: Brand;
+  brand: Brand; // ignorada no tema festa
   logo: string; // data URL (PNG/JPEG/WebP) ou ''
 }
 
@@ -74,7 +71,6 @@ export interface BaseState {
   type: 'state';
   code: string;
   theme: Theme;
-  scoring: Scoring;
   brand: Brand & { logo: number }; // logo: versão (0 = sem logo)
   phase: Phase;
   qIndex: number;
@@ -105,6 +101,7 @@ export interface PlayerState extends BaseState {
     score: number;
     delta: number;
     rank: number;
+    prevRank: number; // posição antes da última pergunta (0 = não tinha)
     choice: number | null; // o que respondeu nesta pergunta
   };
   ranking: RankRow[]; // top 5

@@ -1403,3 +1403,343 @@ body:has(main.tv) .foot .assin {
 .hero .btnrow {
   width: 100%;
 }
+
+/* ================= experiência completa ================= */
+
+/* ---------- tema Escola: papel de caderno, azul e amarelo-lápis ---------- */
+[data-tema='escola'] {
+  --bg: #eef4ff;
+  --fg: #14213d;
+  --fg2: #3d4a66;
+  --line: #14213d;
+  --soft-line: #c9d6ef;
+  --acc: #2b59c3;
+  --acc-ink: #ffffff;
+  --acc-text: #1f448f;
+  --acc-soft: #dde7fb;
+  --good: #1b7a4a;
+  --mata: #1b2f6b;
+  --amarelo: #ffc83d;
+  --laranja: #ff8c42;
+  --sh: 0 6px 0 #14213d;
+  --sh-sm: 0 4px 0 #14213d;
+}
+[data-tema='escola'] body {
+  background-color: #eef4ff;
+  background-image: linear-gradient(#d6e2fa 1px, transparent 1px), linear-gradient(90deg, rgba(229, 56, 59, 0.28) 2px, transparent 2px);
+  background-size: 100% 32px, 100% 100%;
+  background-position: 0 8px, 56px 0;
+}
+[data-tema='escola'] body:has(main.tv),
+body:has(main.tv)[data-tema='escola'] {
+  background: #1b2f6b;
+}
+[data-tema='escola'] .rank > div:first-child,
+[data-tema='escola'] .podium .p1 {
+  background: var(--amarelo);
+}
+[data-tema='escola'] .podium .p3 {
+  background: #8fb2f2;
+}
+
+/* ---------- logo: uma cor só no Corporativo ---------- */
+.logo .logo-mono,
+.foto-quiddo .logo-mono {
+  display: none;
+}
+[data-tema='corp'] body:not(:has(main.tv)) .logo .logo-cor,
+[data-tema='corp'] .foto-quiddo .logo-cor {
+  display: none;
+}
+[data-tema='corp'] body:not(:has(main.tv)) .logo .logo-mono,
+[data-tema='corp'] .foto-quiddo .logo-mono {
+  display: block;
+}
+.foto-quiddo .logo-cor {
+  display: block;
+}
+
+/* ---------- editor: passos com título grande ---------- */
+.passo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: clamp(24px, 5vw, 30px);
+}
+.passo > span {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--amarelo);
+  border: var(--bw) solid var(--line);
+  font-size: 20px;
+  font-style: normal;
+}
+.passo small {
+  font: 700 16px var(--text);
+  color: var(--fg2);
+}
+.chips.big button {
+  font-size: 16px;
+  padding: 10px 18px;
+  min-height: 52px;
+}
+/* resposta certa: contorno grosso e cor diferente, além do botão de opção */
+.opt-ed.certa input[type='text'] {
+  border: 4px solid var(--good);
+  background: #e3f6ec;
+  font-weight: 800;
+}
+.opt-ed.certa .marca-certa {
+  color: var(--good);
+  font-weight: 900;
+}
+.opt-ed.certa .marca-certa span::before {
+  content: '✓ ';
+}
+
+/* ---------- moedinhas ---------- */
+svg.moeda {
+  width: 18px;
+  height: 18px;
+  vertical-align: -3px;
+  margin-right: 3px;
+}
+.moeda-voa {
+  position: fixed;
+  z-index: 60;
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+}
+.moeda-voa svg.moeda {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+}
+.rank b.pts {
+  display: inline-block;
+  min-width: 3.2em;
+  text-align: right;
+}
+.placar {
+  font: 800 20px var(--text);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.placar .meus-pts {
+  font-family: var(--disp);
+  font-size: 40px;
+  display: inline-block;
+}
+.ganho {
+  color: var(--good);
+  font-weight: 900;
+}
+.subiu {
+  color: var(--good);
+  font-weight: 900;
+  font-size: 18px;
+  animation: pop 0.4s ease-out 0.9s backwards;
+}
+
+/* ---------- pódio com suspense ---------- */
+.big.pequeno {
+  font-size: clamp(28px, 8vw, 40px);
+}
+.podium > div.oculto {
+  background: #e9e4d8;
+  color: var(--fg2);
+  align-content: center;
+}
+.podium .q {
+  font: 900 54px var(--disp);
+  line-height: 1;
+  opacity: 0.6;
+}
+.podium > div.vazio {
+  border: 0;
+  background: none;
+}
+.podium > div.novo {
+  animation: sobe 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+}
+.podium > div.tremendo {
+  animation: treme 0.25s ease-in-out infinite;
+}
+@keyframes sobe {
+  from {
+    transform: translateY(40%) scale(0.9);
+    opacity: 0;
+  }
+}
+@keyframes treme {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(-1.2deg);
+  }
+  75% {
+    transform: rotate(1.2deg);
+  }
+}
+.confete {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 70;
+  overflow: hidden;
+}
+.confete i {
+  position: absolute;
+  top: -20px;
+  width: 10px;
+  height: 16px;
+  border-radius: 2px;
+  animation: cai linear forwards;
+}
+@keyframes cai {
+  to {
+    top: 105vh;
+    transform: rotate(720deg);
+  }
+}
+
+/* ---------- cartão de foto do pódio ---------- */
+.foto {
+  gap: 18px;
+}
+.foto-topo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.foto-quiddo img {
+  width: 120px;
+  height: auto;
+}
+.foto-logo-marca {
+  max-height: 48px;
+  max-width: 200px;
+  object-fit: contain;
+}
+.foto-evento {
+  display: grid;
+  text-align: right;
+  line-height: 1.2;
+}
+.foto-evento b {
+  font: 900 20px var(--disp);
+}
+.foto-evento span {
+  font-size: 14px;
+  color: var(--fg2);
+  font-weight: 700;
+}
+.foto-pe {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--fg2);
+  letter-spacing: 0.04em;
+}
+body.modo-foto .top,
+body.modo-foto .foot,
+body.modo-foto main > :not(#foto) {
+  display: none !important;
+}
+body.modo-foto main {
+  max-width: 1200px;
+  min-height: 100vh;
+  align-content: center;
+  padding: 24px;
+}
+body.modo-foto #foto {
+  padding: 36px;
+}
+body.modo-foto .podium .p1 {
+  min-height: 300px;
+}
+body.modo-foto .podium .p2 {
+  min-height: 240px;
+}
+body.modo-foto .podium .p3 {
+  min-height: 190px;
+}
+.sair-foto {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 80;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  border-radius: 999px;
+  padding: 8px 14px;
+  min-height: 44px;
+  font: 800 14px var(--text);
+  cursor: pointer;
+}
+
+/* ---------- rodapé padrão Beyond the Work ---------- */
+.btw {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg);
+  text-decoration: none;
+  min-height: 44px;
+}
+.btw-sym {
+  width: 30px;
+  height: 30px;
+  flex: none;
+}
+.btw-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.1;
+}
+.btw-txt small {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg2);
+}
+.btw-txt b {
+  font-family: 'Sora', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.0375em;
+}
+body:has(main.tv) .btw {
+  color: #fff6e6;
+}
+body:has(main.tv) .btw-txt small {
+  color: #cde7dc;
+}
+@media (max-width: 480px) {
+  .rank > div {
+    grid-template-columns: 30px 1fr auto auto;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .rank em {
+    font-size: 13px;
+  }
+  .rank em svg.moeda {
+    display: none;
+  }
+}

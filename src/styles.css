@@ -5410,3 +5410,71 @@ body.modo-foto .btn-som {
 .etapa-acoes .btn[type='submit'] {
   flex: 1;
 }
+
+/* revelação: a resposta certa ganha destaque (faixa grande, barra com brilho, as outras apagadas) */
+.certa-faixa {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 4px 0 10px;
+  padding: 12px 20px;
+  border-radius: 20px;
+  background: var(--good);
+  color: #fff;
+  border: var(--bw) solid #0e2a22;
+  box-shadow: 0 6px 0 #0e2a22;
+  animation: certaEntra 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+  animation-delay: 0.9s;
+}
+.certa-ok {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: var(--good);
+  font: 900 30px var(--text);
+}
+.certa-faixa .lt {
+  flex: none;
+}
+.certa-txt {
+  min-width: 0;
+  font: 900 clamp(24px, 3.4vw, 44px) / 1.1 var(--disp);
+  overflow-wrap: anywhere;
+}
+.g-col.certa .g-barra {
+  box-shadow: 0 0 0 4px var(--card), 0 0 0 9px var(--good);
+  animation:
+    sobeBarra 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.1) both,
+    certaBrilho 1.4s ease-in-out 1.4s 2;
+}
+.g-col.certa .g-n {
+  color: var(--good);
+}
+.g-col.errada .g-barra {
+  opacity: 0.3;
+  filter: grayscale(0.6);
+}
+.g-col.errada .g-rot {
+  opacity: 0.55;
+}
+@keyframes certaEntra {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(10px);
+  }
+}
+@keyframes certaBrilho {
+  50% {
+    box-shadow: 0 0 0 4px var(--card), 0 0 0 16px var(--good);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .certa-faixa,
+  .g-col.certa .g-barra {
+    animation: none;
+  }
+}

@@ -46,7 +46,7 @@ Pontos: errou ou não respondeu, 0. Acertou: `round(500 + 500 × max(0, 1 − te
 
 Cada pergunta pode ser de múltipla escolha (2 a 4 respostas) ou verdadeiro ou falso. O motor ainda aceita enquete e "Quem é mais provável…" (sem pontos), mas o editor não oferece mais esses tipos. Qualquer pergunta pode ter uma imagem (reduzida no navegador para até 960×540; aparece na TV e nos celulares).
 
-Antes de cada pergunta há um "Prepare-se" de 4 segundos: a pergunta aparece, a contagem corre e só depois dá para responder; o tempo de resposta conta a partir daí. O editor tem a opção "A última pergunta vale o dobro", que dobra os pontos da última pergunta com resposta certa.
+Antes de cada pergunta há um "Prepare-se" de 5 segundos: a pergunta aparece, a contagem corre e só depois dá para responder; o tempo de resposta conta a partir daí. O editor tem a opção "A última pergunta vale o dobro", que dobra os pontos da última pergunta com resposta certa.
 
 Depois de cada pergunta o ranking mostra as moedinhas entrando, o placar subindo e quem trocou de posição. No fim, o pódio é revelado do 3º para o 1º lugar, com suspense, e o "modo foto" deixa só o pódio na tela.
 
@@ -62,7 +62,7 @@ Floresta é o Quiddo de sempre. Cada outro visual troca as cores da TV e dos cel
 
 Na Floresta, o pódio muda de cenário: em Amigos & família e Escola ele reveza entre a mata à noite (vaga-lumes), a chuva de ipê e a praia no fim de tarde (a cena sai do código da sala, então a TV e os celulares mostram a mesma); o Corporativo mantém o palco sóbrio. O álbum de figurinhas com o carimbo "Nota 10" virou um visual próprio da Escola. Quando o 1º aparece, cada lugar comemora do seu jeito (o 1º gira com coroa, o 2º pula, o 3º balança) e quem ficou fora do pódio aplaude no celular.
 
-Entre as rodadas: a contagem do "Prepare-se" é o olho do tucano; a pergunta que vale o dobro chega com o selo ×2 e a tela treme; a última pergunta cai do alto com os 3 primeiros nervosos na TV; uma cortina de folhas atravessa a TV na troca de pergunta. Na revelação, as erradas afundam, a certa ganha o selo, os bichos de quem acertou entram em fila e aparece o "Mais rápido no gatilho". O ranking da TV alterna entre a pista (cada bicho corre até a pontuação nova) e as colunas, e destaca quem está "pegando fogo" (3 acertos seguidos ou mais).
+Entre as rodadas: a contagem do "Prepare-se" é o olho do tucano; a pergunta que vale o dobro chega com o selo ×2 e a tela treme; a última pergunta cai do alto com os 3 primeiros nervosos na TV; uma cortina de folhas atravessa a TV na troca de pergunta. Na revelação, primeiro aparecem só os votos de cada resposta; um instante depois a certa ganha o selo verde e as outras apagam (os celulares esperam o mesmo tempo para dizer quem acertou). Depois da última pergunta não tem ranking, para não entregar o vencedor: vai direto para o pódio. Na última, os bichos de quem acertou entram em fila e aparece o "Mais rápido no gatilho". O ranking da TV alterna entre a pista (cada bicho corre até a pontuação nova) e as colunas, e destaca quem está "pegando fogo" (3 acertos seguidos ou mais).
 
 Os bichos piscam e respiram na sala de espera e no pódio, entram como figurinhas com sombra dura e ganham molduras de conquista: chamas (sequência de 3 acertos), raio (o mais rápido da pergunta) e louros dourados (quem lidera).
 

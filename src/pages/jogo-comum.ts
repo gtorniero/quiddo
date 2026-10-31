@@ -18,7 +18,7 @@ export function brandBar(s: BaseState) {
 export const preparando = (s: BaseState, now: number) => s.phase === 'question' && now < s.startsAt;
 
 /** Olho do tucano grande da contagem do "Prepare-se": o anel amarelo esvazia em 3 s e o número fica na pupila. */
-const OLHO_CONTA = `<div class="olho-conta" aria-hidden="true"><svg viewBox="0 0 300 300" focusable="false"><circle cx="150" cy="150" r="136" fill="#13A07A" stroke="#0E2A22" stroke-width="8"/><circle cx="150" cy="150" r="105" fill="none" stroke="#0E6B50" stroke-width="14"/><circle class="anel" id="anel" cx="150" cy="150" r="105" fill="none" stroke="#FFC83D" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="100 200" transform="rotate(-90 150 150)"/><circle cx="150" cy="150" r="88" fill="#5BC0EB" stroke="#0E2A22" stroke-width="7"/><circle cx="150" cy="150" r="62" fill="#fff" stroke="#0E2A22" stroke-width="4"/></svg><b class="prep-n" id="prep">4</b></div>`;
+const OLHO_CONTA = `<div class="olho-conta" aria-hidden="true"><svg viewBox="0 0 300 300" focusable="false"><circle cx="150" cy="150" r="136" fill="#13A07A" stroke="#0E2A22" stroke-width="8"/><circle cx="150" cy="150" r="105" fill="none" stroke="#0E6B50" stroke-width="14"/><circle class="anel" id="anel" cx="150" cy="150" r="105" fill="none" stroke="#FFC83D" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="100 200" transform="rotate(-90 150 150)"/><circle cx="150" cy="150" r="88" fill="#5BC0EB" stroke="#0E2A22" stroke-width="7"/><circle cx="150" cy="150" r="62" fill="#fff" stroke="#0E2A22" stroke-width="4"/></svg><b class="prep-n" id="prep">5</b></div>`;
 
 /** Selo "×2" que cai na tela antes da pergunta que vale o dobro. */
 const CARIMBO_X2 = '<div class="x2" aria-hidden="true"><span>×2</span></div>';
@@ -187,15 +187,20 @@ export function fogoFaixa(rows: RankRow[]) {
 export const segundos = (ms: number) => (ms / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' s';
 
 /** Gráfico de barras da revelação: quantas pessoas escolheram cada resposta, com a certa destacada. */
-export function graficoVotos(s: BaseState) {
+/** Na revelação, primeiro só os votos; a certa ganha o destaque depois deste tempo (suspense). */
+export const SUSPENSE_MS = 2600;
+
+/** Gráfico da revelação. Sem `destaque`, mostra só quantos votaram em cada uma, sem dizer qual é a certa. */
+export function graficoVotos(s: BaseState, destaque = true) {
   const q = s.question!;
   const counts = s.counts || q.o.map(() => 0);
   const max = Math.max(1, ...counts);
-  const leitura = q.o.map((o, k) => `${LETRAS[k]}, ${o}: ${counts[k]} ${counts[k] === 1 ? 'pessoa' : 'pessoas'}${k === s.correct ? ' (certa)' : ''}`).join('. ');
-  return `<div class="votos-grafico" style="--n:${q.o.length}" role="img" aria-label="${esc(leitura)}">${q.o
+  const certa = (k: number) => destaque && k === s.correct;
+  const leitura = q.o.map((o, k) => `${LETRAS[k]}, ${o}: ${counts[k]} ${counts[k] === 1 ? 'pessoa' : 'pessoas'}${certa(k) ? ' (certa)' : ''}`).join('. ');
+  return `<div class="votos-grafico${destaque ? ' destaque' : ''}" style="--n:${q.o.length}" role="img" aria-label="${esc(leitura)}">${q.o
     .map(
       (o, k) =>
-        `<div class="g-col${k === s.correct ? ' certa' : ' errada'}" style="--h:${Math.round((counts[k] / max) * 100)}%;--i:${k}"><b class="g-n">${counts[k]}</b><span class="g-barra c${k}">${simbolo(k)}${k === s.correct ? '<span class="g-ok" aria-hidden="true">✓</span>' : ''}</span><span class="g-rot"><span class="lt c${k}">${LETRAS[k]}</span><span class="g-txt">${esc(o)}</span></span></div>`,
+        `<div class="g-col${!destaque ? '' : certa(k) ? ' certa' : ' errada'}" style="--h:${Math.round((counts[k] / max) * 100)}%;--i:${k}"><b class="g-n">${counts[k]}</b><span class="g-barra c${k}">${simbolo(k)}${certa(k) ? '<span class="g-ok" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' : ''}</span><span class="g-rot"><span class="lt c${k}">${LETRAS[k]}</span><span class="g-txt">${esc(o)}</span></span></div>`,
     )
     .join('')}</div>`;
 }

@@ -3545,7 +3545,7 @@ svg.av.vivo .corpo {
 /* contagem no olho do tucano */
 .olho-conta {
   position: relative;
-  width: clamp(170px, 34vw, 260px);
+  width: clamp(120px, 26vw, 190px);
   aspect-ratio: 1;
   display: grid;
   place-items: center;
@@ -3559,11 +3559,11 @@ svg.av.vivo .corpo {
 }
 .olho-conta .prep-n {
   position: relative;
-  font: 900 clamp(56px, 11vw, 96px) / 1 var(--disp);
+  font: 900 clamp(42px, 8vw, 70px) / 1 var(--disp);
   color: #0e2a22;
 }
 .olho-conta .prep-n.bora {
-  font-size: clamp(28px, 5.5vw, 44px);
+  font-size: clamp(20px, 4vw, 32px);
   background: #0e2a22;
   color: #ffc83d;
   border-radius: 50%;
@@ -4069,7 +4069,7 @@ svg.av.vivo .corpo {
   font-size: clamp(26px, 3.4vw, 46px);
 }
 .tv .olho-conta {
-  width: clamp(150px, 27vh, 250px);
+  width: clamp(110px, 19vh, 180px);
 }
 .tv .ultima {
   font-size: clamp(36px, 5.6vw, 72px);
@@ -5364,6 +5364,63 @@ body.modo-foto .btn-som {
 }
 .plano.liberado strong {
   white-space: nowrap;
+}
+
+/* revelação em dois tempos: primeiro só os votos; depois a certa ganha o selo verde e as outras apagam */
+.verdict.espera {
+  background: var(--card);
+  color: var(--fg);
+  font-size: clamp(24px, 7vw, 36px);
+}
+.votos-grafico.destaque .g-barra {
+  animation: none;
+}
+.votos-grafico.destaque .g-n {
+  animation: none;
+}
+.votos-grafico.destaque .g-col.errada .g-barra {
+  animation: apagaBarra 0.6s ease-out both;
+}
+.votos-grafico.destaque .g-col.certa .g-barra {
+  box-shadow: 0 0 0 5px var(--good);
+  animation: realcaCerta 0.7s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+.votos-grafico.destaque .g-col.certa .g-n {
+  color: var(--good);
+}
+.g-ok {
+  top: 8px;
+  width: clamp(44px, 5vw, 60px);
+  height: clamp(44px, 5vw, 60px);
+  background: var(--good);
+  color: #fff;
+  border: 3px solid #0e2a22;
+  animation: carimbaOk 0.55s cubic-bezier(0.3, 1.6, 0.5, 1) 0.15s both;
+}
+.g-ok svg {
+  width: 64%;
+  height: 64%;
+}
+.g-col.certa .g-rot {
+  border-top-color: var(--good);
+}
+@keyframes apagaBarra {
+  from {
+    opacity: 1;
+  }
+}
+@keyframes realcaCerta {
+  from {
+    box-shadow: 0 0 0 0 var(--good);
+  }
+  50% {
+    box-shadow: 0 0 0 14px var(--good);
+  }
+}
+@keyframes carimbaOk {
+  from {
+    transform: translateX(-50%) scale(0) rotate(-30deg);
+  }
 }
 
 /* entrada em telas: uma etapa por vez, com progresso e botões no pé */

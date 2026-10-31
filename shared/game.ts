@@ -24,7 +24,7 @@ export interface Pessoa {
 }
 
 /** Duração do "Prepare-se" antes de cada pergunta. */
-export const PREP_MS = 4000;
+export const PREP_MS = 5000;
 
 export interface Answer {
   choice: number;
@@ -218,7 +218,8 @@ export function reveal(room: Room): boolean {
 }
 
 export function showRanking(room: Room): boolean {
-  if (room.phase !== 'reveal') return false;
+  // depois da última pergunta não tem ranking: ele entregaria o vencedor antes do pódio
+  if (room.phase !== 'reveal' || room.qIndex >= room.questions.length - 1) return false;
   room.phase = 'ranking';
   return true;
 }

@@ -13,7 +13,7 @@ import { BICHOS, CABECA, ROSTO, encodeAvatar, parseAvatar, randomAvatar, startAv
 import type { Avatar, Bicho, ItemCabeca, ItemRosto } from '../../shared/avatar';
 import { avatarSvg, comMoldura } from '../lib/avatar-art';
 import { simbolo } from '../lib/simbolos';
-import { FOGO, MOEDA, agendaPodio, novosNoPodio, answersStatic, aplaude, prepare, preparando, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick, top10 } from './jogo-comum';
+import { FOGO, MOEDA, SUSPENSE_MS, agendaPodio, novosNoPodio, answersStatic, aplaude, prepare, preparando, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick, top10 } from './jogo-comum';
 
 interface Seat {
   pid: string;
@@ -30,6 +30,8 @@ function mount(main: HTMLElement, code: string) {
   let sock: RoomSocket | null = null;
   let s: PlayerState | null = null;
   let sending: number | null = null; // resposta tocada, esperando o servidor confirmar
+  let destaqueEm = 0; // revelação: o celular mostra se acertou junto com o destaque da TV
+  let destaqueTimer = 0;
   let revealDrawAt = 0; // o sorteio aparece no celular depois da roleta da TV
   let drawTimer = 0;
   let clock = 0;
@@ -143,6 +145,15 @@ function mount(main: HTMLElement, code: string) {
       clearTimeout(drawTimer);
       drawTimer = window.setTimeout(render, Math.max(0, revealDrawAt - Date.now()));
     }
+    if (prev && prev.phase === 'question' && s.phase === 'reveal' && s.question?.tipo === 'quiz') {
+      destaqueEm = Date.now() + SUSPENSE_MS;
+      clearTimeout(destaqueTimer);
+      destaqueTimer = window.setTimeout(() => {
+        if (s?.phase !== 'reveal') return;
+        render();
+        festejar('reveal');
+      }, SUSPENSE_MS);
+    }
     if (s.phase === 'final' && prev && prev.phase !== 'final') suspense();
     if (s.phase !== 'final') pararSuspense();
     // as respostas aparecem quando o "Prepare-se" acaba
@@ -155,7 +166,7 @@ function mount(main: HTMLElement, code: string) {
     if (!prev || prev.phase !== s.phase || prev.qIndex !== s.qIndex) {
       window.scrollTo(0, 0);
       if (s.phase === 'question') main.querySelector<HTMLElement>('button.ans')?.focus({ preventScroll: true });
-      if (prev) festejar(s.phase);
+      if (prev && Date.now() >= destaqueEm) festejar(s.phase);
     }
   }
 
@@ -251,11 +262,16 @@ function mount(main: HTMLElement, code: string) {
     if (s.question!.tipo !== 'quiz') {
       return `<section class="stage">${questionHead(s)}<div class="verdict voto-feito" role="status">${answered ? 'Voto contado!' : 'Não votou'}</div>${answersStatic(s, s.me.choice)}</section>`;
     }
+    // suspense: enquanto a TV mostra só os votos, o celular mostra só a resposta escolhida
+    if (Date.now() < destaqueEm)
+      return `<section class="stage">${questionHead(s)}<div class="verdict espera" role="status"><span class="dots">Olhe para a tela</span></div>${answersStatic({ ...s, correct: null }, s.me.choice)}</section>`;
     const ok = answered && s.me.choice === s.correct;
+    // na última não mostra a posição: ela entregaria o pódio
+    const ultima = s.qIndex >= s.total - 1;
     const fogo = ok && s.me.streak >= FOGO ? `<div class="fogo-selo">${comMoldura(avatarSvg(s.me.avatar, 56), 'fogo')}<span><b>${s.me.streak} acertos seguidos!</b> Você está pegando fogo.</span></div>` : '';
     return `<section class="stage revelada">${questionHead(s)}<div class="verdict ${ok ? 'ok' : 'no'}" role="status">${answered ? (ok ? `Mandou bem! +${fmt(s.me.delta)}` : 'Quase!') : 'Não respondeu'}</div>${fogo}
       ${answersStatic(s, s.me.choice)}
-      <p class="hint" style="font-size:19px">Você está em <b>${s.me.rank}º</b> de ${s.playerCount}, com ${fmt(s.me.score)} pontos.</p></section>`;
+      <p class="hint" style="font-size:19px">${ultima ? '<b>Olhe para a tela:</b> o pódio vem aí!' : `Você está em <b>${s.me.rank}º</b> de ${s.playerCount}, com ${fmt(s.me.score)} pontos.`}</p></section>`;
   }
 
   function ranking(s: PlayerState) {
@@ -352,6 +368,7 @@ function mount(main: HTMLElement, code: string) {
   else form();
 
   return () => {
+    clearTimeout(destaqueTimer);
     if (sock) sock.stop();
     clearInterval(clock);
     clearTimeout(prepTimer);

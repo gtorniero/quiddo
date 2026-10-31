@@ -19,7 +19,7 @@ beforeEach(() => {
 });
 
 describe('fases', () => {
-  it('segue lobby → question → reveal → ranking → question → … → final', () => {
+  it('segue lobby → question → reveal → ranking → question → reveal → final', () => {
     expect(room.phase).toBe('lobby');
     expect(G.next(room, S)).toBe(false);
     expect(G.start(room, S)).toBe(true);
@@ -33,7 +33,9 @@ describe('fases', () => {
     expect(room.phase).toBe('question');
     expect(room.qIndex).toBe(1);
     G.reveal(room);
-    G.showRanking(room);
+    // depois da última não tem ranking: vai direto para o pódio
+    expect(G.showRanking(room)).toBe(false);
+    expect(room.phase).toBe('reveal');
     expect(G.next(room, T0 + 50_000)).toBe(true);
     expect(room.phase).toBe('final');
     expect(room.endedAt).toBe(T0 + 50_000);

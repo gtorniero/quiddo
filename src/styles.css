@@ -5006,3 +5006,208 @@ svg.av.vivo .corpo {
   font: 700 13px var(--text);
   color: var(--fg2);
 }
+
+/* botão de tela cheia da tela principal */
+.btn-cheia {
+  position: fixed;
+  right: 14px;
+  top: 14px;
+  z-index: 60;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  background: rgba(14, 42, 34, 0.75);
+  color: #fff6e6;
+  border-radius: 999px;
+  padding: 8px 16px;
+  min-height: 44px;
+  font: 800 14px var(--text);
+  cursor: pointer;
+}
+.btn-cheia:hover {
+  background: rgba(14, 42, 34, 0.95);
+}
+body.modo-foto .btn-cheia {
+  display: none;
+}
+
+/* gráfico de barras da revelação: quantos escolheram cada resposta */
+.votos-grafico {
+  display: grid;
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  gap: clamp(10px, 2vw, 22px);
+  align-items: end;
+  height: clamp(220px, 40vh, 380px);
+  padding: 8px 4px 0;
+}
+.g-col {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100%;
+  min-width: 0;
+  gap: 6px;
+}
+.g-n {
+  font: 900 clamp(26px, 3.6vw, 44px) / 1 var(--disp);
+  text-align: center;
+  align-self: end;
+  animation: pop 0.4s ease-out both;
+  animation-delay: calc(0.9s + var(--i) * 0.08s);
+}
+.g-barra {
+  position: relative;
+  align-self: end;
+  height: max(var(--h), 10px);
+  border: var(--bw) solid #0e2a22;
+  border-bottom-width: 0;
+  border-radius: 14px 14px 0 0;
+  overflow: hidden;
+  transform-origin: bottom;
+  animation: sobeBarra 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+  animation-delay: calc(var(--i) * 0.08s);
+}
+.g-barra .sym {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: 40%;
+  max-width: 60px;
+  transform: translateX(-50%);
+  opacity: 0.35;
+}
+.g-ok {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--good);
+  border: 3px solid #0e2a22;
+  display: grid;
+  place-items: center;
+  font: 900 22px var(--text);
+}
+.g-rot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: var(--bw) solid #0e2a22;
+  padding-top: 8px;
+  min-width: 0;
+}
+.g-rot .lt {
+  flex: none;
+}
+.g-txt {
+  font-weight: 800;
+  font-size: clamp(14px, 1.6vw, 20px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.g-col.errada .g-barra {
+  opacity: 0.45;
+}
+.g-col.certa .g-txt {
+  color: var(--good);
+}
+@keyframes sobeBarra {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+/* entrada do jogador: nome, bicho, cabeça, rosto; o personagem fica fixo no alto */
+.entrada form {
+  display: grid;
+  gap: 16px;
+}
+.av-fixo {
+  position: sticky;
+  top: 8px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  background: var(--card);
+  border: var(--bw) solid var(--line);
+  box-shadow: var(--sh-sm);
+}
+.av-fixo-bicho svg.av {
+  display: block;
+  width: 76px;
+  height: 76px;
+}
+.av-fixo-bicho svg.av {
+  animation: pop 0.25s ease-out;
+}
+.av-fixo-nome {
+  flex: 1;
+  min-width: 0;
+  font: 900 22px var(--disp);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.passo-j > span,
+.avset legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 900 20px var(--disp);
+}
+.entrada .n {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--amarelo);
+  border: 2px solid var(--line);
+  font: 900 15px var(--disp);
+}
+
+/* "Encerrar jogo": pequeno e afastado do botão principal, para ninguém clicar sem querer */
+.encerrar {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0;
+}
+.encerrar .linkbtn {
+  font-size: 13px;
+  color: var(--fg2);
+  opacity: 0.85;
+}
+.rodape-jogo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+/* botão de som, ao lado do de tela cheia */
+.btn-som {
+  position: fixed;
+  right: 168px;
+  top: 14px;
+  z-index: 60;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  background: rgba(14, 42, 34, 0.75);
+  color: #fff6e6;
+  border-radius: 999px;
+  padding: 8px 16px;
+  min-height: 44px;
+  font: 800 14px var(--text);
+  cursor: pointer;
+}
+.btn-som[aria-pressed='false'] {
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+body.modo-foto .btn-som {
+  display: none;
+}

@@ -305,7 +305,8 @@ const FESTA_POS = ['', 'giro', 'pulinho', 'balanca'];
  * Pódio completo. `step` revela do 3º para o 1º (0 nenhum, 1 terceiro, 2 segundo, 3 suspense, 4 primeiro);
  * `novo` é a posição que acabou de aparecer, para animar só ela. `code` escolhe a cena (ver cenaDoPodio).
  */
-export function palco(rows: RankRow[], tema: Theme, step = 4, novo = -1, code = '', visual: Visual = 'floresta'): string {
+export function palco(rows: RankRow[], tema: Theme, step = 4, novo: number | number[] = -1, code = '', visual: Visual = 'floresta'): string {
+  const novos = Array.isArray(novo) ? novo : [novo];
   const cena = cenaDoPodio(tema, code, visual);
   const ordem: [RankRow | undefined, number][] = [
     [rows[1], 2],
@@ -321,7 +322,7 @@ export function palco(rows: RankRow[], tema: Theme, step = 4, novo = -1, code = 
       const festa = step >= 4 ? ' ' + FESTA_POS[pos] : '';
       const coroa = pos === 1 && step >= 4 ? '<svg class="coroa-voa" viewBox="-34 -26 68 46" aria-hidden="true" focusable="false"><path d="M-26 12 L-29 -14 L-14 -1 L0 -20 L14 -1 L29 -14 L26 12Z" fill="#FFC83D" stroke="#0E2A22" stroke-width="4" stroke-linejoin="round"/><circle cx="0" cy="2" r="4" fill="#E5383B"/><circle cx="-15" cy="5" r="3" fill="#1E7FD6"/><circle cx="15" cy="5" r="3" fill="#13A07A"/></svg>' : '';
       const quem = show
-        ? `<div class="boneco${pos === novo ? ' novo' : ''}${pos === 1 ? ' campeao' : ''}">${coroa}<div class="festa${festa}"><span class="fig" style="--r:${giro[pos - 1]}">${comMoldura(avatarSvg(r.avatar, 160, false, { vivo: true }), pos === 1 && step >= 4 ? 'lider' : null)}</span></div></div>`
+        ? `<div class="boneco${novos.includes(pos) ? ' novo' : ''}${pos === 1 ? ' campeao' : ''}">${coroa}<div class="festa${festa}"><span class="fig" style="--r:${giro[pos - 1]}">${comMoldura(avatarSvg(r.avatar, 160, false, { vivo: true }), pos === 1 && step >= 4 ? 'lider' : null)}</span></div></div>`
         : `<div class="boneco oculto${pos === 1 && step === 3 ? ' tremendo' : ''}"><span aria-hidden="true">?</span></div>`;
       const placa = show ? `<b>${esc(r.nick)}</b><small>${fmt(r.score)} pts</small>` : '<b class="vazio">&nbsp;</b><small class="vazio">&nbsp;</small>';
       return `<div class="degrau d${pos}">${quem}<div class="bloco"><div class="tampa"></div><div class="frente"><span class="num">${pos}</span>${placa}</div></div></div>`;

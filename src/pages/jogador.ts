@@ -9,22 +9,16 @@ import { RoomSocket } from '../lib/socket';
 import { store, uid } from '../lib/storage';
 import { applyTheme } from '../lib/theme';
 import { palco } from '../lib/podio';
-import { BICHOS, CABECA, CORES_N, ROSTO, avatarName, encodeAvatar, parseAvatar, randomAvatar, startAvatar } from '../../shared/avatar';
+import { BICHOS, CABECA, ROSTO, encodeAvatar, parseAvatar, randomAvatar, startAvatar } from '../../shared/avatar';
 import type { Avatar, Bicho, ItemCabeca, ItemRosto } from '../../shared/avatar';
-import { CORES_AVATAR, avatarSvg, comMoldura } from '../lib/avatar-art';
+import { avatarSvg, comMoldura } from '../lib/avatar-art';
 import { simbolo } from '../lib/simbolos';
-import { FOGO, MOEDA, PASSOS_PODIO, answersStatic, aplaude, prepare, preparando, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick, top10 } from './jogo-comum';
+import { FOGO, MOEDA, agendaPodio, novosNoPodio, answersStatic, aplaude, prepare, preparando, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick, top10 } from './jogo-comum';
 
 interface Seat {
   pid: string;
   nick: string;
   avatar?: string;
-}
-
-/** Nome sugerido que cabe no apelido: "Capivara de Boné" ou só "Capivara". */
-function sugestao(v: Avatar) {
-  const n = avatarName(v);
-  return n.length <= LIMITS.nick ? n : BICHOS[v.a];
 }
 
 export function page(code: string): Page {
@@ -44,7 +38,6 @@ function mount(main: HTMLElement, code: string) {
   let lastHtml = '';
   let prepTimer = 0;
   let av: Avatar = parseAvatar(store.get('avatar', '')) || startAvatar();
-  let sugerido = ''; // o apelido que o site sugeriu; se a pessoa não mexeu, ele acompanha o visual
 
   const sair = () => {
     store.del('jog:' + code);
@@ -63,45 +56,35 @@ function mount(main: HTMLElement, code: string) {
     const ros = [btn('f', '-', !av.f, 'Nada', 'Nada no rosto')]
       .concat((Object.keys(ROSTO) as ItemRosto[]).map((f) => btn('f', f, av.f === f, esc(ROSTO[f]), ROSTO[f])))
       .join('');
-    const cores = Array.from({ length: CORES_N }, (_, c) => btn('c', c, av.c === c, `<i style="background:${CORES_AVATAR[c]}"></i>`, `Fundo ${c + 1}`)).join('');
-    return `<fieldset class="avset"><legend>Escolha o bicho</legend><div class="avgrid">${bichos}</div></fieldset>
-      <fieldset class="avset"><legend>Na cabeça</legend><div class="chips">${cab}</div></fieldset>
-      <fieldset class="avset"><legend>No rosto</legend><div class="chips">${ros}</div></fieldset>
-      <fieldset class="avset"><legend>Cor de fundo</legend><div class="avcores">${cores}</div></fieldset>`;
+    // a cor de fundo é sorteada: menos coisa para escolher
+    return `<fieldset class="avset"><legend><span class="n">2</span>Escolha o seu bicho</legend><div class="avgrid">${bichos}</div></fieldset>
+      <fieldset class="avset"><legend><span class="n">3</span>Na cabeça</legend><div class="chips">${cab}</div></fieldset>
+      <fieldset class="avset"><legend><span class="n">4</span>No rosto</legend><div class="chips">${ros}</div></fieldset>`;
   }
 
-  /** Atualiza o personagem e, se a pessoa não escreveu outro apelido, a sugestão de nome. */
-  /** Bicho escolhido, grande, com o botão de sortear. */
-  const previa = () => `${avatarSvg(av, 120, true)}<button type="button" class="btn sec auto" data-act="sortear" data-focus="sortear">Sortear</button>`;
+  /** Personagem fixo no alto: a pessoa vê na hora como ficou a cada toque. */
+  const previa = () => avatarSvg(av, 76, true);
 
   function setAv(next: Avatar) {
     av = next;
     const box = main.querySelector<HTMLElement>('#avp');
     if (box) patch(box, picker());
     const pv = main.querySelector<HTMLElement>('#avprev');
-    if (pv) patch(pv, previa());
-    const nick = main.querySelector<HTMLInputElement>('#nick');
-    if (nick && (!nick.value.trim() || nick.value === sugerido)) {
-      sugerido = sugestao(av);
-      nick.value = sugerido;
-    }
+    if (pv) pv.innerHTML = previa();
   }
 
   function form(err = '') {
     const saved = store.get('nick', '');
-    sugerido = saved ? '' : sugestao(av);
-    main.innerHTML = `<section class="panel"><div class="tag">Sala ${code}</div><h1>Quem é você hoje?</h1>
-      <form id="fj" novalidate style="display:grid;gap:14px">
-        <div id="avprev" class="avprev">${previa()}</div>
-        <label for="nick">Seu apelido<input type="text" id="nick" maxlength="${LIMITS.nick}" value="${esc(saved || sugerido)}" autocomplete="nickname" placeholder="Como vai aparecer no ranking" aria-describedby="nick-err"></label>
+    main.innerHTML = `<section class="panel entrada"><div class="tag">Sala ${code}</div><h1>Quem é você hoje?</h1>
+      <form id="fj" novalidate>
+        <div class="av-fixo"><span id="avprev" class="av-fixo-bicho">${previa()}</span><span class="av-fixo-nome" id="av-nome">${esc(saved) || 'Seu nome'}</span><button type="button" class="btn sec small auto" data-act="sortear" data-focus="sortear">Sortear</button></div>
+        <label for="nick" class="passo-j"><span><span class="n">1</span>Seu nome</span><input type="text" id="nick" maxlength="${LIMITS.nick}" value="${esc(saved)}" autocomplete="nickname" placeholder="Como vai aparecer no ranking" aria-describedby="nick-err"></label>
         <p class="err" id="nick-err" role="alert">${esc(err)}</p>
-        <button class="btn" type="submit">Entrar na sala</button>
-        <h2 class="personalizar">Quer mudar o seu bicho?</h2>
         <div id="avp" class="avpick">${picker()}</div>
-        <button class="btn sec" type="submit">Entrar na sala</button>
+        <button class="btn" type="submit">Entrar na sala</button>
       </form>
-      <p class="small">Sem cadastro. Seu bicho e seu apelido só aparecem nesta rodada.</p></section>`;
-    if (err) main.querySelector<HTMLInputElement>('#nick')!.focus();
+      <p class="small">Sem cadastro. Seu nome e seu bicho só aparecem nesta rodada.</p></section>`;
+    main.querySelector<HTMLInputElement>('#nick')!.focus({ preventScroll: true });
   }
 
   function connect() {
@@ -173,8 +156,7 @@ function mount(main: HTMLElement, code: string) {
   function suspense() {
     pararSuspense();
     passo = 0;
-    PASSOS_PODIO.forEach((ms, i) => {
-      if (!i) return;
+    agendaPodio(!!s && s.playerCount === 3).forEach(([ms, i]) => {
       passoTimers.push(
         window.setTimeout(() => {
           passo = i;
@@ -264,12 +246,13 @@ function mount(main: HTMLElement, code: string) {
     const showDraw = s.drawn.length && Date.now() >= revealDrawAt;
     const last = showDraw ? s.drawn[s.drawn.length - 1] : null;
     const euSorteado = s.drawn.some((d) => d.id === s.me.id) && (last?.id !== s.me.id || showDraw);
-    const novo = [0, 3, 2, 0, 1][passo];
+    const juntos = s.playerCount === 3;
+    const novo = novosNoPodio(passo, juntos);
     const palmas = passo >= 4 && s.me.rank > 3 ? `${aplaude(s.me.avatar)}<p class="muted">Palmas para o pódio!</p>` : '';
     const meu = passo >= 4 ? `${palmas}<div class="big">${s.me.rank}º lugar</div><p class="muted">${fmt(s.me.score)} pontos</p>` : '<p class="muted">Olhe para a tela…</p>';
     // depois do pódio, os 10 primeiros, como na TV
     const lista = passo >= 4 ? top10(s.ranking, s.me.id) : '';
-    return `<section class="stage center"><div class="tag">Fim do quiz</div><div class="big pequeno" aria-live="polite">${podiumTitle(s.podium, passo, s.visual)}</div>${s.podium.length ? palco(s.podium, s.theme, passo, novo, s.code, s.visual) : ''}${meu}</section>${lista}
+    return `<section class="stage center"><div class="tag">Fim do quiz</div><div class="big pequeno" aria-live="polite">${podiumTitle(s.podium, passo, s.visual, juntos)}</div>${s.podium.length ? palco(s.podium, s.theme, passo, novo, s.code, s.visual) : ''}${meu}</section>${lista}
       ${
         last
           ? `<section class="stage center" role="status"><div class="tag">Sorteio de prêmios</div><div class="sorteio">${last.id === s.me.id ? 'Você foi sorteado!' : esc(last.nick)}</div>${
@@ -286,7 +269,7 @@ function mount(main: HTMLElement, code: string) {
     e.preventDefault();
     const nick = cleanNick(main.querySelector<HTMLInputElement>('#nick')!.value);
     if (!nick) return form('Escreva seu apelido para aparecer no ranking.');
-    store.set('nick', nick === sugerido ? '' : nick);
+    store.set('nick', nick);
     const avatar = encodeAvatar(av);
     store.set('avatar', avatar);
     seat = { pid: uid(), nick, avatar };
@@ -320,6 +303,14 @@ function mount(main: HTMLElement, code: string) {
     }
   };
 
+  // o nome digitado aparece ao lado do bicho, na barra fixa
+  const onNome = (e: Event) => {
+    const t = e.target as HTMLInputElement;
+    if (t.id !== 'nick') return;
+    const n = main.querySelector('#av-nome');
+    if (n) n.textContent = t.value.trim() || 'Seu nome';
+  };
+  main.addEventListener('input', onNome);
   main.addEventListener('submit', onSubmit);
   main.addEventListener('click', onClick);
   if (seat) connect();
@@ -332,6 +323,7 @@ function mount(main: HTMLElement, code: string) {
     pararSuspense();
     clearTimeout(drawTimer);
     main.removeEventListener('submit', onSubmit);
+    main.removeEventListener('input', onNome);
     main.removeEventListener('click', onClick);
   };
 }

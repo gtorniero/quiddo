@@ -9,8 +9,9 @@ import { RoomSocket } from '../lib/socket';
 import { store } from '../lib/storage';
 import { applyTheme } from '../lib/theme';
 import { palco } from '../lib/podio';
+import { alternarSom, bipe, fanfarra, ligarMusica, musicaBaixa, pararMusica, prepararSom, reacao, rufar, somLigado } from '../lib/som';
 import { avatarSvg } from '../lib/avatar-art';
-import { PASSOS_PODIO, animateRank, answersStatic, prepare, preparando, brandBar, confete, cortina, errorScreen, fogoFaixa, fotoCabeca, podiumTitle, questionHead, rankColunas, rankList, rankPista, revelacaoTv, tick, top10 } from './jogo-comum';
+import { agendaPodio, graficoVotos, novosNoPodio, animateRank, answersStatic, prepare, preparando, brandBar, confete, cortina, errorScreen, fogoFaixa, fotoCabeca, podiumTitle, questionHead, rankColunas, rankList, rankPista, revelacaoTv, tick, top10 } from './jogo-comum';
 import type { RankRow } from '../../shared/protocol';
 
 /** Rotação das figurinhas na sala de espera: o jeito solto do logo. */
@@ -78,6 +79,13 @@ function mount(main: HTMLElement, code: string) {
       if (s.phase === 'ranking') animateRank(main);
       // cortina de folhas na troca de pergunta
       if (prev && s.phase === 'question' && prev.phase !== 'question') cortina(s.visual);
+      // som: música mais baixa na pergunta; reação na revelação
+      if (s.phase === 'question') musicaBaixa(true);
+      if (prev && s.phase === 'reveal' && prev.phase === 'question') {
+        musicaBaixa(false);
+        const q = s.question;
+        if (q && q.tipo === 'quiz' && s.correct != null && s.counts) reacao(s.counts[s.correct], s.counts.reduce((a, b) => a + b, 0));
+      }
     }
   }
 
@@ -117,13 +125,15 @@ function mount(main: HTMLElement, code: string) {
 
   function suspense() {
     pararSuspense(0);
-    PASSOS_PODIO.forEach((ms, i) => {
-      if (!i) return;
+    agendaPodio(!!s && s.playerCount === 3).forEach(([ms, i]) => {
       passoTimers.push(
         window.setTimeout(() => {
           passo = i;
           render();
-          if (i === 4) confete(s?.theme === 'corp' && s?.visual === 'floresta');
+          if (i === 4) {
+            confete(s?.theme === 'corp' && s?.visual === 'floresta');
+            fanfarra();
+          } else rufar();
         }, ms),
       );
     });
@@ -161,7 +171,7 @@ function mount(main: HTMLElement, code: string) {
                 .join('')}</div>`
             : '<p class="muted esperando">Esperando a turma entrar<span class="dots"></span></p>'
         }
-        <div class="btnrow"><button class="btn" data-act="start" data-focus="start">${n ? 'Começar o quiz' : 'Começar sem jogadores (teste)'}</button><button class="btn sec" data-act="close" data-focus="close">Encerrar sala</button></div>
+        <div class="btnrow"><button class="btn" data-act="start" data-focus="start">${n ? 'Começar o quiz' : 'Começar sem jogadores (teste)'}</button></div><p class="encerrar"><button class="linkbtn" data-act="close" data-focus="close">Encerrar sala</button></p>
       </section>`;
   }
 
@@ -170,7 +180,7 @@ function mount(main: HTMLElement, code: string) {
     const live = s.players.filter((p) => p.connected).length;
     const opiniao = s.question!.tipo !== 'quiz';
     const last = s.qIndex >= s.total - 1;
-    if (!rev && preparando(s, sock.now())) return prepare(s, ultimoRk.slice(0, 3)) + `<section class="panel"><div class="btnrow"><button class="btn sec" data-act="close" data-focus="close">Encerrar</button></div></section>`;
+    if (!rev && preparando(s, sock.now())) return prepare(s, ultimoRk.slice(0, 3)) + `<section class="panel"><p class="encerrar"><button class="linkbtn" data-act="close" data-focus="close">Encerrar jogo</button></p></section>`;
     const status = rev
       ? opiniao
         ? `${s.answeredCount} ${s.answeredCount === 1 ? 'voto' : 'votos'}`
@@ -182,10 +192,12 @@ function mount(main: HTMLElement, code: string) {
       : opiniao
         ? `<button class="btn" data-act="next" data-focus="go">${last ? 'Ver o pódio' : 'Próxima pergunta'}</button>`
         : '<button class="btn" data-act="showRanking" data-focus="go">Ver o ranking</button>';
-    const extras = rev && !opiniao && s.correct != null ? revelacaoTv(s.acertaram, s.counts ? s.counts[s.correct] : s.acertaram.length) : '';
-    return `<section class="stage${rev ? ' revelada' : ''}">${questionHead(s)}${answersStatic(s)}${extras}
+    // revelação: gráfico de barras com os votos; na última pergunta, também quem acertou
+    const quiz = rev && !opiniao && s.correct != null;
+    const extras = quiz && last ? revelacaoTv(s.acertaram, s.counts ? s.counts[s.correct!] : s.acertaram.length) : '';
+    return `<section class="stage${rev ? ' revelada' : ''}">${questionHead(s)}${quiz ? graficoVotos(s) : answersStatic(s)}${extras}
       <div class="meta"><span aria-live="polite">${status}</span></div></section>
-      <section class="panel"><div class="btnrow">${avancar}<button class="btn sec" data-act="close" data-focus="close">Encerrar</button></div><p class="small">Dica: a seta para a direita do teclado ou o passador de slides também avançam.</p></section>`;
+      <section class="panel"><div class="btnrow">${avancar}</div><div class="rodape-jogo"><p class="small">Dica: a seta para a direita do teclado ou o passador de slides também avançam.</p><p class="encerrar"><button class="linkbtn" data-act="close" data-focus="close">Encerrar jogo</button></p></div></section>`;
   }
 
   function ranking(s: HostState) {
@@ -194,15 +206,16 @@ function mount(main: HTMLElement, code: string) {
     const rapido = s.acertaram[0]?.id || '';
     const colunas = s.qIndex % 2 === 1 && s.ranking.length > 1;
     const placar = !s.ranking.length ? '<p class="small">Ninguém jogando ainda.</p>' : colunas ? rankColunas(s.ranking, rapido) + `<div class="sr">${rankList(s.ranking)}</div>` : rankPista(s.ranking, rapido);
-    return `<section class="stage"><div class="tag">${colunas ? 'Como está a disputa' : 'Ranking'} depois da pergunta ${s.qIndex + 1} de ${s.total}</div>${fogoFaixa(s.ranking)}${placar}</section><section class="panel"><div class="btnrow"><button class="btn" data-act="next" data-focus="go">${last ? 'Ver o pódio' : 'Próxima pergunta'}</button><button class="btn sec" data-act="close" data-focus="close">Encerrar</button></div></section>`;
+    return `<section class="stage"><div class="tag">${colunas ? 'Como está a disputa' : 'Ranking'} depois da pergunta ${s.qIndex + 1} de ${s.total}</div>${fogoFaixa(s.ranking)}${placar}</section><section class="panel"><div class="btnrow"><button class="btn" data-act="next" data-focus="go">${last ? 'Ver o pódio' : 'Próxima pergunta'}</button></div><p class="encerrar"><button class="linkbtn" data-act="close" data-focus="close">Encerrar jogo</button></p></section>`;
   }
 
   function final(s: HostState) {
     const last = s.drawn[shownDrawn - 1];
     const scored = s.ranking.some((r) => r.score > 0 && !s.drawn.some((d) => d.id === r.id));
     const anyLeft = s.ranking.some((r) => !s.drawn.some((d) => d.id === r.id));
-    const novo = [0, 3, 2, 0, 1][passo];
-    const card = `<section class="stage center foto" id="foto">${fotoCabeca(s)}<div class="big" aria-live="polite">${podiumTitle(s.podium, passo, s.visual)}</div>${
+    const juntos = s.playerCount === 3;
+    const novo = novosNoPodio(passo, juntos);
+    const card = `<section class="stage center foto" id="foto">${fotoCabeca(s)}<div class="big" aria-live="polite">${podiumTitle(s.podium, passo, s.visual, juntos)}</div>${
       s.podium.length ? palco(s.podium, s.theme, passo, novo, s.code, s.visual) : ''
     }<p class="foto-pe">${esc(location.host)} · quiz ao vivo</p></section>`;
     if (passo < 4) return card + `<section class="panel center"><button class="btn sec auto" data-act="pular" data-focus="pular">Pular o suspense</button></section>`;
@@ -265,7 +278,12 @@ function mount(main: HTMLElement, code: string) {
     if (!b || b.disabled) return;
     const a = b.dataset.act!;
     const v = b.dataset.v || '';
-    if (a === 'start') send({ type: 'start' });
+    if (a === 'start') {
+      send({ type: 'start' });
+      ligarMusica();
+      // o clique em "Começar" é o gesto que o navegador exige para a tela cheia
+      telaCheia(true);
+    }
     else if (a === 'reveal') send({ type: 'reveal' });
     else if (a === 'showRanking') send({ type: 'showRanking' });
     else if (a === 'next') send({ type: 'next' });
@@ -275,18 +293,54 @@ function mount(main: HTMLElement, code: string) {
     } else if (a === 'foto') modoFoto(true);
     else if (a === 'sairfoto') modoFoto(false);
     else if (a === 'restart') {
-      if (confirm('Começar de novo com as mesmas pessoas? Os pontos serão zerados.')) send({ type: 'restart' });
+      if (confirm('Começar de novo com as mesmas pessoas? Os pontos serão zerados.')) {
+        send({ type: 'restart' });
+        ligarMusica();
+      }
     } else if (a === 'draw' && !spinning) send({ type: 'draw', mode: v === 'scored' ? 'scored' : 'all' });
     else if (a === 'kick') {
       const p = s?.players.find((x) => x.id === v);
       if (p && confirm(`Remover ${p.nick} da sala?`)) send({ type: 'kick', playerId: v });
     } else if (a === 'close') {
-      if (confirm('Encerrar a sala? Todo mundo sai do jogo.')) send({ type: 'close' });
+      if (confirm('Encerrar o jogo? Todo mundo sai da sala e o placar se perde.')) send({ type: 'close' });
     }
   };
 
   /** Modo foto: esconde tudo menos o cartão do pódio, em tela cheia se o navegador deixar. */
+  /** Tela cheia da tela principal. Só funciona a partir de um clique ou tecla da pessoa. */
+  function telaCheia(on: boolean) {
+    try {
+      if (on && !document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+      if (!on && document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+    } catch {}
+  }
+  // botão fixo no canto para entrar e sair da tela cheia quando quiser
+  const btnCheia = document.createElement('button');
+  btnCheia.className = 'btn-cheia';
+  btnCheia.type = 'button';
+  const rotuloCheia = () => (btnCheia.textContent = document.fullscreenElement ? 'Sair da tela cheia' : 'Tela cheia');
+  rotuloCheia();
+  btnCheia.addEventListener('click', () => telaCheia(!document.fullscreenElement));
+  if (document.fullscreenEnabled) document.body.appendChild(btnCheia);
+  prepararSom(); // já baixa a voz "Quiddô!" para tocar sem atraso no "Começar"
+  const btnSom = document.createElement('button');
+  btnSom.className = 'btn-som';
+  btnSom.type = 'button';
+  const rotuloSom = () => {
+    btnSom.textContent = somLigado() ? 'Som ligado' : 'Som desligado';
+    btnSom.setAttribute('aria-pressed', String(somLigado()));
+  };
+  rotuloSom();
+  btnSom.addEventListener('click', () => {
+    // religar o som no meio do jogo (por exemplo, depois de recarregar a página) volta a música
+    if (alternarSom() && s && s.phase !== 'lobby') ligarMusica();
+    rotuloSom();
+  });
+  document.body.appendChild(btnSom);
+
+  let cheiaAntesDaFoto = false;
   function modoFoto(on: boolean) {
+    if (on) cheiaAntesDaFoto = !!document.fullscreenElement;
     document.body.classList.toggle('modo-foto', on);
     let x = document.getElementById('sair-foto');
     if (on && !x) {
@@ -298,12 +352,11 @@ function mount(main: HTMLElement, code: string) {
       document.body.appendChild(x);
     }
     if (!on && x) x.remove();
-    try {
-      if (on && !document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
-      if (!on && document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
-    } catch {}
+    // ao sair da foto, só deixa a tela cheia se ela foi ligada pelo modo foto
+    telaCheia(on || cheiaAntesDaFoto);
   }
   const onFull = () => {
+    rotuloCheia();
     if (!document.fullscreenElement && document.body.classList.contains('modo-foto')) modoFoto(false);
   };
   document.addEventListener('fullscreenchange', onFull);
@@ -313,6 +366,11 @@ function mount(main: HTMLElement, code: string) {
     if (e.key === 'Escape' && document.body.classList.contains('modo-foto')) return modoFoto(false);
     const tag = (e.target as HTMLElement).tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON' || tag === 'A') return;
+    if (e.key === 'f' || e.key === 'F') return telaCheia(!document.fullscreenElement);
+    if (e.key === 'm' || e.key === 'M') {
+      alternarSom();
+      return rotuloSom();
+    }
     if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
       e.preventDefault();
       primary();
@@ -332,7 +390,19 @@ function mount(main: HTMLElement, code: string) {
   wake();
   document.addEventListener('visibilitychange', wake);
 
-  const clock = window.setInterval(() => tick(s, sock.now()), 100);
+  let ultimoBipe = '';
+  const clock = window.setInterval(() => {
+    tick(s, sock.now());
+    // um bipe a cada segundo do "Prepare-se" e um mais agudo quando libera as respostas
+    if (s && s.phase === 'question') {
+      const falta = s.startsAt - sock.now();
+      const chave = `${s.qIndex}:${falta > 0 ? Math.ceil(falta / 1000) : 'ja'}`;
+      if (chave !== ultimoBipe && falta > -400) {
+        ultimoBipe = chave;
+        bipe(falta <= 0);
+      }
+    }
+  }, 100);
   main.addEventListener('click', onClick);
   document.addEventListener('keydown', onKey);
   main.innerHTML = `<section class="panel center"><p class="muted dots">Abrindo a sala ${code}</p></section>`;
@@ -344,6 +414,9 @@ function mount(main: HTMLElement, code: string) {
     pararSuspense(4);
     modoFoto(false);
     document.removeEventListener('fullscreenchange', onFull);
+    btnCheia.remove();
+    btnSom.remove();
+    pararMusica();
     document.getElementById('entrou')?.remove();
     main.removeEventListener('click', onClick);
     document.removeEventListener('keydown', onKey);

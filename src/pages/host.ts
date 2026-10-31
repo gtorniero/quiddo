@@ -13,7 +13,7 @@ import { alternarSom, bipe, fanfarra, ligarMusica, musicaBaixa, pararMusica, rea
 import { avatarSvg } from '../lib/avatar-art';
 import { abrirPagamento, confereVolta, meuAcesso } from '../lib/pagamento';
 import { LIMITS } from '../../shared/rules';
-import { agendaPodio, graficoVotos, novosNoPodio, animateRank, answersStatic, prepare, preparando, brandBar, confete, cortina, errorScreen, fogoFaixa, fotoCabeca, podiumTitle, questionHead, rankColunas, rankList, rankPista, revelacaoTv, tick, top10 } from './jogo-comum';
+import { SUSPENSE_MS, agendaPodio, graficoVotos, novosNoPodio, animateRank, answersStatic, prepare, preparando, brandBar, confete, cortina, errorScreen, fogoFaixa, fotoCabeca, podiumTitle, questionHead, rankColunas, rankList, rankPista, revelacaoTv, tick, top10 } from './jogo-comum';
 import type { RankRow } from '../../shared/protocol';
 
 /** Rotação das figurinhas na sala de espera: o jeito solto do logo. */
@@ -37,6 +37,8 @@ function mount(main: HTMLElement, code: string) {
   const vistos = new Set<string>(); // quem já apareceu no lobby (para animar só quem acabou de entrar)
   let ultimoRk: RankRow[] = []; // último ranking visto: os 3 primeiros aparecem nervosos antes da última pergunta
   let avisoTimer = 0;
+  let destaqueEm = 0; // revelação: hora em que a resposta certa ganha o destaque (antes, só os votos)
+  let destaqueTimer = 0;
   let liberando = false; // já pediu ao servidor para liberar a sala com o código deste navegador
 
   main.classList.add('tv');
@@ -77,6 +79,8 @@ function mount(main: HTMLElement, code: string) {
     if (s.phase === 'lobby') ultimoRk = [];
     else if (s.ranking.length) ultimoRk = s.ranking;
     const phaseChanged = !prev || prev.phase !== s.phase || prev.qIndex !== s.qIndex;
+    // revelação ao vivo: primeiro só os votos, a certa ganha o destaque depois (quem recarrega vê tudo pronto)
+    if (prev && prev.phase === 'question' && s.phase === 'reveal') destaqueEm = Date.now() + SUSPENSE_MS;
     if (s.phase === 'final' && s.drawn.length > shownDrawn && prev && prev.phase === 'final') return spin();
     if (s.phase === 'final') shownDrawn = s.drawn.length;
     // o suspense do pódio só roda quando o jogo acaba com a tela aberta; quem recarrega vê o pódio pronto
@@ -96,7 +100,17 @@ function mount(main: HTMLElement, code: string) {
       if (prev && s.phase === 'reveal' && prev.phase === 'question') {
         musicaBaixa(false);
         const q = s.question;
-        if (q && q.tipo === 'quiz' && s.correct != null && s.counts) reacao(s.counts[s.correct], s.counts.reduce((a, b) => a + b, 0));
+        if (q && q.tipo === 'quiz' && s.correct != null && s.counts) {
+          // o som sai junto com o destaque da certa
+          const counts = s.counts;
+          const certa = s.correct;
+          clearTimeout(destaqueTimer);
+          destaqueTimer = window.setTimeout(() => {
+            if (s?.phase !== 'reveal') return;
+            render();
+            reacao(counts[certa], counts.reduce((a, b) => a + b, 0));
+          }, SUSPENSE_MS);
+        }
       }
     }
   }
@@ -201,21 +215,24 @@ function mount(main: HTMLElement, code: string) {
     const opiniao = s.question!.tipo !== 'quiz';
     const last = s.qIndex >= s.total - 1;
     if (!rev && preparando(s, sock.now())) return prepare(s, ultimoRk.slice(0, 3)) + `<section class="panel"><p class="encerrar"><button class="linkbtn" data-act="close" data-focus="close">Encerrar jogo</button></p></section>`;
+    const destaque = Date.now() >= destaqueEm;
     const status = rev
       ? opiniao
         ? `${s.answeredCount} ${s.answeredCount === 1 ? 'voto' : 'votos'}`
-        : `Resposta certa: <b style="font-size:inherit">${String.fromCharCode(65 + (s.correct ?? 0))}</b>`
+        : destaque
+          ? `Resposta certa: <b style="font-size:inherit">${String.fromCharCode(65 + (s.correct ?? 0))}</b>`
+          : '<span class="dots">E a resposta certa é</span>'
       : `${s.answeredCount} de ${live} ${opiniao ? 'votaram' : 'responderam'}${s.question!.tipo === 'quem' ? ' · votem pelo celular em alguém da sala' : ''}`;
     // pergunta de opinião não mexe no placar: pula o ranking
     const avancar = !rev
       ? `<button class="btn" data-act="reveal" data-focus="go">${opiniao ? 'Mostrar os votos' : 'Revelar a resposta'}</button>`
-      : opiniao
+      : opiniao || last
         ? `<button class="btn" data-act="next" data-focus="go">${last ? 'Ver o pódio' : 'Próxima pergunta'}</button>`
         : '<button class="btn" data-act="showRanking" data-focus="go">Ver o ranking</button>';
     // revelação: gráfico de barras com os votos; na última pergunta, também quem acertou
     const quiz = rev && !opiniao && s.correct != null;
-    const extras = quiz && last ? revelacaoTv(s.acertaram, s.counts ? s.counts[s.correct!] : s.acertaram.length) : '';
-    return `<section class="stage${rev ? ' revelada' : ''}">${questionHead(s)}${quiz ? graficoVotos(s) : answersStatic(s)}${extras}
+    const extras = quiz && last && destaque ? revelacaoTv(s.acertaram, s.counts ? s.counts[s.correct!] : s.acertaram.length) : '';
+    return `<section class="stage${rev ? ' revelada' : ''}">${questionHead(s)}${quiz ? graficoVotos(s, destaque) : answersStatic(s)}${extras}
       <div class="meta"><span aria-live="polite">${status}</span></div></section>
       <section class="panel"><div class="btnrow">${avancar}</div><div class="rodape-jogo"><p class="small">Dica: a seta para a direita do teclado ou o passador de slides também avançam.</p><p class="encerrar"><button class="linkbtn" data-act="close" data-focus="close">Encerrar jogo</button></p></div></section>`;
   }
@@ -285,7 +302,8 @@ function mount(main: HTMLElement, code: string) {
   function primary() {
     if (!s) return;
     if (s.phase === 'question') send({ type: 'reveal' });
-    else if (s.phase === 'reveal') send({ type: s.question && s.question.tipo !== 'quiz' ? 'next' : 'showRanking' });
+    // opinião não mexe no placar e a última vai direto para o pódio: as duas pulam o ranking
+    else if (s.phase === 'reveal') send({ type: (s.question && s.question.tipo !== 'quiz') || s.qIndex >= s.total - 1 ? 'next' : 'showRanking' });
     else if (s.phase === 'ranking') send({ type: 'next' });
     else if (s.phase === 'final' && passo < 4) {
       pararSuspense(4);
@@ -439,6 +457,7 @@ function mount(main: HTMLElement, code: string) {
   main.innerHTML = `<section class="panel center"><p class="muted dots">Abrindo a sala ${code}</p></section>`;
 
   return () => {
+    clearTimeout(destaqueTimer);
     sock.stop();
     clearInterval(clock);
     clearTimeout(prepTimer);

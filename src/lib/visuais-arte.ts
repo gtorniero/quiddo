@@ -47,7 +47,7 @@ const CONTAS: Record<Exclude<Visual, 'floresta'>, string> = {
 
 /** Desenho do relógio do "Prepare-se" de cada visual (Floresta usa o olho do tucano, em jogo-comum). */
 export function contaVisual(v: Exclude<Visual, 'floresta'>) {
-  return `<div class="olho-conta conta-${v}" aria-hidden="true"><svg viewBox="0 0 300 300" focusable="false">${CONTAS[v]}</svg><b class="prep-n" id="prep">3</b></div>`;
+  return `<div class="olho-conta conta-${v}" aria-hidden="true"><svg viewBox="0 0 300 300" focusable="false">${CONTAS[v]}</svg><b class="prep-n" id="prep">5</b></div>`;
 }
 
 /** Posições fixas (sem sorteio) para espalhar peças pela cortina: mesmo desenho em todas as telas. */

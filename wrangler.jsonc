@@ -11,5 +11,12 @@
     "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  // banco das compras. Na primeira publicação a Cloudflare cria o banco "quiddo" sozinha.
+  "d1_databases": [{ "binding": "DB", "database_name": "quiddo" }],
+  // cobrança: "teste" (só com ?teste_cobranca=1; sem MP_TOKEN o Pix é simulado), "ligada" (para todos) ou "desligada".
+  // Preços (PRECO_PIX, PRECO_CARTAO; padrão 19.90 e 24.90) e segredos (MP_TOKEN, STRIPE_KEY) ficam só no painel da Cloudflare.
+  "vars": { "COBRANCA": "teste" },
+  // mantém variáveis criadas no painel
+  "keep_vars": true,
   "observability": { "enabled": true }
 }

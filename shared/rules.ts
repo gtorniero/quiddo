@@ -3,6 +3,7 @@ import type { Brand, CreateRoomBody, Question, Theme, Visual } from './protocol'
 
 export const LIMITS = {
   maxPlayers: 200,
+  freePlayers: 10, // sala grátis, quando a cobrança está valendo
   maxQuestions: 50,
   questionText: 200,
   answerText: 80,
@@ -125,5 +126,6 @@ export function validateCreate(body: unknown): CreateRoomBody {
   if (logo && (!IMG_RE.test(logo) || logo.length > LIMITS.logoBytes)) {
     throw new Error('Logo inválido ou grande demais.');
   }
-  return { questions, theme, visual: visualDoModo(theme, b.visual), brand, logo };
+  const acesso = String(b.acesso || '').trim().toUpperCase().slice(0, 40);
+  return { questions, theme, visual: visualDoModo(theme, b.visual), brand, logo, acesso, testeCobranca: b.testeCobranca === true };
 }

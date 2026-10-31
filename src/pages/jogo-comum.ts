@@ -400,6 +400,7 @@ export const ERROS: Record<string, [string, string]> = {
   not_found: ['Sala não encontrada', 'Confira o código. A sala some 2 horas depois do fim do jogo.'],
   started: ['O quiz já começou', 'Esta sala não aceita gente nova no meio do jogo. Peça para o anfitrião abrir uma rodada nova.'],
   full: ['A sala está cheia', 'Esta sala chegou ao limite de jogadores.'],
+  cheia_gratis: ['A sala está cheia', 'Esta sala grátis vai até 10 pessoas. Peça para quem abriu a sala liberar mais vagas e tente de novo.'],
   kicked: ['Você saiu da sala', 'O anfitrião tirou você desta rodada.'],
   closed: ['A sala foi encerrada', 'O anfitrião encerrou esta rodada. Valeu por jogar!'],
   bad_key: ['Esta sala foi aberta em outro aparelho', 'Só o aparelho que abriu a sala pode comandar o jogo.'],

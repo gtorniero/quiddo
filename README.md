@@ -99,6 +99,35 @@ npm run deploy
 2. Em **Workers & Pages → quiddo → Settings → Domains & Routes → Add → Custom domain**, digite `quiddo.com.br` (e, se quiser, `www.quiddo.com.br`).
 3. O Cloudflare cria o certificado HTTPS sozinho.
 
+## Cobrança (Pix e cartão)
+
+Mesmo modelo do Retrozap. A sala grátis vai até 10 pessoas; quem paga uma vez libera salas de até 200, sem mensalidade.
+
+- **Pix** pelo Mercado Pago. **Cartão, Apple Pay e Google Pay** pelo Stripe Checkout.
+- Quem paga recebe um código `QD-XXXX-XXXX`, guardado no navegador. Em outro aparelho, a pessoa usa "Já paguei, tenho um código" com o código ou o e-mail do pagamento.
+- O código pode ser usado no editor (antes de abrir a sala) ou na sala de espera ("Liberar até 200 pessoas"), mesmo com a sala já cheia.
+- As compras ficam no banco D1 `quiddo` (tabela `compras`), criado sozinho no primeiro deploy. O código é sempre conferido no servidor.
+
+A variável `COBRANCA` em `wrangler.jsonc` decide o modo:
+
+| Modo | O que acontece |
+| --- | --- |
+| `teste` (atual) | O site continua liberado para todo mundo. Para testar a cobrança, abra `/criar?teste_cobranca=1`. Sem `MP_TOKEN`, o Pix é simulado e aprova sozinho em 4 segundos. |
+| `ligada` | Salas grátis até 10 pessoas; só códigos pagos com a cobrança ligada liberam 200. |
+| `desligada` | Sem cobrança, salas de até 200 para todos. |
+
+### Ligar o pagamento de verdade
+
+1. **Mercado Pago (Pix)**: em mercadopago.com.br/developers, crie uma aplicação e copie o *Access Token* de produção.
+2. **Stripe (cartão, Apple Pay, Google Pay)**: em dashboard.stripe.com, **Developers → API keys**, copie a *Secret key*. Ative Apple Pay e Google Pay em **Settings → Payment methods**.
+3. No Cloudflare, em **Workers & Pages → quiddo → Settings → Variables and Secrets**, adicione como **Secret**: `MP_TOKEN` e `STRIPE_KEY`. Opcional, como texto: `PRECO_PIX` (padrão 19.90), `PRECO_CARTAO` (padrão 24.90) e `CODIGOS_AMIGOS` (códigos de cortesia separados por vírgula).
+4. Webhooks (deixam a confirmação mais rápida; sem eles o site confere sozinho a cada 3 segundos):
+   - Mercado Pago, em **Webhooks**: `https://SEU-SITE/api/mp-webhook`, evento *Order* (ou *Pagamentos*).
+   - Stripe, em **Developers → Webhooks**: `https://SEU-SITE/api/stripe-webhook`, evento `checkout.session.completed`.
+5. Teste com `/criar?teste_cobranca=1` ainda no modo `teste`. Quando estiver certo, troque `COBRANCA` para `ligada` em `wrangler.jsonc` e publique.
+
+Nunca coloque as chaves no código: elas ficam só no painel do Cloudflare.
+
 ## Referência
 
 - `docs/briefing.md`: o briefing do produto.
@@ -106,4 +135,4 @@ npm run deploy
 
 ## Fora do MVP, por enquanto
 
-Contas e login, quizzes na nuvem, plano pago (grátis até 10 jogadores), gerar perguntas a partir de PDF, personagens e nova identidade visual, perguntas com imagem, modo equipes, relatório.
+Contas e login, quizzes na nuvem, gerar perguntas a partir de PDF, personagens e nova identidade visual, perguntas com imagem, modo equipes, relatório.

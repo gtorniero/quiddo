@@ -31,11 +31,14 @@ export interface CreateRoomBody {
   visual?: Visual; // ausente ou fora do modo = floresta
   brand: Brand; // ignorada no tema festa
   logo: string; // data URL (PNG/JPEG/WebP) ou ''
+  acesso?: string; // código de acesso pago (QD-XXXX-XXXX): libera salas com até 200 pessoas
+  testeCobranca?: boolean; // modo teste da cobrança (?teste_cobranca=1)
 }
 
 export interface CreateRoomResult {
   code: string;
   hostKey: string;
+  maxPlayers: number;
 }
 
 // ---------- navegador → servidor ----------
@@ -51,6 +54,7 @@ export type ClientMsg =
   | { type: 'draw'; mode: DrawMode }
   | { type: 'restart' }
   | { type: 'close' }
+  | { type: 'liberar'; codigo: string }
   | { type: 'ping' };
 
 // ---------- servidor → navegador ----------
@@ -112,6 +116,7 @@ export interface BaseState {
 
 export interface HostState extends BaseState {
   role: 'host';
+  maxPlayers: number; // 10 na sala grátis, 200 com acesso pago
   players: { id: string; nick: string; avatar: string; connected: boolean; answered: boolean }[];
   ranking: RankRow[]; // completo na fase final; top 8 na fase de ranking
   acertaram: Acerto[]; // depois da revelação: os 12 primeiros que acertaram, do mais rápido ao mais lento
@@ -133,7 +138,7 @@ export interface PlayerState extends BaseState {
   ranking: RankRow[]; // top 5 durante o jogo, top 10 no fim
 }
 
-export type ErrorCode = 'not_found' | 'started' | 'full' | 'kicked' | 'bad_key' | 'bad_nick' | 'closed';
+export type ErrorCode = 'not_found' | 'started' | 'full' | 'cheia_gratis' | 'kicked' | 'bad_key' | 'bad_nick' | 'closed' | 'acesso_invalido';
 
 export type ServerMsg =
   | HostState

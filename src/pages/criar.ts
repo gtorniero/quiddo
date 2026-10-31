@@ -12,6 +12,7 @@ import { store } from '../lib/storage';
 import { THEME_ACC, applyTheme } from '../lib/theme';
 import { VISUAIS } from '../data/visuais';
 import { miniVisual } from '../lib/visuais-arte';
+import { type Cobranca, abrirPagamento, cobranca, cobrancaValendo, confereVolta, meuAcesso, testeCobranca } from '../lib/pagamento';
 
 export function page(): Page {
   return { title: 'Criar meu quiz', mount };
@@ -30,6 +31,7 @@ function mount(main: HTMLElement) {
   let erro = ''; // erro ao abrir a sala
   let abrindo = false;
   let saveTimer = 0;
+  let cob: Cobranca | null = null; // configuração da cobrança (chega depois)
 
   const persist = (now = false) => {
     clearTimeout(saveTimer);
@@ -208,7 +210,19 @@ function mount(main: HTMLElement) {
     const n = prontas();
     return `<section class="panel" id="abrir-sala"><button class="btn" data-act="abrir"${n && !abrindo ? '' : ' disabled'}>${abrindo ? 'Abrindo a sala…' : n ? `Abrir a sala com ${n} ${n === 1 ? 'pergunta' : 'perguntas'}` : 'Complete ao menos uma pergunta'}</button>
       <p class="err" role="alert">${esc(erro)}</p>
-      <p class="small">Abra a sala no computador que vai para o telão ou o projetor. A turma joga pelo celular.</p></section>`;
+      <p class="small">Abra a sala no computador que vai para o telão ou o projetor. A turma joga pelo celular.</p>${secPlano()}</section>`;
+  }
+
+  /** Grátis até 10 pessoas por sala; quem pagou (código guardado neste navegador) abre salas de até 200. */
+  function secPlano() {
+    return `<div id="plano">${plano()}</div>`;
+  }
+  function plano() {
+    if (!cobrancaValendo(cob) || !cob) return '';
+    if (meuAcesso())
+      return `<p class="plano liberado"><span class="selo">Quiddo liberado</span> Salas de até ${cob.pago} pessoas neste navegador. Código: <strong>${esc(meuAcesso())}</strong></p>`;
+    return `<div class="plano"><p>Sala grátis: até ${cob.gratis} pessoas. Para turmas e eventos maiores, libere salas de até ${cob.pago} pessoas, com pagamento único.</p>
+      <button type="button" class="btn sec" data-act="liberar">Liberar até ${cob.pago} pessoas · a partir de R$ ${esc(cob.pix ? cob.precoPix : cob.precoCartao)}</button></div>`;
   }
 
   // ---------- ações ----------
@@ -221,7 +235,7 @@ function mount(main: HTMLElement) {
       .map((p, i) => compactQuestion({ ...p, tl: q.tempo, dobro: i === ultimaQuiz }))
       .filter((p): p is NonNullable<typeof p> => !!p);
     const festa = q.tema === 'festa';
-    const body: CreateRoomBody = { questions, theme: q.tema, visual: visualDoModo(q.tema, q.visual), brand: festa ? { name: '', color: '' } : { name: q.titulo.trim(), color: q.marca.color }, logo: festa ? '' : q.logo };
+    const body: CreateRoomBody = { questions, theme: q.tema, visual: visualDoModo(q.tema, q.visual), brand: festa ? { name: '', color: '' } : { name: q.titulo.trim(), color: q.marca.color }, logo: festa ? '' : q.logo, acesso: meuAcesso() || undefined, testeCobranca: testeCobranca() || undefined };
     abrindo = true;
     erro = '';
     render();
@@ -372,6 +386,9 @@ function mount(main: HTMLElement) {
       case 'abrir':
         abrirSala();
         return;
+      case 'liberar':
+        abrirPagamento('/criar', refreshPlano);
+        return;
     }
   };
 
@@ -475,6 +492,17 @@ function mount(main: HTMLElement) {
   main.addEventListener('input', onInput);
   main.addEventListener('change', onChange);
   render();
+  testeCobranca();
+  // a cobrança chega depois; só o quadro do plano é redesenhado, para não tirar o foco de quem digita
+  const refreshPlano = () => {
+    const el = main.querySelector('#plano');
+    if (el) el.innerHTML = plano();
+  };
+  cobranca().then((c) => {
+    cob = c;
+    refreshPlano();
+  });
+  confereVolta(refreshPlano);
   return () => {
     main.removeEventListener('click', onClick);
     main.removeEventListener('input', onInput);

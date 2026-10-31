@@ -1,10 +1,12 @@
 // Um Durable Object por sala. É a fonte da verdade: guarda perguntas, jogadores, respostas e pontos,
 // mede o tempo das respostas e manda o estado absoluto para cada conexão por WebSocket.
 import { DurableObject } from 'cloudflare:workers';
+import { type CobrancaEnv, codigoValido } from './cobranca';
+import { LIMITS } from '../shared/rules';
 import * as G from '../shared/game';
 import type { ClientMsg, CreateRoomBody, ServerMsg } from '../shared/protocol';
 
-export interface Env {
+export interface Env extends CobrancaEnv {
   ROOMS: DurableObjectNamespace<Room>;
   ASSETS: Fetcher;
 }
@@ -31,7 +33,7 @@ export class Room extends DurableObject<Env> {
   }
 
   /** Chamado pelo Worker para abrir a sala. Devolve false se o código já está em uso. */
-  async create(code: string, hostKey: string, body: CreateRoomBody): Promise<boolean> {
+  async create(code: string, hostKey: string, body: CreateRoomBody, maxPlayers?: number): Promise<boolean> {
     if (this.room) return false;
     const now = Date.now();
     // as imagens ficam em chaves próprias; o estado da sala guarda só a marca '1'
@@ -41,7 +43,7 @@ export class Room extends DurableObject<Env> {
       imgs['img:' + i] = q.img;
       return { ...q, img: '1' };
     });
-    this.room = G.newRoom({ code, hostKey, theme: body.theme, visual: body.visual, brand: body.brand, questions, hasLogo: !!body.logo, now });
+    this.room = G.newRoom({ code, hostKey, theme: body.theme, visual: body.visual, brand: body.brand, questions, hasLogo: !!body.logo, now, maxPlayers });
     if (body.logo) await this.ctx.storage.put('logo', body.logo);
     for (const [k, v] of Object.entries(imgs)) await this.ctx.storage.put(k, v);
     await this.save();
@@ -149,6 +151,14 @@ export class Room extends DurableObject<Env> {
         // quem saiu pode ter sido o último que faltava responder
         if (ok && room.phase === 'question' && G.everyoneAnswered(room)) G.reveal(room);
         break;
+      case 'liberar': {
+        // o anfitrião pagou com a sala aberta: confere o código e libera até 200 pessoas
+        if (await codigoValido(this.env, msg.codigo)) {
+          room.maxPlayers = LIMITS.maxPlayers;
+          ok = true;
+        } else this.send(ws, { type: 'error', code: 'acesso_invalido' });
+        break;
+      }
       case 'close':
         return this.closeRoom();
     }

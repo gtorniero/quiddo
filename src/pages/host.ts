@@ -11,6 +11,8 @@ import { applyTheme } from '../lib/theme';
 import { palco } from '../lib/podio';
 import { alternarSom, bipe, fanfarra, ligarMusica, musicaBaixa, pararMusica, reacao, rufar, somLigado } from '../lib/som';
 import { avatarSvg } from '../lib/avatar-art';
+import { abrirPagamento, confereVolta, meuAcesso } from '../lib/pagamento';
+import { LIMITS } from '../../shared/rules';
 import { agendaPodio, graficoVotos, novosNoPodio, animateRank, answersStatic, prepare, preparando, brandBar, confete, cortina, errorScreen, fogoFaixa, fotoCabeca, podiumTitle, questionHead, rankColunas, rankList, rankPista, revelacaoTv, tick, top10 } from './jogo-comum';
 import type { RankRow } from '../../shared/protocol';
 
@@ -35,6 +37,7 @@ function mount(main: HTMLElement, code: string) {
   const vistos = new Set<string>(); // quem já apareceu no lobby (para animar só quem acabou de entrar)
   let ultimoRk: RankRow[] = []; // último ranking visto: os 3 primeiros aparecem nervosos antes da última pergunta
   let avisoTimer = 0;
+  let liberando = false; // já pediu ao servidor para liberar a sala com o código deste navegador
 
   main.classList.add('tv');
   if (!hostKey) {
@@ -51,6 +54,10 @@ function mount(main: HTMLElement, code: string) {
   const send = (m: ClientMsg) => sock.send(m);
 
   function onMessage(m: ServerMsg) {
+    if (m.type === 'error' && m.code === 'acesso_invalido') {
+      avisoEntrada('Esse código de acesso não vale');
+      return;
+    }
     if (m.type === 'error' || m.type === 'closed') {
       fatal = m.type === 'closed' ? 'closed' : m.code;
       sock.stop();
@@ -61,6 +68,11 @@ function mount(main: HTMLElement, code: string) {
     if (m.type !== 'state' || m.role !== 'host') return;
     const prev = s;
     s = m;
+    // sala grátis e este navegador já tem acesso pago (ou acabou de pagar): libera sozinha, uma vez
+    if (s.maxPlayers < LIMITS.maxPlayers && meuAcesso() && !liberando) {
+      liberando = true;
+      send({ type: 'liberar', codigo: meuAcesso() });
+    }
     applyTheme(s.theme, s.brand.color, s.visual);
     if (s.phase === 'lobby') ultimoRk = [];
     else if (s.ranking.length) ultimoRk = s.ranking;
@@ -160,7 +172,7 @@ function mount(main: HTMLElement, code: string) {
         </div>
         <div class="qr">${qrSvg(link)}</div>
       </div></section>
-      <section class="panel"><div class="contador"><b>${n}</b><span>${n === 1 ? 'pessoa na sala' : 'pessoas na sala'}</span></div>
+      <section class="panel"><div class="contador"><b>${n}</b><span>${n === 1 ? 'pessoa na sala' : 'pessoas na sala'}</span></div>${planoSala(s)}
         ${
           n
             ? `<div class="jogadores">${s.players
@@ -173,6 +185,14 @@ function mount(main: HTMLElement, code: string) {
         }
         <div class="btnrow"><button class="btn" data-act="start" data-focus="start">${n ? 'Começar o quiz' : 'Começar sem jogadores (teste)'}</button></div><p class="encerrar"><button class="linkbtn" data-act="close" data-focus="close">Encerrar sala</button></p>
       </section>`;
+  }
+
+  /** Sala grátis: mostra o limite e o botão para liberar até 200 pessoas. */
+  function planoSala(s: HostState) {
+    if (s.maxPlayers >= LIMITS.maxPlayers) return '';
+    const cheia = s.players.length >= s.maxPlayers;
+    return `<div class="plano${cheia ? ' cheia' : ''}" role="status"><p>${cheia ? `<b>A sala encheu.</b> A sala grátis vai até ${s.maxPlayers} pessoas.` : `Sala grátis: até ${s.maxPlayers} pessoas.`}</p>
+      <button type="button" class="btn sec auto" data-act="liberar" data-focus="liberar">Liberar até ${LIMITS.maxPlayers} pessoas</button></div>`;
   }
 
   function pergunta(s: HostState) {
@@ -301,6 +321,13 @@ function mount(main: HTMLElement, code: string) {
     else if (a === 'kick') {
       const p = s?.players.find((x) => x.id === v);
       if (p && confirm(`Remover ${p.nick} da sala?`)) send({ type: 'kick', playerId: v });
+    } else if (a === 'liberar') {
+      const pedir = (codigo: string) => {
+        liberando = true;
+        send({ type: 'liberar', codigo });
+      };
+      if (meuAcesso()) pedir(meuAcesso());
+      else abrirPagamento('/host/' + code, pedir);
     } else if (a === 'close') {
       if (confirm('Encerrar o jogo? Todo mundo sai da sala e o placar se perde.')) send({ type: 'close' });
     }
@@ -404,6 +431,11 @@ function mount(main: HTMLElement, code: string) {
   }, 100);
   main.addEventListener('click', onClick);
   document.addEventListener('keydown', onKey);
+  // voltou do pagamento com cartão: o código fica guardado e a sala é liberada no próximo estado (ou já)
+  confereVolta((codigo) => {
+    liberando = true;
+    send({ type: 'liberar', codigo });
+  });
   main.innerHTML = `<section class="panel center"><p class="muted dots">Abrindo a sala ${code}</p></section>`;
 
   return () => {

@@ -42,6 +42,8 @@ describe('perguntas', () => {
     expect(r.theme).toBe('corp');
     expect(r.questions[0]).toEqual({ t: 'Oi', o: ['1', '2'], c: 1, tl: 15 });
     expect(r.brand.color).toBe('');
+    expect(validateCreate({ questions: [{ t: 'a', o: ['1', '2'], c: 0, tl: 10 }], acesso: ' qd-abcd-1234 ', testeCobranca: true })).toMatchObject({ acesso: 'QD-ABCD-1234', testeCobranca: true });
+    expect(validateCreate({ questions: [{ t: 'a', o: ['1', '2'], c: 0, tl: 10 }], testeCobranca: 'sim' })).toMatchObject({ acesso: '', testeCobranca: false });
     const escola = validateCreate({ theme: 'escola', questions: [{ t: 'a', o: ['1', '2'], c: 0, tl: 10 }], brand: { name: 'Escola X', color: '#123456' }, logo: '' });
     expect(escola.theme).toBe('escola');
     expect(escola.brand).toEqual({ name: 'Escola X', color: '#123456' });

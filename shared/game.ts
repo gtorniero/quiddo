@@ -34,6 +34,7 @@ export interface Answer {
 export interface Room {
   code: string;
   hostKey: string;
+  maxPlayers?: number; // ausente = LIMITS.maxPlayers (salas antigas e cobrança desligada)
   theme: Theme;
   visual?: Visual; // salas antigas não têm: Floresta
   brand: Brand;
@@ -53,10 +54,11 @@ export interface Room {
   endedAt: number; // 0 enquanto o jogo não acabou
 }
 
-export function newRoom(o: { code: string; hostKey: string; theme: Theme; visual?: Visual; brand: Brand; questions: Question[]; hasLogo: boolean; now: number }): Room {
+export function newRoom(o: { code: string; hostKey: string; theme: Theme; visual?: Visual; brand: Brand; questions: Question[]; hasLogo: boolean; now: number; maxPlayers?: number }): Room {
   return {
     code: o.code,
     hostKey: o.hostKey,
+    maxPlayers: o.maxPlayers ?? LIMITS.maxPlayers,
     theme: o.theme,
     visual: o.visual || 'floresta',
     brand: o.brand,
@@ -76,7 +78,9 @@ export function newRoom(o: { code: string; hostKey: string; theme: Theme; visual
   };
 }
 
-export type JoinResult = { ok: true; player: Player } | { ok: false; code: 'started' | 'full' | 'kicked' | 'bad_nick' };
+export type JoinResult = { ok: true; player: Player } | { ok: false; code: 'started' | 'full' | 'cheia_gratis' | 'kicked' | 'bad_nick' };
+
+export const limiteDe = (room: Room) => room.maxPlayers ?? LIMITS.maxPlayers;
 
 /** Entrada ou volta de um jogador. Quem já estava na sala volta com os pontos e o personagem, mesmo com o jogo andando. */
 export function join(room: Room, playerId: string, rawNick: string, now: number, rawAvatar: unknown = ''): JoinResult {
@@ -91,7 +95,7 @@ export function join(room: Room, playerId: string, rawNick: string, now: number,
   const nick = cleanNick(rawNick);
   if (!nick) return { ok: false, code: 'bad_nick' };
   if (room.phase !== 'lobby') return { ok: false, code: 'started' };
-  if (Object.keys(room.players).length >= LIMITS.maxPlayers) return { ok: false, code: 'full' };
+  if (Object.keys(room.players).length >= limiteDe(room)) return { ok: false, code: limiteDe(room) < LIMITS.maxPlayers ? 'cheia_gratis' : 'full' };
   const avatar = uniqueAvatar(
     cleanAvatar(rawAvatar),
     Object.values(room.players).map((p) => avatarOf(p)),
@@ -309,6 +313,7 @@ export function hostView(room: Room, now: number, rk: RankRow[] = ranking(room))
   return {
     ...base(room, now),
     role: 'host',
+    maxPlayers: limiteDe(room),
     podium: room.phase === 'final' ? rk.slice(0, 3) : [],
     players: Object.values(room.players)
       .sort((a, b) => a.joinedAt - b.joinedAt)

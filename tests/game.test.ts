@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import * as G from '../shared/game';
+import { LIMITS } from '../shared/rules';
 
 const qs = [
   { t: 'Um?', o: ['a', 'b', 'c', 'd'], c: 0, tl: 20 },
@@ -130,6 +131,16 @@ describe('jogadores', () => {
   it('respeita o limite de 200 por sala', () => {
     for (let i = 0; i < 197; i++) G.join(room, 'x' + i, 'J' + i, T0);
     expect(G.join(room, 'y', 'Extra', T0)).toEqual({ ok: false, code: 'full' });
+  });
+
+  it('sala grátis vai até 10 e pode ser liberada até 200', () => {
+    const r = G.newRoom({ code: 'ABCD', hostKey: 'k', theme: 'corp', brand: { name: '', color: '' }, questions: qs, hasLogo: false, now: T0, maxPlayers: LIMITS.freePlayers });
+    for (let i = 0; i < 10; i++) expect(G.join(r, 'g' + i, 'G' + i, T0).ok).toBe(true);
+    expect(G.join(r, 'extra', 'Extra', T0)).toEqual({ ok: false, code: 'cheia_gratis' });
+    expect(G.join(r, 'g3', 'G3', T0).ok).toBe(true); // quem já estava volta
+    expect(G.hostView(r, T0).maxPlayers).toBe(10);
+    r.maxPlayers = LIMITS.maxPlayers;
+    expect(G.join(r, 'extra', 'Extra', T0).ok).toBe(true);
   });
 });
 

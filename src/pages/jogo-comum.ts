@@ -186,6 +186,20 @@ export function fogoFaixa(rows: RankRow[]) {
 /** Tempo de resposta em segundos, com vírgula. */
 export const segundos = (ms: number) => (ms / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' s';
 
+/** Gráfico de barras da revelação: quantas pessoas escolheram cada resposta, com a certa destacada. */
+export function graficoVotos(s: BaseState) {
+  const q = s.question!;
+  const counts = s.counts || q.o.map(() => 0);
+  const max = Math.max(1, ...counts);
+  const leitura = q.o.map((o, k) => `${LETRAS[k]}, ${o}: ${counts[k]} ${counts[k] === 1 ? 'pessoa' : 'pessoas'}${k === s.correct ? ' (certa)' : ''}`).join('. ');
+  return `<div class="votos-grafico" style="--n:${q.o.length}" role="img" aria-label="${esc(leitura)}">${q.o
+    .map(
+      (o, k) =>
+        `<div class="g-col${k === s.correct ? ' certa' : ' errada'}" style="--h:${Math.round((counts[k] / max) * 100)}%;--i:${k}"><b class="g-n">${counts[k]}</b><span class="g-barra c${k}">${simbolo(k)}${k === s.correct ? '<span class="g-ok" aria-hidden="true">✓</span>' : ''}</span><span class="g-rot"><span class="lt c${k}">${LETRAS[k]}</span><span class="g-txt">${esc(o)}</span></span></div>`,
+    )
+    .join('')}</div>`;
+}
+
 /** Depois da revelação, na TV: os bichos de quem acertou entram em fila e o mais rápido ganha o destaque. */
 export function revelacaoTv(acertaram: Acerto[], total: number) {
   if (!total) return '<div class="acertos"><p class="small">Ninguém acertou essa. Bora para a próxima!</p></div>';
@@ -317,10 +331,34 @@ export function fotoCabeca(s: BaseState) {
 }
 
 /** Frase do suspense acima do pódio. */
-export function podiumTitle(rows: RankRow[], step: number, visual: Visual = 'floresta') {
+export function podiumTitle(rows: RankRow[], step: number, visual: Visual = 'floresta', juntos = false) {
   if (!rows.length) return 'Fim do quiz';
   if (step >= 4) return esc(VISUAIS[visual].campeao).replace('{n}', () => esc(rows[0].nick));
+  if (juntos && step === 2) return 'Em 2º e 3º lugar…';
   return ['Quem subiu no pódio?', 'Em 3º lugar…', 'Em 2º lugar…', 'E quem venceu foi…'][step];
+}
+
+/**
+ * Agenda do suspense do pódio: [milissegundos desde o fim do jogo, passo].
+ * Com exatamente 3 jogadores, 2º e 3º aparecem juntos (o passo pula direto para 2);
+ * com mais gente, um de cada vez.
+ */
+export function agendaPodio(juntos: boolean): [number, number][] {
+  return juntos
+    ? [
+        [1800, 2],
+        [3800, 3],
+        [6200, 4],
+      ]
+    : PASSOS_PODIO.slice(1).map((ms, i) => [ms, i + 1] as [number, number]);
+}
+
+/** Quem acabou de aparecer no pódio neste passo (para animar só eles). */
+export function novosNoPodio(passo: number, juntos: boolean): number[] {
+  if (passo === 1) return [3];
+  if (passo === 2) return juntos ? [2, 3] : [2];
+  if (passo >= 4) return [1];
+  return [];
 }
 
 /** Os 10 primeiros, para todo mundo, depois do pódio. As linhas entram uma a uma, do 1º ao 10º. */

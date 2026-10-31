@@ -12,6 +12,9 @@ let proximo = 0; // hora (no relógio do áudio) do próximo tempo da música
 let passo = 0;
 
 const BPM = 108;
+// volume da música: alto o bastante para caixa de notebook e de TV; na pergunta abaixa um pouco
+const MUSICA_ALTA = 0.75;
+const MUSICA_BAIXA = 0.4;
 const SEMI = 60 / BPM / 2; // colcheia
 
 export const somLigado = () => store.get<boolean>('som', true);
@@ -25,7 +28,7 @@ function garante(): Ctx | null {
   mestre.gain.value = somLigado() ? 1 : 0;
   mestre.connect(ctx.destination);
   musicaGain = ctx.createGain();
-  musicaGain.gain.value = 0.16;
+  musicaGain.gain.value = MUSICA_ALTA;
   musicaGain.connect(mestre);
   return ctx;
 }
@@ -58,7 +61,7 @@ function chocalho(quando: number, vol: number, destino: AudioNode) {
   src.buffer = buf;
   const f = ctx.createBiquadFilter();
   f.type = 'highpass';
-  f.frequency.value = 6000;
+  f.frequency.value = 5000;
   const g = ctx.createGain();
   g.gain.value = vol;
   src.connect(f).connect(g).connect(destino);
@@ -70,8 +73,8 @@ function bumbo(quando: number, destino: AudioNode) {
   if (!ctx) return;
   const o = ctx.createOscillator();
   const g = ctx.createGain();
-  o.frequency.setValueAtTime(120, quando);
-  o.frequency.exponentialRampToValueAtTime(45, quando + 0.12);
+  o.frequency.setValueAtTime(160, quando);
+  o.frequency.exponentialRampToValueAtTime(60, quando + 0.12);
   g.gain.setValueAtTime(0.9, quando);
   g.gain.exponentialRampToValueAtTime(0.0001, quando + 0.18);
   o.connect(g).connect(destino);
@@ -80,7 +83,8 @@ function bumbo(quando: number, destino: AudioNode) {
 }
 
 // Levada em 16 colcheias (2 compassos): baixo, marimba e chocalho. Escala pentatônica, alegre e leve.
-const BAIXO = [43, null, null, 43, null, null, 50, null, 45, null, null, 45, null, null, 52, null];
+// O baixo fica uma oitava acima do grave de verdade: caixa de notebook e de TV não toca abaixo de ~150 Hz.
+const BAIXO = [55, null, null, 55, null, null, 62, null, 57, null, null, 57, null, null, 64, null];
 const MELODIA = [null, 67, null, 69, 71, null, 74, null, null, 72, null, 71, 69, null, 67, null];
 
 function agenda() {
@@ -91,9 +95,9 @@ function agenda() {
     chocalho(proximo, i % 2 ? 0.12 : 0.22, musicaGain);
     const b = BAIXO[i];
     if (b != null) nota(b, proximo, SEMI * 1.8, 'triangle', 0.5, musicaGain);
-    // a melodia só entra a cada dois ciclos, para não cansar
+    // a melodia toca sempre; a cada dois ciclos sobe uma quarta para variar
     const m = MELODIA[i];
-    if (m != null && Math.floor(passo / 16) % 2 === 1) nota(m, proximo, SEMI * 1.5, 'sine', 0.28, musicaGain);
+    if (m != null) nota(m + (Math.floor(passo / 16) % 2 === 1 ? 5 : 0), proximo, SEMI * 1.5, 'triangle', 0.35, musicaGain);
     proximo += SEMI;
     passo++;
   }
@@ -125,7 +129,7 @@ export function alternarSom(): boolean {
 
 /** Abaixa a música durante a pergunta e volta depois. */
 export function musicaBaixa(baixa: boolean) {
-  if (musicaGain && ctx) musicaGain.gain.setTargetAtTime(baixa ? 0.07 : 0.16, ctx.currentTime, 0.3);
+  if (musicaGain && ctx) musicaGain.gain.setTargetAtTime(baixa ? MUSICA_BAIXA : MUSICA_ALTA, ctx.currentTime, 0.3);
 }
 
 /** Bipe da contagem do "Prepare-se". `ultimo` é o "já!", mais agudo. */

@@ -192,7 +192,10 @@ export function graficoVotos(s: BaseState) {
   const counts = s.counts || q.o.map(() => 0);
   const max = Math.max(1, ...counts);
   const leitura = q.o.map((o, k) => `${LETRAS[k]}, ${o}: ${counts[k]} ${counts[k] === 1 ? 'pessoa' : 'pessoas'}${k === s.correct ? ' (certa)' : ''}`).join('. ');
-  return `<div class="votos-grafico" style="--n:${q.o.length}" role="img" aria-label="${esc(leitura)}">${q.o
+  const c = s.correct ?? 0;
+  // faixa grande com a resposta certa: é a primeira coisa que a sala lê na TV
+  const faixa = `<div class="certa-faixa" aria-hidden="true"><span class="certa-ok">✓</span><span class="lt c${c}">${LETRAS[c]}</span><span class="certa-txt">${esc(q.o[c] || '')}</span></div>`;
+  return `${faixa}<div class="votos-grafico" style="--n:${q.o.length}" role="img" aria-label="${esc(leitura)}">${q.o
     .map(
       (o, k) =>
         `<div class="g-col${k === s.correct ? ' certa' : ' errada'}" style="--h:${Math.round((counts[k] / max) * 100)}%;--i:${k}"><b class="g-n">${counts[k]}</b><span class="g-barra c${k}">${simbolo(k)}${k === s.correct ? '<span class="g-ok" aria-hidden="true">✓</span>' : ''}</span><span class="g-rot"><span class="lt c${k}">${LETRAS[k]}</span><span class="g-txt">${esc(o)}</span></span></div>`,

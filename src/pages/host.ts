@@ -211,7 +211,7 @@ function mount(main: HTMLElement, code: string) {
       ? `<button class="btn" data-act="reveal" data-focus="go">${opiniao ? 'Mostrar os votos' : 'Revelar a resposta'}</button>`
       : opiniao
         ? `<button class="btn" data-act="next" data-focus="go">${last ? 'Ver o pódio' : 'Próxima pergunta'}</button>`
-        : '<button class="btn" data-act="showRanking" data-focus="go">Ver o ranking</button>';
+        : '<button class="btn" data-act="showRanking" data-focus="go">Próxima</button>';
     // revelação: gráfico de barras com os votos; na última pergunta, também quem acertou
     const quiz = rev && !opiniao && s.correct != null;
     const extras = quiz && last ? revelacaoTv(s.acertaram, s.counts ? s.counts[s.correct!] : s.acertaram.length) : '';

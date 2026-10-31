@@ -9,6 +9,7 @@ import { RoomSocket } from '../lib/socket';
 import { store } from '../lib/storage';
 import { applyTheme } from '../lib/theme';
 import { palco } from '../lib/podio';
+import { alternarSom, bipe, fanfarra, ligarMusica, musicaBaixa, pararMusica, reacao, rufar, somLigado } from '../lib/som';
 import { avatarSvg } from '../lib/avatar-art';
 import { agendaPodio, graficoVotos, novosNoPodio, animateRank, answersStatic, prepare, preparando, brandBar, confete, cortina, errorScreen, fogoFaixa, fotoCabeca, podiumTitle, questionHead, rankColunas, rankList, rankPista, revelacaoTv, tick, top10 } from './jogo-comum';
 import type { RankRow } from '../../shared/protocol';
@@ -78,6 +79,13 @@ function mount(main: HTMLElement, code: string) {
       if (s.phase === 'ranking') animateRank(main);
       // cortina de folhas na troca de pergunta
       if (prev && s.phase === 'question' && prev.phase !== 'question') cortina(s.visual);
+      // som: música mais baixa na pergunta; reação na revelação
+      if (s.phase === 'question') musicaBaixa(true);
+      if (prev && s.phase === 'reveal' && prev.phase === 'question') {
+        musicaBaixa(false);
+        const q = s.question;
+        if (q && q.tipo === 'quiz' && s.correct != null && s.counts) reacao(s.counts[s.correct], s.counts.reduce((a, b) => a + b, 0));
+      }
     }
   }
 
@@ -122,7 +130,10 @@ function mount(main: HTMLElement, code: string) {
         window.setTimeout(() => {
           passo = i;
           render();
-          if (i === 4) confete(s?.theme === 'corp' && s?.visual === 'floresta');
+          if (i === 4) {
+            confete(s?.theme === 'corp' && s?.visual === 'floresta');
+            fanfarra();
+          } else rufar();
         }, ms),
       );
     });
@@ -269,6 +280,7 @@ function mount(main: HTMLElement, code: string) {
     const v = b.dataset.v || '';
     if (a === 'start') {
       send({ type: 'start' });
+      ligarMusica();
       // o clique em "Começar" é o gesto que o navegador exige para a tela cheia
       telaCheia(true);
     }
@@ -281,7 +293,10 @@ function mount(main: HTMLElement, code: string) {
     } else if (a === 'foto') modoFoto(true);
     else if (a === 'sairfoto') modoFoto(false);
     else if (a === 'restart') {
-      if (confirm('Começar de novo com as mesmas pessoas? Os pontos serão zerados.')) send({ type: 'restart' });
+      if (confirm('Começar de novo com as mesmas pessoas? Os pontos serão zerados.')) {
+        send({ type: 'restart' });
+        ligarMusica();
+      }
     } else if (a === 'draw' && !spinning) send({ type: 'draw', mode: v === 'scored' ? 'scored' : 'all' });
     else if (a === 'kick') {
       const p = s?.players.find((x) => x.id === v);
@@ -307,6 +322,20 @@ function mount(main: HTMLElement, code: string) {
   rotuloCheia();
   btnCheia.addEventListener('click', () => telaCheia(!document.fullscreenElement));
   if (document.fullscreenEnabled) document.body.appendChild(btnCheia);
+  const btnSom = document.createElement('button');
+  btnSom.className = 'btn-som';
+  btnSom.type = 'button';
+  const rotuloSom = () => {
+    btnSom.textContent = somLigado() ? 'Som ligado' : 'Som desligado';
+    btnSom.setAttribute('aria-pressed', String(somLigado()));
+  };
+  rotuloSom();
+  btnSom.addEventListener('click', () => {
+    // religar o som no meio do jogo (por exemplo, depois de recarregar a página) volta a música
+    if (alternarSom() && s && s.phase !== 'lobby') ligarMusica();
+    rotuloSom();
+  });
+  document.body.appendChild(btnSom);
 
   let cheiaAntesDaFoto = false;
   function modoFoto(on: boolean) {
@@ -337,6 +366,10 @@ function mount(main: HTMLElement, code: string) {
     const tag = (e.target as HTMLElement).tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON' || tag === 'A') return;
     if (e.key === 'f' || e.key === 'F') return telaCheia(!document.fullscreenElement);
+    if (e.key === 'm' || e.key === 'M') {
+      alternarSom();
+      return rotuloSom();
+    }
     if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
       e.preventDefault();
       primary();
@@ -356,7 +389,19 @@ function mount(main: HTMLElement, code: string) {
   wake();
   document.addEventListener('visibilitychange', wake);
 
-  const clock = window.setInterval(() => tick(s, sock.now()), 100);
+  let ultimoBipe = '';
+  const clock = window.setInterval(() => {
+    tick(s, sock.now());
+    // um bipe a cada segundo do "Prepare-se" e um mais agudo quando libera as respostas
+    if (s && s.phase === 'question') {
+      const falta = s.startsAt - sock.now();
+      const chave = `${s.qIndex}:${falta > 0 ? Math.ceil(falta / 1000) : 'ja'}`;
+      if (chave !== ultimoBipe && falta > -400) {
+        ultimoBipe = chave;
+        bipe(falta <= 0);
+      }
+    }
+  }, 100);
   main.addEventListener('click', onClick);
   document.addEventListener('keydown', onKey);
   main.innerHTML = `<section class="panel center"><p class="muted dots">Abrindo a sala ${code}</p></section>`;
@@ -369,6 +414,8 @@ function mount(main: HTMLElement, code: string) {
     modoFoto(false);
     document.removeEventListener('fullscreenchange', onFull);
     btnCheia.remove();
+    btnSom.remove();
+    pararMusica();
     document.getElementById('entrou')?.remove();
     main.removeEventListener('click', onClick);
     document.removeEventListener('keydown', onKey);

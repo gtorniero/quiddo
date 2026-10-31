@@ -5365,3 +5365,48 @@ body.modo-foto .btn-som {
 .plano.liberado strong {
   white-space: nowrap;
 }
+
+/* entrada em telas: uma etapa por vez, com progresso e botões no pé */
+.entrada h1 {
+  margin: 0;
+  outline: none;
+}
+.etapa-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.etapa-pontos {
+  display: flex;
+  gap: 6px;
+}
+.etapa-pontos i {
+  width: 28px;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--soft-line);
+}
+.etapa-pontos i.feito {
+  background: var(--fg2);
+}
+.etapa-pontos i.agora {
+  background: var(--amarelo);
+  box-shadow: 0 0 0 2px var(--line);
+}
+.avgrid.grande {
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 8px;
+}
+.avgrid.grande button {
+  min-width: 72px;
+  min-height: 72px;
+}
+.etapa-acoes {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.etapa-acoes .btn[type='submit'] {
+  flex: 1;
+}

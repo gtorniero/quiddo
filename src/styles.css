@@ -2745,6 +2745,18 @@ main.home {
 .h-faixa span:nth-child(3n) {
   background: #fff0c4;
 }
+/* no computador, as ocasiões cabem numa linha só */
+@media (min-width: 1000px) {
+  .h-faixa {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .h-faixa span {
+    padding: 5px 11px;
+    font-size: clamp(13px, 1.15vw, 15px);
+    white-space: nowrap;
+  }
+}
 .h-bloco {
   display: grid;
   gap: 18px;

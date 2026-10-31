@@ -99,13 +99,63 @@ function agenda() {
   }
 }
 
-/** Liga o áudio (precisa vir de um clique) e começa a musiquinha. */
+/**
+ * Vinheta "qui-ddô": o nome cantado em duas notas. "qui" é curtinho e sobe; "ddô" é mais longo,
+ * redondo e com um balanço; no fim, um "pop", como o olho do logo.
+ */
+export function vinheta(quando?: number) {
+  if (!ctx || !mestre) return;
+  const t = quando ?? ctx.currentTime + 0.02;
+  const voz = (de: number, ate: number, ini: number, dur: number, vol: number, vibrato: boolean) => {
+    const o = ctx!.createOscillator();
+    const f = ctx!.createBiquadFilter();
+    const g = ctx!.createGain();
+    o.type = 'square';
+    f.type = 'lowpass';
+    f.frequency.value = 1800;
+    f.Q.value = 6;
+    o.frequency.setValueAtTime(hz(de), ini);
+    o.frequency.exponentialRampToValueAtTime(hz(ate), ini + Math.min(0.08, dur / 2));
+    if (vibrato) {
+      const lfo = ctx!.createOscillator();
+      const prof = ctx!.createGain();
+      lfo.frequency.value = 7;
+      prof.gain.value = 9;
+      lfo.connect(prof).connect(o.frequency);
+      lfo.start(ini + 0.1);
+      lfo.stop(ini + dur);
+    }
+    g.gain.setValueAtTime(0.0001, ini);
+    g.gain.exponentialRampToValueAtTime(vol, ini + 0.015);
+    g.gain.setValueAtTime(vol, ini + dur * 0.6);
+    g.gain.exponentialRampToValueAtTime(0.0001, ini + dur);
+    o.connect(f).connect(g).connect(mestre!);
+    o.start(ini);
+    o.stop(ini + dur + 0.05);
+  };
+  voz(76, 79, t, 0.14, 0.16, false); // "qui"
+  voz(79, 72, t + 0.17, 0.5, 0.18, true); // "ddô"
+  nota(84, t + 0.17, 0.5, 'sine', 0.12, mestre); // brilho em cima do "ddô"
+  // "pop": bolha que desce rápido
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.frequency.setValueAtTime(1400, t + 0.7);
+  o.frequency.exponentialRampToValueAtTime(320, t + 0.78);
+  g.gain.setValueAtTime(0.25, t + 0.7);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.82);
+  o.connect(g).connect(mestre);
+  o.start(t + 0.7);
+  o.stop(t + 0.85);
+}
+
+/** Liga o áudio (precisa vir de um clique), toca a vinheta "qui-ddô" e começa a musiquinha. */
 export function ligarMusica() {
   const c = garante();
   if (!c) return;
   c.resume().catch(() => {});
   if (timer) return;
-  proximo = c.currentTime + 0.1;
+  vinheta(c.currentTime + 0.05);
+  proximo = c.currentTime + 1.1; // a música entra depois da vinheta
   passo = 0;
   timer = window.setInterval(agenda, 60);
 }
@@ -171,4 +221,5 @@ export function fanfarra() {
   const t = ctx.currentTime;
   [67, 72, 76, 79, 84].forEach((m, i) => nota(m, t + i * 0.11, i === 4 ? 0.9 : 0.25, 'square', 0.14, mestre!));
   bumbo(t + 0.44, mestre);
+  vinheta(t + 1.3);
 }

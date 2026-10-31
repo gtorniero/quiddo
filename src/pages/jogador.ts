@@ -44,22 +44,28 @@ function mount(main: HTMLElement, code: string) {
     navigate('/');
   };
 
+  // entrada em telas: 1 nome, 2 bicho, 3 cabeça, 4 rosto (uma tela por vez)
+  let etapa = 1;
+  let nome = store.get('nick', '');
+  const TITULOS = ['', 'Qual é o seu nome?', 'Escolha o seu bicho', 'Algo na cabeça?', 'E no rosto?'];
+
+  const opcao = (k: string, v: string | number, on: boolean, inner: string, label: string) =>
+    `<button type="button" data-act="av" data-k="${k}" data-v="${v}" data-focus="av-${k}-${v}" aria-pressed="${on}" aria-label="${esc(label)}">${inner}</button>`;
+
   function picker() {
-    const btn = (k: string, v: string | number, on: boolean, inner: string, label: string) =>
-      `<button type="button" data-act="av" data-k="${k}" data-v="${v}" data-focus="av-${k}-${v}" aria-pressed="${on}" aria-label="${esc(label)}">${inner}</button>`;
-    const bichos = (Object.keys(BICHOS) as Bicho[])
-      .map((a) => btn('a', a, av.a === a, avatarSvg({ a, h: null, f: null, c: av.c }, 48), BICHOS[a]))
-      .join('');
-    const cab = [btn('h', '-', !av.h, 'Nada', 'Nada na cabeça')]
-      .concat((Object.keys(CABECA) as ItemCabeca[]).map((h) => btn('h', h, av.h === h, esc(CABECA[h]), CABECA[h])))
-      .join('');
-    const ros = [btn('f', '-', !av.f, 'Nada', 'Nada no rosto')]
-      .concat((Object.keys(ROSTO) as ItemRosto[]).map((f) => btn('f', f, av.f === f, esc(ROSTO[f]), ROSTO[f])))
-      .join('');
-    // a cor de fundo é sorteada: menos coisa para escolher
-    return `<fieldset class="avset"><legend><span class="n">2</span>Escolha o seu bicho</legend><div class="avgrid">${bichos}</div></fieldset>
-      <fieldset class="avset"><legend><span class="n">3</span>Na cabeça</legend><div class="chips">${cab}</div></fieldset>
-      <fieldset class="avset"><legend><span class="n">4</span>No rosto</legend><div class="chips">${ros}</div></fieldset>`;
+    if (etapa === 2)
+      return `<div class="avgrid grande">${(Object.keys(BICHOS) as Bicho[])
+        .map((a) => opcao('a', a, av.a === a, avatarSvg({ a, h: null, f: null, c: av.c }, 64), BICHOS[a]))
+        .join('')}</div>`;
+    if (etapa === 3)
+      return `<div class="chips big">${[opcao('h', '-', !av.h, 'Nada', 'Nada na cabeça')]
+        .concat((Object.keys(CABECA) as ItemCabeca[]).map((h) => opcao('h', h, av.h === h, esc(CABECA[h]), CABECA[h])))
+        .join('')}</div>`;
+    if (etapa === 4)
+      return `<div class="chips big">${[opcao('f', '-', !av.f, 'Nada', 'Nada no rosto')]
+        .concat((Object.keys(ROSTO) as ItemRosto[]).map((f) => opcao('f', f, av.f === f, esc(ROSTO[f]), ROSTO[f])))
+        .join('')}</div>`;
+    return '';
   }
 
   /** Personagem fixo no alto: a pessoa vê na hora como ficou a cada toque. */
@@ -74,17 +80,32 @@ function mount(main: HTMLElement, code: string) {
   }
 
   function form(err = '') {
-    const saved = store.get('nick', '');
-    main.innerHTML = `<section class="panel entrada"><div class="tag">Sala ${code}</div><h1>Quem é você hoje?</h1>
+    const pontos = [1, 2, 3, 4].map((i) => `<i class="${i < etapa ? 'feito' : i === etapa ? 'agora' : ''}"></i>`).join('');
+    const corpo =
+      etapa === 1
+        ? `<input type="text" id="nick" maxlength="${LIMITS.nick}" value="${esc(nome)}" autocomplete="nickname" placeholder="Como vai aparecer no ranking" aria-labelledby="etapa-t" aria-describedby="nick-err"><p class="err" id="nick-err" role="alert">${esc(err)}</p>`
+        : `<div id="avp" class="avpick">${picker()}</div>`;
+    const botao = etapa === 1 ? 'Próximo' : etapa === 2 ? '' : etapa === 3 ? 'Próximo' : 'Entrar na sala';
+    main.innerHTML = `<section class="panel entrada"><div class="tag">Sala ${code}</div>
       <form id="fj" novalidate>
-        <div class="av-fixo"><span id="avprev" class="av-fixo-bicho">${previa()}</span><span class="av-fixo-nome" id="av-nome">${esc(saved) || 'Seu nome'}</span><button type="button" class="btn sec small auto" data-act="sortear" data-focus="sortear">Sortear</button></div>
-        <label for="nick" class="passo-j"><span><span class="n">1</span>Seu nome</span><input type="text" id="nick" maxlength="${LIMITS.nick}" value="${esc(saved)}" autocomplete="nickname" placeholder="Como vai aparecer no ranking" aria-describedby="nick-err"></label>
-        <p class="err" id="nick-err" role="alert">${esc(err)}</p>
-        <div id="avp" class="avpick">${picker()}</div>
-        <button class="btn" type="submit">Entrar na sala</button>
+        <div class="av-fixo"><span id="avprev" class="av-fixo-bicho">${previa()}</span><span class="av-fixo-nome" id="av-nome">${esc(nome) || 'Seu nome'}</span>${
+          etapa > 1 ? '<button type="button" class="btn sec small auto" data-act="sortear" data-focus="sortear">Sortear</button>' : ''
+        }</div>
+        <div class="etapa-topo"><span class="etapa-pontos" aria-hidden="true">${pontos}</span><span class="small">Passo ${etapa} de 4</span></div>
+        <h1 id="etapa-t" tabindex="-1">${TITULOS[etapa]}</h1>
+        ${etapa === 2 ? '<p class="small">Toque no seu bicho.</p>' : ''}
+        ${corpo}
+        <div class="etapa-acoes">${etapa > 1 ? '<button type="button" class="btn sec auto" data-act="voltar">Voltar</button>' : ''}${botao ? `<button class="btn" type="submit">${botao}</button>` : ''}</div>
       </form>
       <p class="small">Sem cadastro. Seu nome e seu bicho só aparecem nesta rodada.</p></section>`;
-    main.querySelector<HTMLInputElement>('#nick')!.focus({ preventScroll: true });
+    window.scrollTo(0, 0);
+    if (etapa === 1) main.querySelector<HTMLInputElement>('#nick')!.focus({ preventScroll: true });
+    else main.querySelector<HTMLElement>('#etapa-t')!.focus({ preventScroll: true });
+  }
+
+  function irPara(n: number) {
+    etapa = Math.max(1, Math.min(4, n));
+    form();
   }
 
   function connect() {
@@ -103,7 +124,10 @@ function mount(main: HTMLElement, code: string) {
     if (m.type === 'error' || m.type === 'kicked' || m.type === 'closed') {
       const c = m.type === 'error' ? m.code : m.type;
       banner('');
-      if (c === 'bad_nick') return form('Escreva um apelido para aparecer no ranking.');
+      if (c === 'bad_nick') {
+        etapa = 1;
+        return form('Escreva um apelido para aparecer no ranking.');
+      }
       if (c !== 'not_found') store.del('jog:' + code);
       main.innerHTML = errorScreen(c, '<a class="btn auto" href="/entrar" data-link>Entrar em outra sala</a>');
       return;
@@ -267,9 +291,15 @@ function mount(main: HTMLElement, code: string) {
   const onSubmit = (e: Event) => {
     if ((e.target as HTMLElement).id !== 'fj') return;
     e.preventDefault();
-    const nick = cleanNick(main.querySelector<HTMLInputElement>('#nick')!.value);
-    if (!nick) return form('Escreva seu apelido para aparecer no ranking.');
-    store.set('nick', nick);
+    if (etapa === 1) {
+      nome = cleanNick(main.querySelector<HTMLInputElement>('#nick')!.value);
+      if (!nome) return form('Escreva seu apelido para aparecer no ranking.');
+      store.set('nick', nome);
+      return irPara(2);
+    }
+    if (etapa < 4) return irPara(etapa + 1);
+    const nick = cleanNick(nome);
+    if (!nick) return irPara(1);
     const avatar = encodeAvatar(av);
     store.set('avatar', avatar);
     seat = { pid: uid(), nick, avatar };
@@ -289,8 +319,12 @@ function mount(main: HTMLElement, code: string) {
       if (k === 'h') next.h = v === '-' ? null : (v as ItemCabeca);
       if (k === 'f') next.f = v === '-' ? null : (v as ItemRosto);
       if (k === 'c') next.c = Number(v);
-      return setAv(next);
+      setAv(next);
+      // escolheu o bicho: vai sozinho para a próxima tela, depois de ver o personagem mudar
+      if (k === 'a' && etapa === 2) window.setTimeout(() => etapa === 2 && irPara(3), 280);
+      return;
     }
+    if (b.dataset.act === 'voltar') return irPara(etapa - 1);
     if (b.dataset.act === 'sair') {
       if (confirm('Sair da sala? Você perde a vaga nesta rodada.')) sair();
       return;
@@ -308,6 +342,7 @@ function mount(main: HTMLElement, code: string) {
     const t = e.target as HTMLInputElement;
     if (t.id !== 'nick') return;
     const n = main.querySelector('#av-nome');
+    nome = t.value;
     if (n) n.textContent = t.value.trim() || 'Seu nome';
   };
   main.addEventListener('input', onNome);

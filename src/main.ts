@@ -25,7 +25,7 @@ function route(path: string): Page {
   const p = path.replace(/\/+$/, '') || '/';
   if (p === '/') return home.page();
   if (p === '/criar') return criar.page();
-  if (p === '/entrar') return entrar.page();
+  if (p === '/jogar' || p === '/entrar') return entrar.page();
   if (p === '/guias') return guias.lista();
   let m = /^\/guias\/([a-z0-9-]+)$/.exec(p);
   if (m) return guias.artigo(m[1]);

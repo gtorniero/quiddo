@@ -10,7 +10,7 @@ export function header(path: string, compact = false) {
     `<a class="logo" href="/" data-link aria-label="Quiddo, página inicial">${MARCA}</a>` +
     (compact
       ? ''
-      : `<nav class="nav" aria-label="Principal"><a class="nav-criar" href="/criar" data-link${cur('/criar')}>Criar meu quiz</a><a href="/entrar" data-link${cur('/entrar')}>Entrar<span class="nav-longo">&nbsp;com código</span></a><a href="/guias" data-link${cur('/guias')}>Guias</a></nav>`);
+      : `<nav class="nav" aria-label="Principal"><a class="nav-criar" href="/criar" data-link${cur('/criar')}>Criar meu quiz</a><a href="/jogar" data-link${cur('/jogar') || cur('/entrar')}>Entrar<span class="nav-longo">&nbsp;com código</span></a><a href="/guias" data-link${cur('/guias')}>Guias</a></nav>`);
 }
 
 let bannerTimer = 0;

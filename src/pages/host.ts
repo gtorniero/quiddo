@@ -9,7 +9,7 @@ import { RoomSocket } from '../lib/socket';
 import { store } from '../lib/storage';
 import { applyTheme } from '../lib/theme';
 import { palco } from '../lib/podio';
-import { alternarSom, bipe, fanfarra, ligarMusica, musicaBaixa, pararMusica, reacao, rufar, somLigado } from '../lib/som';
+import { alternarSom, bipe, fanfarra, ligarMusica, musicaBaixa, pararMusica, prepararSom, reacao, rufar, somLigado } from '../lib/som';
 import { avatarSvg } from '../lib/avatar-art';
 import { agendaPodio, graficoVotos, novosNoPodio, animateRank, answersStatic, prepare, preparando, brandBar, confete, cortina, errorScreen, fogoFaixa, fotoCabeca, podiumTitle, questionHead, rankColunas, rankList, rankPista, revelacaoTv, tick, top10 } from './jogo-comum';
 import type { RankRow } from '../../shared/protocol';
@@ -322,6 +322,7 @@ function mount(main: HTMLElement, code: string) {
   rotuloCheia();
   btnCheia.addEventListener('click', () => telaCheia(!document.fullscreenElement));
   if (document.fullscreenEnabled) document.body.appendChild(btnCheia);
+  prepararSom(); // já baixa a voz "Quiddô!" para tocar sem atraso no "Começar"
   const btnSom = document.createElement('button');
   btnSom.className = 'btn-som';
   btnSom.type = 'button';

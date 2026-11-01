@@ -87,7 +87,7 @@ function mount(main: HTMLElement, code: string) {
       etapa === 1
         ? `<input type="text" id="nick" maxlength="${LIMITS.nick}" value="${esc(nome)}" autocomplete="nickname" placeholder="Como vai aparecer no ranking" aria-labelledby="etapa-t" aria-describedby="nick-err"><p class="err" id="nick-err" role="alert">${esc(err)}</p>`
         : `<div id="avp" class="avpick">${picker()}</div>`;
-    const botao = etapa === 1 ? 'Próximo' : etapa === 2 ? '' : etapa === 3 ? 'Próximo' : 'Entrar na sala';
+    const botao = etapa === 1 ? 'Próximo' : etapa === 2 ? '' : etapa === 3 ? 'Próximo' : 'Jogar!';
     main.innerHTML = `<section class="panel entrada"><div class="tag">Sala ${code}</div>
       <form id="fj" novalidate>
         <div class="av-fixo"><span id="avprev" class="av-fixo-bicho">${previa()}</span><span class="av-fixo-nome" id="av-nome">${esc(nome) || 'Seu nome'}</span>${
@@ -131,7 +131,7 @@ function mount(main: HTMLElement, code: string) {
         return form('Escreva um apelido para aparecer no ranking.');
       }
       if (c !== 'not_found') store.del('jog:' + code);
-      main.innerHTML = errorScreen(c, '<a class="btn auto" href="/entrar" data-link>Entrar em outra sala</a>');
+      main.innerHTML = errorScreen(c, '<a class="btn auto" href="/jogar" data-link>Jogar em outra sala</a>');
       return;
     }
     if (m.type !== 'state' || m.role !== 'player') return;

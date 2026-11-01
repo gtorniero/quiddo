@@ -2,11 +2,11 @@ import type { Page } from '../main';
 import { CODE_RE, normalizeCode } from '../../shared/rules';
 import { navigate } from '../lib/nav';
 
-/** Campo de código + botão, usado na home e em /entrar. */
+/** Campo de código + botão, usado na home e em /jogar. */
 export function codeForm(id: string) {
   return `<form class="row" data-codeform novalidate>
     <label for="code-${id}">Código da sala<input type="text" class="code" id="code-${id}" maxlength="4" placeholder="KX7Q" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" aria-describedby="code-${id}-err"></label>
-    <button class="btn" type="submit">Entrar na sala</button>
+    <button class="btn" type="submit">Jogar</button>
   </form><p class="err" id="code-${id}-err" role="alert"></p>`;
 }
 
@@ -39,9 +39,9 @@ export function bindCodeForm(root: HTMLElement, go: (code: string) => void) {
 
 export function page(): Page {
   return {
-    title: 'Entrar com código',
+    title: 'Jogar com código',
     mount(main) {
-      main.innerHTML = `<section class="panel"><h1>Entrar na sala</h1><p class="muted">Digite o código que aparece na tela do anfitrião.</p>${codeForm('entrar')}</section>`;
+      main.innerHTML = `<section class="panel"><h1>Jogar</h1><p class="muted">Digite o código que aparece na tela do anfitrião.</p>${codeForm('jogar')}</section>`;
       main.querySelector<HTMLInputElement>('input.code')!.focus();
       return bindCodeForm(main, (code) => navigate('/' + code));
     },

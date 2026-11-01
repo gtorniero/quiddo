@@ -26,7 +26,7 @@ Para testar com o celular na mesma rede Wi-Fi: `npm run dev -- --host` e abra no
 | `/criar` | Editor do quiz: Meus quizzes, nome do quiz (com a marca em Corporativo e Escola), modo (Corporativo, Amigos & família, Escola), visual do jogo, tempo de cada pergunta, perguntas (2 de modelo: verdadeiro ou falso e múltipla escolha), abrir a sala |
 | `/host/{CODIGO}` | Tela do anfitrião, para a TV ou o projetor |
 | `/{CODIGO}` | Entrada e tela do jogador |
-| `/entrar` | Digitar o código da sala |
+| `/jogar` | Digitar o código da sala (`/entrar` leva ao mesmo lugar, até virar o login com conta) |
 | `/guias` e `/guias/{slug}` | Guias. Os textos ficam em `src/data/guias.ts` |
 
 Na tela do anfitrião, a seta para a direita, Page Down ou espaço avançam o jogo. Isso faz o passador de slides funcionar.

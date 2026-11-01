@@ -15,7 +15,7 @@ import { avatarSvg } from '../lib/avatar-art';
 import { simbolo, OLHO } from '../lib/simbolos';
 import { palco } from '../lib/podio';
 import { MOEDA, coins, countUp } from './jogo-comum';
-import { codeForm, bindCodeForm } from './entrar';
+import { codeForm, bindCodeForm } from './jogar';
 
 // pergunta de demonstração: a certa é a B
 const DEMO = { t: 'Qual destes bichos é o símbolo do Quiddo?', o: ['Arara', 'Tucano', 'Capivara', 'Onça'], c: 1, tl: 10 };

@@ -7,7 +7,7 @@ import { store } from './lib/storage';
 import { navigate } from './lib/nav';
 import type { Theme } from '../shared/protocol';
 import * as home from './pages/home';
-import * as entrar from './pages/entrar';
+import * as jogar from './pages/jogar';
 import * as criar from './pages/criar';
 import * as host from './pages/host';
 import * as jogador from './pages/jogador';
@@ -25,7 +25,8 @@ function route(path: string): Page {
   const p = path.replace(/\/+$/, '') || '/';
   if (p === '/') return home.page();
   if (p === '/criar') return criar.page();
-  if (p === '/entrar') return entrar.page();
+  // /entrar fica para o login com conta, no futuro; por enquanto leva ao mesmo lugar, para links antigos
+  if (p === '/jogar' || p === '/entrar') return jogar.page();
   if (p === '/guias') return guias.lista();
   let m = /^\/guias\/([a-z0-9-]+)$/.exec(p);
   if (m) return guias.artigo(m[1]);
@@ -41,7 +42,7 @@ function naoEncontrada(): Page {
     title: 'Página não encontrada',
     mount(main) {
       main.innerHTML =
-        '<section class="panel center"><h1>Ops</h1><p class="muted">Essa página não existe. Se você recebeu um código de sala, digite em “Entrar com código”.</p><a class="btn auto" href="/entrar" data-link>Entrar com código</a></section>';
+        '<section class="panel center"><h1>Ops</h1><p class="muted">Essa página não existe. Se você recebeu um código de sala, digite em “Jogar com código”.</p><a class="btn auto" href="/jogar" data-link>Jogar com código</a></section>';
     },
   };
 }

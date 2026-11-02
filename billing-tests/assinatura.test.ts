@@ -125,9 +125,13 @@ describe('Quiddo Stripe mensal', () => {
   await webhook('invoice.payment_failed', sub.latest_invoice);
   expect(read('SELECT expira FROM compras')!.expira).toBe(before.expira); expect(await codigoValido(env, before.codigo)).toBe(false);
  });
- it('cancel at period end retains paid access; actual cancellation revokes it', async () => {
+ it.each(['period_end', 'cancel_at'])('scheduled cancellation via %s retains paid access; actual cancellation revokes it', async (kind) => {
   await seedPurchase(); await webhook('checkout.session.completed', session); const code = read('SELECT codigo FROM compras')!.codigo;
-  sub.cancel_at_period_end = true; await webhook('customer.subscription.updated', sub); expect(await codigoValido(env, code)).toBe(true);
+  if (kind === 'period_end') sub.cancel_at_period_end = true; else sub.cancel_at = sub.items.data[0].current_period_end;
+  await webhook('customer.subscription.updated', sub); expect(await codigoValido(env, code)).toBe(true);
+  expect(read('SELECT cancel_at_period_end FROM qd_assinaturas')!.cancel_at_period_end).toBe(1);
+  const account = await rotaCobranca(new Request(ORIGIN + '/api/conta', { headers: { Cookie: 'qd_sessao=' + TOKEN } }), env, '/api/conta');
+  expect((await account!.json() as any).assinatura.renova).toBe(false);
   sub.status = 'canceled'; await webhook('customer.subscription.deleted', sub); expect(await codigoValido(env, code)).toBe(false);
  });
  it.each(['charge.refunded','charge.dispute.created','radar.early_fraud_warning.created'])('risk event %s revokes access and a later invoice cannot clear it', async (kind) => {

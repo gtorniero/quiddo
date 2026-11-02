@@ -11,7 +11,7 @@ import { applyTheme } from '../lib/theme';
 import { palco } from '../lib/podio';
 import { alternarSom, bipe, fanfarra, ligarMusica, musicaBaixa, pararMusica, reacao, rufar, somLigado } from '../lib/som';
 import { avatarSvg } from '../lib/avatar-art';
-import { abrirPagamento, confereVolta, meuAcesso } from '../lib/pagamento';
+import { abrirPagamento, cobranca, confereVolta, meuAcesso } from '../lib/pagamento';
 import { LIMITS } from '../../shared/rules';
 import { SUSPENSE_MS, agendaPodio, graficoVotos, novosNoPodio, animateRank, answersStatic, prepare, preparando, brandBar, confete, cortina, errorScreen, fogoFaixa, fotoCabeca, podiumTitle, questionHead, rankColunas, rankList, rankPista, revelacaoTv, tick, top10 } from './jogo-comum';
 import type { RankRow } from '../../shared/protocol';
@@ -39,6 +39,16 @@ function mount(main: HTMLElement, code: string) {
   let avisoTimer = 0;
   let destaqueEm = 0; // revelação: hora em que a resposta certa ganha o destaque (antes, só os votos)
   let destaqueTimer = 0;
+  let ultimaEspera = 0; // quantos esperavam vaga no último estado (para avisar quando chega mais gente)
+  // preços da oferta da sala cheia (o servidor manda; até lá, os padrões)
+  let ofertaPor = '11,99';
+  let ofertaDe = '15,99';
+  cobranca().then((c) => {
+    if (c?.oferta) {
+      ofertaPor = c.oferta.preco;
+      ofertaDe = c.oferta.de;
+    }
+  });
   let liberando = false; // já pediu ao servidor para liberar a sala com o código deste navegador
 
   main.classList.add('tv');
@@ -127,6 +137,8 @@ function mount(main: HTMLElement, code: string) {
     }
     for (const p of s.players) vistos.add(p.id);
     if (s.phase !== 'lobby') document.getElementById('entrou')?.classList.remove('on');
+    if (s.phase === 'lobby' && s.esperando > ultimaEspera && s.maxPlayers < LIMITS.maxPlayers) avisoEntrada('Tem gente querendo entrar!');
+    ultimaEspera = s.esperando;
     if (novos.length) avisoEntrada(novos.length === 1 ? `${novos[0].nick} entrou!` : `${novos.length} pessoas entraram!`);
     tick(s, sock.now());
   }
@@ -176,7 +188,9 @@ function mount(main: HTMLElement, code: string) {
   function lobby(s: HostState) {
     const invite = `Bora jogar Quiddo? Entra na sala com o código ${code}: ${link}`;
     const n = s.players.length;
-    return `<section class="stage"><div class="joinbox">
+    // com gente esperando vaga, a oferta vem no topo da tela, antes do código da sala
+    const oferta = s.esperando > 0 && s.maxPlayers < LIMITS.maxPlayers ? `<section class="oferta-topo">${planoSala(s)}</section>` : '';
+    return `${oferta}<section class="stage"><div class="joinbox">
         <div style="display:grid;gap:12px">
           <div class="tag">Entre pelo celular</div>
           <div class="url">${esc(location.host)}/<b>${code}</b></div>
@@ -186,7 +200,7 @@ function mount(main: HTMLElement, code: string) {
         </div>
         <div class="qr">${qrSvg(link)}</div>
       </div></section>
-      <section class="panel"><div class="contador"><b>${n}</b><span>${n === 1 ? 'pessoa na sala' : 'pessoas na sala'}</span></div>${planoSala(s)}
+      <section class="panel"><div class="contador"><b>${n}</b><span>${n === 1 ? 'pessoa na sala' : 'pessoas na sala'}${s.maxPlayers < LIMITS.maxPlayers ? ` <small class="limite-gratis">de ${s.maxPlayers} na sala grátis</small>` : ''}</span></div>${oferta ? '' : planoSala(s)}
         ${
           n
             ? `<div class="jogadores">${s.players
@@ -204,6 +218,11 @@ function mount(main: HTMLElement, code: string) {
   /** Sala grátis: mostra o limite e o botão para liberar até 200 pessoas. */
   function planoSala(s: HostState) {
     if (s.maxPlayers >= LIMITS.maxPlayers) return '';
+    // alguém tentou entrar com a sala cheia: oferta para liberar na hora, sem interromper o jogo
+    if (s.esperando > 0)
+      return `<div class="plano oferta" role="status"><p class="oferta-fila"><b>${s.esperando}</b> ${s.esperando === 1 ? 'pessoa esperando' : 'pessoas esperando'} para entrar</p>
+        <p>A sala grátis vai até ${s.maxPlayers} pessoas. <b>Não interrompa o jogo:</b> libere até ${LIMITS.maxPlayers} pessoas com o Passe 7 dias <span class="oferta-preco">de <s>R$ ${esc(ofertaDe)}</s> por <b>R$ ${esc(ofertaPor)}</b></span>. Faça um Pix agora e a sala libera em um minuto.</p>
+        <button type="button" class="btn auto" data-act="oferta" data-focus="oferta">Pagar R$ ${esc(ofertaPor)} com Pix e liberar</button></div>`;
     const cheia = s.players.length >= s.maxPlayers;
     return `<div class="plano${cheia ? ' cheia' : ''}" role="status"><p>${cheia ? `<b>A sala encheu.</b> A sala grátis vai até ${s.maxPlayers} pessoas.` : `Sala grátis: até ${s.maxPlayers} pessoas.`}</p>
       <button type="button" class="btn sec auto" data-act="liberar" data-focus="liberar">Liberar até ${LIMITS.maxPlayers} pessoas</button></div>`;
@@ -339,13 +358,13 @@ function mount(main: HTMLElement, code: string) {
     else if (a === 'kick') {
       const p = s?.players.find((x) => x.id === v);
       if (p && confirm(`Remover ${p.nick} da sala?`)) send({ type: 'kick', playerId: v });
-    } else if (a === 'liberar') {
+    } else if (a === 'liberar' || a === 'oferta') {
       const pedir = (codigo: string) => {
         liberando = true;
         send({ type: 'liberar', codigo });
       };
       if (meuAcesso()) pedir(meuAcesso());
-      else abrirPagamento('/host/' + code, pedir);
+      else abrirPagamento('/host/' + code, pedir, 'mensal', a === 'oferta' ? { codigo: code, hostKey } : undefined);
     } else if (a === 'close') {
       if (confirm('Encerrar o jogo? Todo mundo sai da sala e o placar se perde.')) send({ type: 'close' });
     }

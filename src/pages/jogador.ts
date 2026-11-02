@@ -30,6 +30,7 @@ function mount(main: HTMLElement, code: string) {
   let sock: RoomSocket | null = null;
   let s: PlayerState | null = null;
   let sending: number | null = null; // resposta tocada, esperando o servidor confirmar
+  let esperandoVaga = false; // sala grátis cheia: esperando o anfitrião liberar mais vagas
   let destaqueEm = 0; // revelação: o celular mostra se acertou junto com o destaque da TV
   let destaqueTimer = 0;
   let revealDrawAt = 0; // o sorteio aparece no celular depois da roleta da TV
@@ -116,7 +117,7 @@ function mount(main: HTMLElement, code: string) {
     sock = new RoomSocket({
       code,
       hello: () => ({ type: 'join', nick: me.nick, playerId: me.pid, avatar: me.avatar }),
-      onStatus: (on) => banner(on ? '' : 'A conexão caiu, reconectando…'),
+      onStatus: (on) => banner(on || esperandoVaga ? '' : 'A conexão caiu, reconectando…'),
       onMessage,
     });
     clock = window.setInterval(() => sock && tick(s, sock.now()), 100);
@@ -130,11 +131,19 @@ function mount(main: HTMLElement, code: string) {
         etapa = 1;
         return form('Escreva um apelido para aparecer no ranking.');
       }
+      // sala grátis cheia: fica esperando; o celular tenta de novo sozinho e entra quando o anfitrião liberar
+      if (c === 'cheia_gratis') {
+        esperandoVaga = true;
+        main.innerHTML = `<section class="stage center espera-vaga" role="status"><div class="tag">Sala ${code}</div><div class="big">A sala encheu</div>
+          <p class="muted">Esta sala grátis vai até 10 pessoas. Quem abriu a sala pode liberar mais vagas agora. Fique nesta tela: você entra sozinho assim que liberar<span class="dots"></span></p></section>`;
+        return;
+      }
       if (c !== 'not_found') store.del('jog:' + code);
       main.innerHTML = errorScreen(c, '<a class="btn auto" href="/jogar" data-link>Jogar em outra sala</a>');
       return;
     }
     if (m.type !== 'state' || m.role !== 'player') return;
+    esperandoVaga = false;
     const prev = s;
     s = m;
     applyTheme(s.theme, s.brand.color, s.visual);

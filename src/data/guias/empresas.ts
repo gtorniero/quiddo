@@ -15,7 +15,7 @@ export const EMPRESAS: Guia[] = [
 <li>O time entra pelo celular, sem cadastro e sem baixar app. Cada um escolhe um bicho do Brasil e um apelido.</li>
 <li>Você avança o jogo com a seta do teclado ou com o passador de slides.</li>
 </ol>
-<p>Cabem até 200 pessoas na mesma sala. Dá para fazer com a convenção inteira de uma vez.</p>
+<p>Com um plano pago, cabem até 200 pessoas na mesma sala (a grátis vai até 10). Dá para fazer com a convenção inteira de uma vez.</p>
 <h2>Um roteiro em três rodadas</h2>
 <p>Separe o quiz em blocos curtos, espalhados pelo dia. Três rodadas de 5 a 7 perguntas funcionam bem.</p>
 <p><strong>Rodada 1: produto</strong></p>
@@ -252,7 +252,7 @@ export const EMPRESAS: Guia[] = [
 <p>Gincana e feira de ciências reúnem muita gente: alunos de várias turmas, professores, pais e avós. Um quiz ao vivo coloca todo mundo no mesmo jogo, na mesma tela. Ninguém precisa de cadastro nem de app, só do celular.</p>
 <h2>Por que funciona em evento grande</h2>
 <ul>
-<li>Cabem até 200 pessoas por sala.</li>
+<li>Cabem até 10 pessoas na sala grátis e até 200 nos planos pagos.</li>
 <li>A entrada é por um código de 4 letras ou um QR code na tela.</li>
 <li>Cada participante escolhe um bicho do Brasil e um apelido. Vovó vira capivara, o diretor vira tucano.</li>
 <li>O tema Escola leva o nome, a cor e o logo da escola para a tela.</li>

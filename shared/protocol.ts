@@ -117,6 +117,7 @@ export interface BaseState {
 export interface HostState extends BaseState {
   role: 'host';
   maxPlayers: number; // 10 na sala grátis, 200 com acesso pago
+  esperando: number; // sala grátis cheia: quantas pessoas tentaram entrar e estão esperando vaga
   players: { id: string; nick: string; avatar: string; connected: boolean; answered: boolean }[];
   ranking: RankRow[]; // completo na fase final; top 8 na fase de ranking
   acertaram: Acerto[]; // depois da revelação: os 12 primeiros que acertaram, do mais rápido ao mais lento

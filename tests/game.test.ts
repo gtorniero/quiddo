@@ -139,10 +139,13 @@ describe('jogadores', () => {
     const r = G.newRoom({ code: 'ABCD', hostKey: 'k', theme: 'corp', brand: { name: '', color: '' }, questions: qs, hasLogo: false, now: T0, maxPlayers: LIMITS.freePlayers });
     for (let i = 0; i < 10; i++) expect(G.join(r, 'g' + i, 'G' + i, T0).ok).toBe(true);
     expect(G.join(r, 'extra', 'Extra', T0)).toEqual({ ok: false, code: 'cheia_gratis' });
+    G.join(r, 'extra', 'Extra', T0); // tentar de novo não conta duas vezes
     expect(G.join(r, 'g3', 'G3', T0).ok).toBe(true); // quem já estava volta
     expect(G.hostView(r, T0).maxPlayers).toBe(10);
+    expect(G.hostView(r, T0).esperando).toBe(1);
     r.maxPlayers = LIMITS.maxPlayers;
     expect(G.join(r, 'extra', 'Extra', T0).ok).toBe(true);
+    expect(G.hostView(r, T0).esperando).toBe(0);
   });
 });
 

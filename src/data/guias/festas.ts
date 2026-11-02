@@ -108,7 +108,7 @@ export const FESTAS: Guia[] = [
     resumo: 'O ano da turma em retrospectiva, com pódio e prêmios',
     publico: 'festas',
     corpo: `
-<p>A confraternização de fim de ano tem um risco: virar um encontro em que cada grupinho conversa no seu canto. Um quiz sobre o ano da turma resolve isso. Todo mundo olha para a mesma tela, relembra as histórias e ri junto. Funciona com amigos, com o time do trabalho ou com a empresa inteira, já que a sala aceita até 200 pessoas.</p>
+<p>A confraternização de fim de ano tem um risco: virar um encontro em que cada grupinho conversa no seu canto. Um quiz sobre o ano da turma resolve isso. Todo mundo olha para a mesma tela, relembra as histórias e ri junto. Funciona com amigos, com o time do trabalho ou com a empresa inteira, já que a sala aceita até 10 pessoas de graça e até 200 nos planos pagos.</p>
 <h2>O ano em retrospectiva</h2>
 <p>Comece pelos grandes momentos do ano. Pegue o calendário e anote o que marcou a turma, mês a mês. Depois transforme em pergunta.</p>
 <ul>

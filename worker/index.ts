@@ -6,7 +6,7 @@
 //   /api/cobranca, /api/pix, /api/pix/status, /api/cartao, /api/acesso: cobrança (worker/cobranca.ts)
 // O resto vai para os arquivos estáticos; rotas como /criar e /ABCD caem no index.html.
 import type { CreateRoomResult } from '../shared/protocol';
-import { CODE_RE, LIMITS, randomCode, validateCreate } from '../shared/rules';
+import { CODE_RE, LIMITS, normalizeCode, randomCode, validateCreate } from '../shared/rules';
 import { cobrancaVale, codigoValido, rotaCobranca } from './cobranca';
 import { anotaUso, rotaUso } from './uso';
 import { rotaLogin } from './login';
@@ -30,7 +30,10 @@ export default {
     const login = await rotaLogin(req, env, url.pathname);
     if (login) return login;
     // cobrança: Pix, cartão/Apple Pay/Google Pay e conferência do código de acesso
-    const cob = await rotaCobranca(req, env, url.pathname);
+    const cob = await rotaCobranca(req, env, url.pathname, async (sala, hostKey) => {
+      const code = normalizeCode(sala);
+      return CODE_RE.test(code) && env.ROOMS.get(env.ROOMS.idFromName(code)).ofertaValida(hostKey);
+    });
     if (cob) return cob;
 
     if (parts[1] === 'salas' && parts.length === 2 && req.method === 'POST') {

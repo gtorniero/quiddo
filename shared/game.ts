@@ -52,6 +52,7 @@ export interface Room {
   drawn: Drawn[];
   createdAt: number;
   mexeu?: number; // última mensagem de alguém na sala (para fechar a sala parada)
+  barrados?: string[]; // quem tentou entrar com a sala grátis cheia (esperando vaga)
   endedAt: number; // 0 enquanto o jogo não acabou
 }
 
@@ -81,6 +82,9 @@ export function newRoom(o: { code: string; hostKey: string; theme: Theme; visual
 
 export type JoinResult = { ok: true; player: Player } | { ok: false; code: 'started' | 'full' | 'cheia_gratis' | 'kicked' | 'bad_nick' };
 
+/** Quantos tentaram entrar na sala grátis cheia e ainda não entraram. */
+export const esperandoVaga = (room: Room) => (room.barrados || []).filter((id) => !room.players[id] && !room.kicked.includes(id)).length;
+
 export const limiteDe = (room: Room) => room.maxPlayers ?? LIMITS.maxPlayers;
 
 /** Entrada ou volta de um jogador. Quem já estava na sala volta com os pontos e o personagem, mesmo com o jogo andando. */
@@ -96,7 +100,13 @@ export function join(room: Room, playerId: string, rawNick: string, now: number,
   const nick = cleanNick(rawNick);
   if (!nick) return { ok: false, code: 'bad_nick' };
   if (room.phase !== 'lobby') return { ok: false, code: 'started' };
-  if (Object.keys(room.players).length >= limiteDe(room)) return { ok: false, code: limiteDe(room) < LIMITS.maxPlayers ? 'cheia_gratis' : 'full' };
+  if (Object.keys(room.players).length >= limiteDe(room)) {
+    if (limiteDe(room) >= LIMITS.maxPlayers) return { ok: false, code: 'full' };
+    // sala grátis cheia: anota quem ficou de fora, para o anfitrião ver quantos estão esperando
+    const b = (room.barrados ||= []);
+    if (!b.includes(id) && b.length < LIMITS.maxPlayers) b.push(id);
+    return { ok: false, code: 'cheia_gratis' };
+  }
   const avatar = uniqueAvatar(
     cleanAvatar(rawAvatar),
     Object.values(room.players).map((p) => avatarOf(p)),
@@ -316,6 +326,7 @@ export function hostView(room: Room, now: number, rk: RankRow[] = ranking(room))
     ...base(room, now),
     role: 'host',
     maxPlayers: limiteDe(room),
+    esperando: esperandoVaga(room),
     podium: room.phase === 'final' ? rk.slice(0, 3) : [],
     players: Object.values(room.players)
       .sort((a, b) => a.joinedAt - b.joinedAt)

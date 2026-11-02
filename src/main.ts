@@ -1,5 +1,8 @@
 // Roteador da aplicação. Cada página monta o <main> e devolve uma função de limpeza.
 import './styles.css';
+
+// o endereço provisório da Cloudflare leva para o domínio oficial, no mesmo caminho
+if (location.hostname.endsWith('.workers.dev')) location.replace(`https://www.quiddo.com.br${location.pathname}${location.search}`);
 import { CODE_RE, normalizeCode } from '../shared/rules';
 import { header, banner } from './lib/layout';
 import { applyTheme } from './lib/theme';

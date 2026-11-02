@@ -1,17 +1,12 @@
 // Roteador da aplicação. Cada página monta o <main> e devolve uma função de limpeza.
 import './styles.css';
+import { seoHead } from '../shared/seo';
 import { CODE_RE, normalizeCode } from '../shared/rules';
 import { header, banner } from './lib/layout';
 import { applyTheme } from './lib/theme';
 import { store } from './lib/storage';
 import { navigate } from './lib/nav';
 import type { Theme } from '../shared/protocol';
-import * as home from './pages/home';
-import * as jogar from './pages/jogar';
-import * as criar from './pages/criar';
-import * as host from './pages/host';
-import * as jogador from './pages/jogador';
-import * as guias from './pages/guias';
 
 export type Cleanup = (() => void) | void;
 export interface Page {
@@ -21,19 +16,19 @@ export interface Page {
   mount(main: HTMLElement): Cleanup;
 }
 
-function route(path: string): Page {
+async function route(path: string): Promise<Page> {
   const p = path.replace(/\/+$/, '') || '/';
-  if (p === '/') return home.page();
-  if (p === '/criar') return criar.page();
+  if (p === '/') return (await import('./pages/home')).page();
+  if (p === '/criar') return (await import('./pages/criar')).page();
   // /entrar fica para o login com conta, no futuro; por enquanto leva ao mesmo lugar, para links antigos
-  if (p === '/jogar' || p === '/entrar') return jogar.page();
-  if (p === '/guias') return guias.lista();
+  if (p === '/jogar' || p === '/entrar') return (await import('./pages/jogar')).page();
+  if (p === '/guias') return (await import('./pages/guias')).lista();
   let m = /^\/guias\/([a-z0-9-]+)$/.exec(p);
-  if (m) return guias.artigo(m[1]);
+  if (m) return (await import('./pages/guias')).artigo(m[1]);
   m = /^\/host\/([A-Za-z0-9]{4})$/.exec(p);
-  if (m && CODE_RE.test(normalizeCode(m[1]))) return host.page(normalizeCode(m[1]));
+  if (m && CODE_RE.test(normalizeCode(m[1]))) return (await import('./pages/host')).page(normalizeCode(m[1]));
   m = /^\/([A-Za-z0-9]{4})$/.exec(p);
-  if (m && CODE_RE.test(normalizeCode(m[1]))) return jogador.page(normalizeCode(m[1]));
+  if (m && CODE_RE.test(normalizeCode(m[1]))) return (await import('./pages/jogador')).page(normalizeCode(m[1]));
   return naoEncontrada();
 }
 
@@ -49,17 +44,23 @@ function naoEncontrada(): Page {
 
 let cleanup: Cleanup;
 
-function render() {
+let renderVersion = 0;
+async function render() {
+  const version = ++renderVersion;
+  const page = await route(location.pathname);
+  if (version !== renderVersion) return;
   if (cleanup) cleanup();
   cleanup = undefined;
   banner('');
   // tema padrão do site: o último escolhido no editor
   applyTheme(store.get<Theme>('tema', 'festa'));
-  const page = route(location.pathname);
   const main = document.getElementById('conteudo')!;
   main.className = page.wide ? 'wide' : '';
   header(location.pathname, page.compact);
-  document.title = page.title === 'Quiddo' ? 'Quiddo · Quizz do seu jeito' : `${page.title} · Quiddo`;
+  document.querySelectorAll('title, meta[name="description"], meta[name="robots"], meta[property^="og:"], meta[name^="twitter:"], link[rel="canonical"], #seo-schema').forEach(el => el.remove());
+  const metadata = new DOMParser().parseFromString(seoHead(location.pathname.replace(/\/+$/, '') || '/'), 'text/html');
+  for (const el of Array.from(metadata.head.children)) document.head.appendChild(el);
+  if (!document.querySelector('link[rel="canonical"]')) document.title = `${page.title} · Quiddo`;
   main.innerHTML = '';
   cleanup = page.mount(main);
 }

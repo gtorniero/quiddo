@@ -14,7 +14,7 @@ export const CASAMENTO: Guia[] = [
 <li>Crie um quiz no site com o tema Amigos &amp; família.</li>
 <li>Escreva de 12 a 20 perguntas sobre o noivo. Coloque o nome dele direto no texto, por exemplo: "Qual é o time do Rafa?".</li>
 <li>Escolha o tempo das perguntas. Para despedida, 15 ou 20 segundos funcionam bem: dá para ler e ainda sobra pressão.</li>
-<li>Abra a sala, mostre o código de 4 letras na TV e deixe a turma entrar.</li>
+<li>Abra a sala, mostre o código de 4 caracteres na TV e deixe a turma entrar.</li>
 </ol>
 <h2>Perguntas de exemplo para adaptar</h2>
 <p>Troque "Rafa" pelo nome do seu noivo e ajuste as alternativas. Cada pergunta pode ter de 2 a 4 respostas.</p>
@@ -60,7 +60,7 @@ export const CASAMENTO: Guia[] = [
     publico: 'casamento',
     corpo: `
 <p>Na despedida de solteira, as amigas da escola, da faculdade, do trabalho e a família se encontram, muitas vezes pela primeira vez. Um quiz ao vivo é o jeito mais rápido de unir essa turma: todo mundo joga junto e descobre quem realmente conhece a noiva de cor.</p>
-<p>Funciona assim: a TV mostra um código de 4 letras e um QR code. Cada convidada entra pelo celular, sem cadastro e sem baixar nada, escolhe um personagem (tucano de coroa, onça de chapéu de festa, jabuti de óculos de coração) e um apelido. Em um minuto, a sala está cheia.</p>
+<p>Funciona assim: a TV mostra um código de 4 caracteres e um QR code. Cada convidada entra pelo celular, sem cadastro e sem baixar nada, escolhe um personagem (tucano de coroa, onça de chapéu de festa, jabuti de óculos de coração) e um apelido. Em um minuto, a sala está cheia.</p>
 <h2>Passo a passo</h2>
 <ol>
 <li>Crie o quiz no site e escolha o tema Amigos &amp; família.</li>
@@ -247,7 +247,7 @@ export const CASAMENTO: Guia[] = [
 <ol>
 <li><strong>Depois que a maioria chegou.</strong> Mais ou menos uma hora depois do início, quando a turma já comeu algo e está animada.</li>
 <li><strong>Antes do pico da música.</strong> Com o som alto, ninguém escuta o anfitrião.</li>
-<li><strong>Com a TV em lugar visível.</strong> Teste o projetor ou a TV antes. O código de 4 letras e o QR code precisam aparecer bem.</li>
+<li><strong>Com a TV em lugar visível.</strong> Teste o projetor ou a TV antes. O código de 4 caracteres e o QR code precisam aparecer bem.</li>
 </ol>
 <p>Avise a turma: "Daqui a cinco minutos tem quiz, peguem o celular". Não precisa de cadastro nem de app, então a entrada é rápida. Até 200 pessoas cabem na mesma sala.</p>
 <h2>4. Prendas leves e opcionais</h2>

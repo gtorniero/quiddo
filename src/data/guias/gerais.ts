@@ -118,7 +118,7 @@ export const GERAIS: Guia[] = [
 <li>Criar expectativa para a próxima pergunta.</li>
 </ul>
 <h2>Antes da primeira pergunta</h2>
-<p>Com o código de 4 letras e o QR code na TV, espere a sala encher. Enquanto isso, puxe conversa com quem está entrando: “Olha a capivara de óculos chegando!” Os personagens, bichos do Brasil com acessórios, são um ótimo assunto para quebrar o gelo.</p>
+<p>Com o código de 4 caracteres e o QR code na TV, espere a sala encher. Enquanto isso, puxe conversa com quem está entrando: “Olha a capivara de óculos chegando!” Os personagens, bichos do Brasil com acessórios, são um ótimo assunto para quebrar o gelo.</p>
 <p>Quando todos estiverem dentro, explique em três frases:</p>
 <ol>
 <li>“A pergunta aparece na TV, você responde no celular.”</li>
@@ -190,14 +190,14 @@ export const GERAIS: Guia[] = [
 <p>Este é o passo mais importante. Um dia antes, ou pelo menos uma hora antes:</p>
 <ol>
 <li>Abra a sala na TV.</li>
-<li>Entre pelo seu celular com o código de 4 letras ou o QR code.</li>
+<li>Entre pelo seu celular com o código de 4 caracteres ou o QR code.</li>
 <li>Escolha um personagem e um apelido.</li>
 <li>Jogue duas ou três perguntas e confira o ranking.</li>
 <li>Veja se as respostas certas estão marcadas direito.</li>
 </ol>
 <p>Se der, peça para um colega entrar também. Dois celulares mostram melhor como a sala vai se comportar.</p>
 <h2>5. QR code visível</h2>
-<p>O código de 4 letras e o QR code aparecem na TV. Para todo mundo conseguir entrar:</p>
+<p>O código de 4 caracteres e o QR code aparecem na TV. Para todo mundo conseguir entrar:</p>
 <ul>
 <li>Deixe a tela de entrada aberta por alguns minutos antes de começar.</li>
 <li>Leia o código em voz alta, letra por letra: “É B, R, A, S.”</li>

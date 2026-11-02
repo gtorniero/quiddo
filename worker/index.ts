@@ -5,6 +5,7 @@
 //   GET  /api/salas/{CODIGO}/img/{N} imagem da pergunta N
 //   /api/cobranca, /api/pix, /api/pix/status, /api/cartao, /api/acesso: cobrança (worker/cobranca.ts)
 // O resto vai para os arquivos estáticos; rotas como /criar e /ABCD caem no index.html.
+import { siteResponse } from './site';
 import type { CreateRoomResult } from '../shared/protocol';
 import { CODE_RE, LIMITS, randomCode, validateCreate } from '../shared/rules';
 import { cobrancaVale, codigoValido, rotaCobranca } from './cobranca';
@@ -13,14 +14,14 @@ import type { Env } from './room';
 export { Room } from './room';
 
 const json = (data: unknown, status = 200) =>
-  new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
+  new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' } });
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
     const parts = url.pathname.split('/').filter(Boolean); // ['api', 'salas', 'ABCD', 'ws']
 
-    if (parts[0] !== 'api') return env.ASSETS.fetch(req);
+    if (parts[0] !== 'api') return siteResponse(req, env.ASSETS);
 
     // cobrança: Pix, cartão/Apple Pay/Google Pay e conferência do código de acesso
     const cob = await rotaCobranca(req, env, url.pathname);

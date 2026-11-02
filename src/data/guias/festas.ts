@@ -44,7 +44,7 @@ export const FESTAS: Guia[] = [
 <li><strong>Antes do parabéns:</strong> o quiz esquenta a turma e o pódio vira o gancho para o bolo.</li>
 <li><strong>Longe da hora da comida quente:</strong> com prato na mão, ninguém pega o celular.</li>
 </ul>
-<p>Na prática: ligue a TV, mostre o código de 4 letras e o QR code, e cada convidado entra pelo celular, sem cadastro. Cada um escolhe seu bicho, uma capivara de boné, uma onça de óculos de coração, e um apelido. Use 20 segundos por pergunta para dar tempo de rir da alternativa errada.</p>
+<p>Na prática: ligue a TV, mostre o código de 4 caracteres e o QR code, e cada convidado entra pelo celular, sem cadastro. Cada um escolhe seu bicho, uma capivara de boné, uma onça de óculos de coração, e um apelido. Use 20 segundos por pergunta para dar tempo de rir da alternativa errada.</p>
 <h2>O final</h2>
 <p>O pódio revela do 3º para o 1º lugar, com suspense. Chame o aniversariante para entregar o prêmio e tire a foto ali mesmo. Se quiser, faça um sorteio entre todos no fim, assim até quem errou tudo sai com chance de ganhar uma lembrancinha.</p>`,
   },
@@ -95,7 +95,7 @@ export const FESTAS: Guia[] = [
 <h2>Como montar a noite</h2>
 <ol>
 <li>Crie o quiz no site com o tema Amigos & família, umas 12 a 15 perguntas.</li>
-<li>Ligue na TV da sala e mostre o código de 4 letras e o QR code.</li>
+<li>Ligue na TV da sala e mostre o código de 4 caracteres e o QR code.</li>
 <li>Cada um entra pelo celular, sem baixar app e sem cadastro.</li>
 <li>Depois de cada pergunta, o ranking mostra quem subiu. É ali que a torcida começa.</li>
 <li>No fim, o pódio revela do 3º para o 1º lugar. Junte a família para a foto.</li>
@@ -136,7 +136,7 @@ export const FESTAS: Guia[] = [
 <li><strong>Varie o número de respostas:</strong> cada pergunta pode ter de 2 a 4 alternativas. Uma de verdadeiro ou falso no meio quebra o ritmo de um jeito bom.</li>
 </ol>
 <h2>Na hora da festa</h2>
-<p>Ligue o projetor ou a TV e mostre o código de 4 letras e o QR code. Cada pessoa entra pelo celular, sem cadastro e sem baixar app, e escolhe um personagem: uma capivara de óculos de coração, um sapo de boné, um tucano de chapéu de festa. Isso já rende a primeira risada.</p>
+<p>Ligue o projetor ou a TV e mostre o código de 4 caracteres e o QR code. Cada pessoa entra pelo celular, sem cadastro e sem baixar app, e escolhe um personagem: uma capivara de óculos de coração, um sapo de boné, um tucano de chapéu de festa. Isso já rende a primeira risada.</p>
 <p>Lembre a turma da regra: errou, zero pontos. Acertou, de 500 a 1000 pontos, e quanto mais rápido, mais pontos. Depois de cada pergunta, o ranking mostra os pontos subindo e quem ganhou posições. A disputa esquenta sozinha.</p>
 <h2>Prêmios</h2>
 <p>O pódio no fim revela do 3º para o 1º lugar, com suspense. Prepare um prêmio para cada posição e chame os três para a foto.</p>
@@ -194,7 +194,7 @@ export const FESTAS: Guia[] = [
 <p>O quiz é tempero, não o prato principal. Algumas regras práticas:</p>
 <ol>
 <li><strong>Escolha o momento:</strong> depois da primeira leva de carne, quando todo mundo já comeu e está de boa.</li>
-<li><strong>Entrada fácil:</strong> mostre o código de 4 letras e o QR code na TV. Cada um entra pelo celular, sem cadastro e sem baixar app.</li>
+<li><strong>Entrada fácil:</strong> mostre o código de 4 caracteres e o QR code na TV. Cada um entra pelo celular, sem cadastro e sem baixar app.</li>
 <li><strong>Ninguém é obrigado:</strong> quem estiver na churrasqueira pode só torcer. Dá para jogar em dupla, um celular para dois.</li>
 <li><strong>Nada constrangedor:</strong> nada de pergunta sobre ex, peso ou quem bebeu mais. Piada boa é a que todo mundo ri junto.</li>
 <li><strong>Acabe no auge:</strong> pare enquanto a turma ainda quer mais. A próxima rodada fica para depois do pão de alho.</li>
@@ -220,7 +220,7 @@ export const FESTAS: Guia[] = [
 </ol>
 <h2>O roteiro de 20 minutos</h2>
 <h2>Minutos 0 a 3: entrada</h2>
-<p>Abra a sala e mostre na tela o código de 4 letras e o QR code. Cada pessoa entra pelo celular, sem cadastro e sem baixar app. Dê um tempinho para escolherem o personagem. Ver o tucano de óculos de coração ou a onça de chapéu de festa aparecer na TV já arranca risada.</p>
+<p>Abra a sala e mostre na tela o código de 4 caracteres e o QR code. Cada pessoa entra pelo celular, sem cadastro e sem baixar app. Dê um tempinho para escolherem o personagem. Ver o tucano de óculos de coração ou a onça de chapéu de festa aparecer na TV já arranca risada.</p>
 <h2>Minutos 3 a 6: aquecimento</h2>
 <p>Comece com duas ou três perguntas fáceis. Todo mundo acerta, todo mundo pontua e entra no clima.</p>
 <ul>

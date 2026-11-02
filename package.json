@@ -10,7 +10,8 @@
     "deploy": "vite build && wrangler deploy",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p worker/tsconfig.json --noEmit",
     "test": "vitest run",
-    "simular": "node scripts/simular.mjs"
+    "simular": "node scripts/simular.mjs",
+    "check:seo": "node scripts/check-seo-build.mjs"
   },
   "dependencies": {
     "qrcode-generator": "^2.0.4"

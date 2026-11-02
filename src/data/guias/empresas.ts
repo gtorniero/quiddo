@@ -11,7 +11,7 @@ export const EMPRESAS: Guia[] = [
 <h2>Como funciona na prática</h2>
 <ol>
 <li>Você monta o quiz no site com as suas perguntas e escolhe o tema Corporativo.</li>
-<li>Abre a sala. A TV ou o projetor mostra um código de 4 letras e um QR code.</li>
+<li>Abre a sala. A TV ou o projetor mostra um código de 4 caracteres e um QR code.</li>
 <li>O time entra pelo celular, sem cadastro e sem baixar app. Cada um escolhe um bicho do Brasil e um apelido.</li>
 <li>Você avança o jogo com a seta do teclado ou com o passador de slides.</li>
 </ol>
@@ -114,7 +114,7 @@ export const EMPRESAS: Guia[] = [
 <li>Escolha o tempo. Para treinamento, 20 ou 30 segundos dá tempo de pensar.</li>
 </ol>
 <h2>No dia</h2>
-<p>Abra a sala na TV. Aparece um código de 4 letras e um QR code. A turma entra pelo celular, sem cadastro e sem baixar app, escolhe um bicho do Brasil como personagem e um apelido. Se a integração tem slides, use a seta do teclado ou o passador para avançar o quiz no mesmo computador.</p>
+<p>Abra a sala na TV. Aparece um código de 4 caracteres e um QR code. A turma entra pelo celular, sem cadastro e sem baixar app, escolhe um bicho do Brasil como personagem e um apelido. Se a integração tem slides, use a seta do teclado ou o passador para avançar o quiz no mesmo computador.</p>
 <p>Depois de cada pergunta, a TV mostra quantos escolheram cada alternativa. Pare ali por alguns segundos. Explique por que a certa é a certa. Esse é o momento de aprendizado. Em seguida vem o ranking, e a sala volta a se animar.</p>
 <h2>Cuidados</h2>
 <ul>
@@ -133,7 +133,7 @@ export const EMPRESAS: Guia[] = [
 <p>Em toda reunião longa chega o momento em que metade da sala está olhando o celular. Em vez de lutar contra isso, use o celular a favor. Um quiz ao vivo no meio da apresentação traz a atenção de volta e transforma a plateia em participante.</p>
 <h2>Quiz e slides no mesmo ritmo</h2>
 <p>Na tela da TV ou do projetor, a seta do teclado ou um passador de slides avança o jogo. Você não precisa trocar de equipamento nem chamar ninguém da técnica. Deixe o quiz aberto numa aba e alterne com a apresentação.</p>
-<p>Antes de começar, abra a sala. A tela mostra um código de 4 letras e um QR code. Peça para todo mundo entrar logo no início. Sem cadastro e sem baixar app, leva menos de um minuto. Cada pessoa escolhe um personagem, um bicho do Brasil, e um apelido.</p>
+<p>Antes de começar, abra a sala. A tela mostra um código de 4 caracteres e um QR code. Peça para todo mundo entrar logo no início. Sem cadastro e sem baixar app, leva menos de um minuto. Cada pessoa escolhe um personagem, um bicho do Brasil, e um apelido.</p>
 <h2>Quantas perguntas usar</h2>
 <p>Menos é mais. A estrela é a apresentação, não o jogo.</p>
 <ul>
@@ -197,7 +197,7 @@ export const EMPRESAS: Guia[] = [
 <h2>Como funciona na sala</h2>
 <ol>
 <li>O professor cria o quiz no site com as próprias perguntas e escolhe o tema Escola.</li>
-<li>Abre a sala no projetor ou na TV. Aparece um código de 4 letras e um QR code.</li>
+<li>Abre a sala no projetor ou na TV. Aparece um código de 4 caracteres e um QR code.</li>
 <li>Os alunos entram pelo celular, sem cadastro e sem baixar app.</li>
 <li>Cada aluno escolhe um personagem, um bicho do Brasil, e um apelido.</li>
 </ol>
@@ -253,7 +253,7 @@ export const EMPRESAS: Guia[] = [
 <h2>Por que funciona em evento grande</h2>
 <ul>
 <li>Cabem até 200 pessoas por sala.</li>
-<li>A entrada é por um código de 4 letras ou um QR code na tela.</li>
+<li>A entrada é por um código de 4 caracteres ou um QR code na tela.</li>
 <li>Cada participante escolhe um bicho do Brasil e um apelido. Vovó vira capivara, o diretor vira tucano.</li>
 <li>O tema Escola leva o nome, a cor e o logo da escola para a tela.</li>
 </ul>

@@ -36,113 +36,8 @@ export function page(): Page {
     mount(main) {
       // a home sempre usa o visual colorido do Quiddo
       applyTheme('festa');
-      const guias = [
-        ['festas', 'Festa e aniversário', 'Quem conhece melhor o aniversariante, Natal em família, churrasco.'],
-        ['empresas', 'Empresa e evento', 'Convenção, integração, treinamento e o fim da palestra chata.'],
-        ['escola', 'Sala de aula', 'Revisão para prova que a turma pede para repetir.'],
-        ['casamento', 'Chá bar e despedida', 'Quem conhece melhor o casal, com pódio para a foto.'],
-      ]
-        .map(([pub, t, d]) => {
-          const g = GUIAS.find((x) => x.publico === pub && x.corpo);
-          return `<a class="caso" href="${g ? '/guias/' + g.slug : '/guias'}" data-link><b>${esc(t)}</b><span>${esc(d)}</span><em>Ver ideias →</em></a>`;
-        })
-        .join('');
-
       main.classList.add('home');
-      main.innerHTML = `
-        <section class="h-hero">
-          <div class="h-texto">
-            <span class="selo">Grátis · sem cadastro · pronto em 2 minutos</span>
-            <h1>Crie o seu quiz e jogue ao vivo com a turma toda.</h1>
-            <p>Escreva as suas perguntas, mostre a sala no telão, no projetor ou no computador, e a turma joga pelo celular. Quem acerta mais rápido ganha mais pontos, o ranking sobe a cada rodada e o pódio vira foto.</p>
-            <a class="btn cta" href="/criar" data-link>Criar meu quiz grátis <span aria-hidden="true">→</span></a>
-            <p class="h-mini">Funciona em qualquer celular, sem baixar app. Até 200 pessoas por sala.</p>
-          </div>
-          <div class="h-demo" id="demo" aria-labelledby="demo-t">
-            <div class="demo-topo"><span class="pill">Experimente agora</span><span class="timer" aria-hidden="true">${OLHO}<b id="demo-tempo">10</b></span></div>
-            <div class="bar" aria-hidden="true"><i id="demo-barra"></i></div>
-            <h2 class="qt" id="demo-t">${esc(DEMO.t)}</h2>
-            <div class="answers" role="group" aria-labelledby="demo-t">${DEMO.o
-              .map((o, k) => `<button class="ans c${k}" data-demo="${k}">${simbolo(k)}<span class="lt">${LETRAS[k]}</span><span>${esc(o)}</span><span></span></button>`)
-              .join('')}</div>
-            <div class="demo-fim" id="demo-fim" role="status" aria-live="polite"></div>
-          </div>
-        </section>
-
-        <section class="h-faixa" aria-label="Para quem é">
-          <span>Aniversário</span><span>Convenção de vendas</span><span>Sala de aula</span><span>Chá bar</span><span>Natal em família</span><span>Treinamento</span><span>Churrasco</span>
-        </section>
-
-        <section class="h-bloco">
-          <h2>Como funciona</h2>
-          <ol class="h-passos">
-            <li><span class="n">1</span><b>Escreva as perguntas</b><p>Múltipla escolha ou verdadeiro ou falso, com imagem se quiser. Nos temas Corporativo e Escola, com a sua marca.</p></li>
-            <li><span class="n">2</span><b>Abra a sala na tela principal</b><p>No telão, no projetor ou no computador aparecem um código e um QR. A turma entra pelo celular, escolhe um bicho e um apelido.</p></li>
-            <li><span class="n">3</span><b>Joguem juntos</b><p>A pergunta aparece em todas as telas ao mesmo tempo. Ranking a cada rodada, pódio e sorteio no fim.</p></li>
-          </ol>
-          <a class="btn cta" href="/criar" data-link>Criar meu quiz grátis <span aria-hidden="true">→</span></a>
-        </section>
-
-        <section class="h-bloco">
-          <h2>Do jeito que aparece na tela</h2>
-          <div class="h-telas">
-            <figure class="tela">
-              <div class="tela-tv">
-                <div class="contador"><b>12</b><span>pessoas na sala</span></div>
-                <div class="h-sala">${SALA.map((a, i) => `<div>${avatarSvg(a, 44)}<span>${NOMES[i]}</span></div>`).join('')}</div>
-              </div>
-              <figcaption><b>A turma entra</b> e cada um vira um bicho do Brasil.</figcaption>
-            </figure>
-            <figure class="tela">
-              <div class="tela-tv">
-                <div class="rank">${EXEMPLO.map(
-                  (r) =>
-                    `<div><i>${r.rank}</i><span class="who">${avatarSvg(r.avatar, 30)}${esc(r.nick)}${r.prevRank > r.rank ? `<span class="up">▲${r.prevRank - r.rank}</span>` : ''}</span><em>${r.delta ? MOEDA + '+' + fmt(r.delta) : ''}</em><b>${fmt(r.score)}</b></div>`,
-                ).join('')}</div>
-              </div>
-              <figcaption><b>Ranking a cada rodada,</b> com moedinhas e quem subiu.</figcaption>
-            </figure>
-            <figure class="tela">
-              <div class="tela-tv tela-podio">${palco(EXEMPLO, 'festa')}</div>
-              <figcaption><b>Pódio com suspense,</b> pronto para a foto do grupo.</figcaption>
-            </figure>
-          </div>
-        </section>
-
-        <section class="h-bloco">
-          <h2>Três jeitos de jogar</h2>
-          <p class="h-sub">Escolha o modo do seu evento. O visual do jogo você escolhe depois, no editor.</p>
-          <div class="h-temas">${(Object.keys(TEMAS) as Theme[])
-            .map(
-              (k) =>
-                `<a class="h-tema h-tema-${k}" href="/criar" data-link data-tema-novo="${k}"><span class="sw">${TEMAS[k].cores.map((c) => `<i style="background:${c}"></i>`).join('')}</span><b>${esc(TEMAS[k].nome)}</b><span>${esc(TEMAS[k].desc)}</span><em>${k === 'festa' ? 'Sem marca, com as cores do Quiddo' : 'Com nome, cor e logo da sua ' + (k === 'corp' ? 'empresa' : 'escola')}</em><strong>Criar neste modo →</strong></a>`,
-            )
-            .join('')}</div>
-        </section>
-
-        <section class="h-bloco">
-          <h2>Por que a turma pede outra rodada</h2>
-          <div class="h-beneficios">
-            <div><b>Rapidez vale ponto</b><p>De 500 a 1.000 por acerto. Quem responde primeiro sobe no ranking.</p></div>
-            <div><b>A última vale o dobro</b><p>Chance de virada no fim, para ninguém desistir.</p></div>
-            <div><b>Personagens</b><p>20 bichos do Brasil com boné, coroa, óculos e mais. Cada um monta o seu.</p></div>
-            <div><b>Sorteio de prêmios</b><p>Entre todos ou só entre quem pontuou, com roleta no telão.</p></div>
-            <div><b>Sua marca</b><p>Nome, cor e logo da empresa ou da escola na tela e nos celulares.</p></div>
-            <div><b>Até 200 pessoas</b><p>Sem cadastro e sem app. Abre no navegador de qualquer celular.</p></div>
-          </div>
-        </section>
-
-        <section class="h-bloco">
-          <h2>Para qualquer ocasião</h2>
-          <div class="h-casos">${guias}</div>
-        </section>
-
-        <section class="h-final">
-          <h2>Seu primeiro quiz fica pronto antes do café esfriar.</h2>
-          <p>Já vem com perguntas de exemplo para você trocar pelas suas.</p>
-          <a class="btn cta claro" href="/criar" data-link>Criar meu quiz grátis <span aria-hidden="true">→</span></a>
-          <div class="h-entrar"><p><b>Vai jogar?</b> Digite o código que aparece na tela.</p>${codeForm('home')}</div>
-        </section>`;
+      main.innerHTML = homeHTML();
 
       // ---------- pergunta de demonstração ----------
       let t0 = performance.now();
@@ -225,4 +120,114 @@ export function page(): Page {
       };
     },
   };
+}
+
+export function homeHTML(): string {
+      const guias = [
+        ['festas', 'Festa e aniversário', 'Quem conhece melhor o aniversariante, Natal em família, churrasco.'],
+        ['empresas', 'Empresa e evento', 'Convenção, integração, treinamento e o fim da palestra chata.'],
+        ['escola', 'Sala de aula', 'Revisão para prova que a turma pede para repetir.'],
+        ['casamento', 'Chá bar e despedida', 'Quem conhece melhor o casal, com pódio para a foto.'],
+      ]
+        .map(([pub, t, d]) => {
+          const g = GUIAS.find((x) => x.publico === pub && x.corpo);
+          return `<a class="caso" href="${g ? '/guias/' + g.slug : '/guias'}" data-link><b>${esc(t)}</b><span>${esc(d)}</span><em>Ver ideias →</em></a>`;
+        })
+        .join('');
+
+      return `
+        <section class="h-hero">
+          <div class="h-texto">
+            <span class="selo">Grátis · sem cadastro · pronto em 2 minutos</span>
+            <h1>Crie o seu quiz e jogue ao vivo com a turma toda.</h1>
+            <p>Escreva as suas perguntas, mostre a sala no telão, no projetor ou no computador, e a turma joga pelo celular. Quem acerta mais rápido ganha mais pontos, o ranking sobe a cada rodada e o pódio vira foto.</p>
+            <a class="btn cta" href="/criar" data-link>Criar meu quiz grátis <span aria-hidden="true">→</span></a>
+            <p class="h-mini">Jogue pelo navegador do celular, sem baixar app. Até 200 pessoas por sala.</p>
+          </div>
+          <div class="h-demo" id="demo" aria-labelledby="demo-t">
+            <div class="demo-topo"><span class="pill">Experimente agora</span><span class="timer" aria-hidden="true">${OLHO}<b id="demo-tempo">10</b></span></div>
+            <div class="bar" aria-hidden="true"><i id="demo-barra"></i></div>
+            <h2 class="qt" id="demo-t">${esc(DEMO.t)}</h2>
+            <div class="answers" role="group" aria-labelledby="demo-t">${DEMO.o
+              .map((o, k) => `<button class="ans c${k}" data-demo="${k}">${simbolo(k)}<span class="lt">${LETRAS[k]}</span><span>${esc(o)}</span><span></span></button>`)
+              .join('')}</div>
+            <div class="demo-fim" id="demo-fim" role="status" aria-live="polite"></div>
+          </div>
+        </section>
+
+        <section class="h-faixa" aria-label="Para quem é">
+          <span>Aniversário</span><span>Convenção de vendas</span><span>Sala de aula</span><span>Chá bar</span><span>Natal em família</span><span>Treinamento</span><span>Churrasco</span>
+        </section>
+
+        <section class="h-bloco">
+          <h2>Como funciona</h2>
+          <ol class="h-passos">
+            <li><span class="n">1</span><b>Escreva as perguntas</b><p>Múltipla escolha ou verdadeiro ou falso, com imagem se quiser. Nos temas Corporativo e Escola, com a sua marca.</p></li>
+            <li><span class="n">2</span><b>Abra a sala na tela principal</b><p>No telão, no projetor ou no computador aparecem um código e um QR. A turma entra pelo celular, escolhe um bicho e um apelido.</p></li>
+            <li><span class="n">3</span><b>Joguem juntos</b><p>A pergunta aparece em todas as telas ao mesmo tempo. Ranking a cada rodada, pódio e sorteio no fim.</p></li>
+          </ol>
+          <a class="btn cta" href="/criar" data-link>Criar meu quiz grátis <span aria-hidden="true">→</span></a>
+        </section>
+
+        <section class="h-bloco">
+          <h2>Do jeito que aparece na tela</h2>
+          <div class="h-telas">
+            <figure class="tela">
+              <div class="tela-tv">
+                <div class="contador"><b>12</b><span>pessoas na sala</span></div>
+                <div class="h-sala">${SALA.map((a, i) => `<div>${avatarSvg(a, 44)}<span>${NOMES[i]}</span></div>`).join('')}</div>
+              </div>
+              <figcaption><b>A turma entra</b> e cada um vira um bicho do Brasil.</figcaption>
+            </figure>
+            <figure class="tela">
+              <div class="tela-tv">
+                <div class="rank">${EXEMPLO.map(
+                  (r) =>
+                    `<div><i>${r.rank}</i><span class="who">${avatarSvg(r.avatar, 30)}${esc(r.nick)}${r.prevRank > r.rank ? `<span class="up">▲${r.prevRank - r.rank}</span>` : ''}</span><em>${r.delta ? MOEDA + '+' + fmt(r.delta) : ''}</em><b>${fmt(r.score)}</b></div>`,
+                ).join('')}</div>
+              </div>
+              <figcaption><b>Ranking a cada rodada,</b> com moedinhas e quem subiu.</figcaption>
+            </figure>
+            <figure class="tela">
+              <div class="tela-tv tela-podio">${palco(EXEMPLO, 'festa')}</div>
+              <figcaption><b>Pódio com suspense,</b> pronto para a foto do grupo.</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section class="h-bloco">
+          <h2>Três jeitos de jogar</h2>
+          <p class="h-sub">Escolha o modo do seu evento. O visual do jogo você escolhe depois, no editor.</p>
+          <div class="h-temas">${(Object.keys(TEMAS) as Theme[])
+            .map(
+              (k) =>
+                `<a class="h-tema h-tema-${k}" href="/criar" data-link data-tema-novo="${k}"><span class="sw">${TEMAS[k].cores.map((c) => `<i style="background:${c}"></i>`).join('')}</span><b>${esc(TEMAS[k].nome)}</b><span>${esc(TEMAS[k].desc)}</span><em>${k === 'festa' ? 'Sem marca, com as cores do Quiddo' : 'Com nome, cor e logo da sua ' + (k === 'corp' ? 'empresa' : 'escola')}</em><strong>Criar neste modo →</strong></a>`,
+            )
+            .join('')}</div>
+        </section>
+
+        <section class="h-bloco">
+          <h2>Por que a turma pede outra rodada</h2>
+          <div class="h-beneficios">
+            <div><b>Rapidez vale ponto</b><p>De 500 a 1.000 por acerto. Quem responde primeiro sobe no ranking.</p></div>
+            <div><b>A última vale o dobro</b><p>Chance de virada no fim, para ninguém desistir.</p></div>
+            <div><b>Personagens</b><p>20 bichos do Brasil com boné, coroa, óculos e mais. Cada um monta o seu.</p></div>
+            <div><b>Sorteio de prêmios</b><p>Entre todos ou só entre quem pontuou, com roleta no telão.</p></div>
+            <div><b>Sua marca</b><p>Nome, cor e logo da empresa ou da escola na tela e nos celulares.</p></div>
+            <div><b>Até 200 pessoas</b><p>Sem cadastro e sem app. Abre no navegador do celular.</p></div>
+          </div>
+        </section>
+
+        <section class="h-bloco">
+          <h2>Para qualquer ocasião</h2>
+          <div class="h-casos">${guias}</div>
+        </section>
+
+        <section class="h-final">
+          <h2>Seu primeiro quiz fica pronto antes do café esfriar.</h2>
+          <p>Já vem com perguntas de exemplo para você trocar pelas suas.</p>
+          <a class="btn cta claro" href="/criar" data-link>Criar meu quiz grátis <span aria-hidden="true">→</span></a>
+          <div class="h-entrar"><p><b>Vai jogar?</b> Digite o código que aparece na tela.</p>${codeForm('home')}</div>
+        </section>`;
+
 }

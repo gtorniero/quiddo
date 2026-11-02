@@ -5467,3 +5467,11 @@ body.modo-foto .btn-som {
 .etapa-acoes .btn[type='submit'] {
   flex: 1;
 }
+
+/* Defer rendering the home showcase below the first viewport on mobile. */
+@media (max-width: 700px) {
+  .h-bloco { content-visibility: auto; contain-intrinsic-size: auto 650px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

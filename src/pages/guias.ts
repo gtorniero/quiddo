@@ -27,7 +27,13 @@ export function artigo(slug: string): Page {
         main.innerHTML = `<section class="panel center"><h1>Guia não encontrado</h1><p class="muted">Esse guia ainda não foi publicado.</p><a class="btn auto" href="/guias" data-link>Ver os guias</a></section>`;
         return;
       }
-      main.innerHTML = `<p><a href="/guias" data-link>← Todos os guias</a></p><article class="panel prose"><h1>${esc(g.titulo)}</h1><p class="muted">${esc(g.resumo)}</p>${g.corpo}</article><section class="panel"><h2>Pronto para testar?</h2><a class="btn" href="/criar" data-link>Criar meu quiz</a></section>`;
+      main.innerHTML = `<p><a href="/guias" data-link>← Todos os guias</a></p><article class="panel prose"><h1>${esc(g.titulo)}</h1><p class="muted">${esc(g.resumo)}</p>${g.corpo}</article><nav class="panel" aria-label="Guias relacionados"><h2>Leia também</h2>${GUIAS.filter((x) => x.slug !== g.slug && x.corpo && x.publico === g.publico).slice(0, 3).map((x) => `<p><a href="/guias/${x.slug}" data-link>${esc(x.titulo)}</a></p>`).join('')}</nav><section class="panel"><h2>Pronto para testar?</h2><a class="btn" href="/criar" data-link>Criar meu quiz</a></section>`;
     },
   };
+}
+
+export function guidesHTML(slug?: string): string {
+  const target = { innerHTML: "" };
+  (slug ? artigo(slug) : lista()).mount(target as HTMLElement);
+  return target.innerHTML;
 }

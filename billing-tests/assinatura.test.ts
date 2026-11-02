@@ -53,8 +53,8 @@ async function webhook(type: string, object: unknown, live = false, valid = true
 }
 beforeEach(async () => {
  vi.useRealTimers(); sqlite = new DatabaseSync(':memory:');
- sqlite.exec("CREATE TABLE compras(ref TEXT PRIMARY KEY,ordem TEXT,email TEXT,status TEXT,codigo TEXT,criado TEXT,pago TEXT,valor TEXT,modo TEXT,plano TEXT,expira TEXT,tipo TEXT,stripe_price TEXT); CREATE TABLE sessoes(token TEXT PRIMARY KEY,email TEXT,criado INTEGER,expira INTEGER)");
- sqlite.prepare('INSERT INTO sessoes VALUES (?,?,?,?)').run(createHash('sha256').update(TOKEN).digest('hex'), EMAIL, Date.now(), Date.now() + 86400e3);
+ sqlite.exec("CREATE TABLE compras(ref TEXT PRIMARY KEY,ordem TEXT,email TEXT,status TEXT,codigo TEXT,criado TEXT,pago TEXT,valor TEXT,modo TEXT,plano TEXT,expira TEXT,tipo TEXT,stripe_price TEXT); CREATE TABLE sessoes(token TEXT PRIMARY KEY,email TEXT,criado INTEGER,expira INTEGER, simulado INTEGER NOT NULL DEFAULT 1)");
+ sqlite.prepare('INSERT INTO sessoes (token, email, criado, expira) VALUES (?,?,?,?)').run(createHash('sha256').update(TOKEN).digest('hex'), EMAIL, Date.now(), Date.now() + 86400e3);
  env = { DB: d1(sqlite), COBRANCA: 'simulacao', STRIPE_KEY: TEST_KEY, STRIPE_PRICE_MENSAL: 'price_qd_month_test', STRIPE_WEBHOOK_SECRET: SECRET, STRIPE_PORTAL_CONFIG: 'bpc_quiddo_test' };
  await tabelasStripe(env.DB!);
  const end = Math.floor(Date.now() / 1000) + 30 * 86400;

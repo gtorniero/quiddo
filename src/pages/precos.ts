@@ -15,6 +15,9 @@ function mount(main: HTMLElement) {
   let cob: Cobranca | null = null;
   const preco = (p: Plano) => cob?.planos.find((x) => x.id === p)?.preco || PADRAO[p];
   const ok = '<span class="pc-ok" aria-hidden="true">✓</span>';
+  // o número de pessoas por sala é o que diferencia os planos: vem grande, logo abaixo do nome
+  const pessoas = (n: number) =>
+    `<p class="pc-pessoas"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3.2" fill="currentColor"/><path d="M2.8 19c0-3.4 2.8-6 6.2-6s6.2 2.6 6.2 6" fill="currentColor"/><circle cx="17" cy="9" r="2.6" fill="currentColor" opacity=".6"/><path d="M15.6 13.3c3.2-.4 5.8 2 5.8 5.2h-4.6" fill="currentColor" opacity=".6"/></svg><span class="pc-pessoas-col"><span><span class="pc-pessoas-txt">até</span> <b>${n}</b></span><span class="pc-pessoas-txt">pessoas por sala</span></span></p>`;
 
   function render() {
     const ate = acessoAte();
@@ -30,26 +33,30 @@ function mount(main: HTMLElement) {
       <section class="precos" aria-label="Planos">
         <article class="pc">
           <h2>Grátis</h2>
+          ${pessoas(10)}
           <p class="pc-preco">R$ 0</p>
-          <ul><li>${ok}Salas de até 10 pessoas</li><li>${ok}Quizzes e jogos ilimitados</li><li>${ok}Todos os modos, visuais e o pódio</li></ul>
+          <ul><li>${ok}Quizzes e jogos ilimitados</li><li>${ok}Todos os modos, visuais e o pódio</li></ul>
           <a class="btn sec" href="/criar" data-link>Criar meu quiz</a>
         </article>
         <article class="pc pc-destaque">
           <span class="selo">Mais vantagem</span>
           <h2>Mensal</h2>
+          ${pessoas(200)}
           <p class="pc-preco">R$ ${esc(preco('mensal'))}<small>/mês</small></p>
-          <ul><li>${ok}Salas de até 200 pessoas</li><li>${ok}Jogos ilimitados o mês todo</li><li>${ok}Use em qualquer aparelho com o seu código</li><li>${ok}Cancele quando quiser</li></ul>
+          <ul><li>${ok}Jogos ilimitados o mês todo</li><li>${ok}Use em qualquer aparelho com o seu código</li><li>${ok}Cancele quando quiser</li></ul>
           <button type="button" class="btn" data-plano="mensal">Assinar o Mensal</button>
         </article>
         <article class="pc">
           <h2>Passe 7 dias</h2>
+          ${pessoas(200)}
           <p class="pc-preco">R$ ${esc(preco('semana'))}</p>
-          <ul><li>${ok}Salas de até 200 pessoas</li><li>${ok}Jogos ilimitados por 7 dias</li><li>${ok}Para um evento, sem assinatura</li></ul>
+          <ul><li>${ok}Jogos ilimitados por 7 dias</li><li>${ok}Para um evento, sem assinatura</li></ul>
           <button type="button" class="btn sec" data-plano="semana">Comprar o Passe</button>
         </article>
         <article class="pc pc-breve">
           <span class="selo">Em breve</span>
           <h2>PRO</h2>
+          ${pessoas(200)}
           <p class="pc-sub">Para empresas e escolas</p>
           <ul><li>${ok}Quiz sugerido por IA a partir do tema</li><li>${ok}Login da equipe, com vários usuários</li><li>${ok}Quizzes salvos na nuvem</li><li>${ok}Tudo do Mensal</li></ul>
           <button type="button" class="btn sec" disabled>Em breve</button>

@@ -17,17 +17,10 @@ export { Room } from './room';
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
 
-/** Endereço oficial do site. Quem abre pelo endereço provisório da Cloudflare (*.workers.dev) é levado para lá. */
-const SITE = 'www.quiddo.com.br';
-
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
     const parts = url.pathname.split('/').filter(Boolean); // ['api', 'salas', 'ABCD', 'ws']
-
-    // páginas abertas em *.workers.dev vão para o domínio (a API segue respondendo, para jogos que já começaram)
-    if (url.hostname.endsWith('.workers.dev') && parts[0] !== 'api' && (req.method === 'GET' || req.method === 'HEAD'))
-      return Response.redirect(`https://${SITE}${url.pathname}${url.search}`, 301);
 
     if (parts[0] !== 'api') return env.ASSETS.fetch(req);
 

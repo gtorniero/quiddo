@@ -5709,3 +5709,37 @@ body.modo-foto .btn-som {
 .precos {
   min-width: 0;
 }
+
+/* número de pessoas por sala, em destaque em cada plano */
+.pc-pessoas {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--acc-soft);
+  color: #0e2a22;
+  border: 2px solid var(--line);
+}
+.pc-pessoas svg {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  color: var(--mata);
+}
+.pc-pessoas b {
+  font: 900 clamp(30px, 3vw, 38px) / 1 var(--disp);
+}
+.pc-pessoas-txt {
+  font-weight: 800;
+  font-size: 14px;
+}
+.pc-destaque .pc-pessoas {
+  background: var(--amarelo);
+}
+.pc-pessoas-col {
+  display: grid;
+  gap: 2px;
+  line-height: 1.1;
+}

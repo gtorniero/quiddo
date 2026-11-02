@@ -88,7 +88,7 @@ Cada push na branch principal publica sozinho.
    - **Production branch**: a branch principal do repositório
 5. Clique em **Deploy**. Em 1 ou 2 minutos aparece o endereço `https://quiddo.<sua-conta>.workers.dev`.
 
-O site oficial é **https://www.quiddo.com.br**. Páginas abertas pelo endereço `workers.dev` são levadas para lá (constante `SITE` em `worker/index.ts`); a API continua respondendo nos dois.
+O site oficial é **https://www.quiddo.com.br**. Páginas abertas pelo endereço `workers.dev` são levadas para lá (no começo de `src/main.ts`, porque a Cloudflare entrega as páginas sem passar pelo servidor); a API continua respondendo nos dois.
 
 ### Caminho alternativo: publicar do seu computador
 

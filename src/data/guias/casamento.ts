@@ -151,7 +151,7 @@ export const CASAMENTO: Guia[] = [
 <li>O último colocado faz um brinde (com o que quiser no copo).</li>
 </ul>
 <h2>O final no pódio</h2>
-<p>O pódio revela do 3º para o 1º lugar, com suspense. Se um dos noivos estiver lá, ótimo. Se não estiver, melhor ainda: é a foto mais engraçada da noite. Depois, aproveite o sorteio de prêmios para distribuir lembrancinhas entre os convidados. Com um plano pago, cabem até 200 pessoas na sala (a sala grátis vai até 10), então ninguém fica de fora.</p>`,
+<p>O pódio revela do 3º para o 1º lugar, com suspense. Se um dos noivos estiver lá, ótimo. Se não estiver, melhor ainda: é a foto mais engraçada da noite. Depois, aproveite o sorteio de prêmios para distribuir lembrancinhas entre os convidados. Até 200 pessoas cabem na sala, então ninguém fica de fora.</p>`,
   },
   {
     slug: '30-perguntas-sobre-o-casal',
@@ -249,7 +249,7 @@ export const CASAMENTO: Guia[] = [
 <li><strong>Antes do pico da música.</strong> Com o som alto, ninguém escuta o anfitrião.</li>
 <li><strong>Com a TV em lugar visível.</strong> Teste o projetor ou a TV antes. O código de 4 letras e o QR code precisam aparecer bem.</li>
 </ol>
-<p>Avise a turma: "Daqui a cinco minutos tem quiz, peguem o celular". Não precisa de cadastro nem de app, então a entrada é rápida. A sala grátis recebe até 10 pessoas; com um plano pago, até 200.</p>
+<p>Avise a turma: "Daqui a cinco minutos tem quiz, peguem o celular". Não precisa de cadastro nem de app, então a entrada é rápida. Até 200 pessoas cabem na mesma sala.</p>
 <h2>4. Prendas leves e opcionais</h2>
 <p>Prenda boa é a que todo mundo ri, inclusive quem paga. Sempre opcional, sem bebida como obrigação e sem expor ninguém.</p>
 <ul>

@@ -2,7 +2,7 @@
 
 Quiz ao vivo para grupos. O anfitrião cria o quiz com as próprias perguntas, abre uma sala com um código de 4 letras, a turma entra pelo celular sem cadastro e todo mundo responde ao mesmo tempo. Quem acerta mais rápido ganha mais pontos, o ranking aparece depois de cada pergunta e no fim tem pódio e sorteio de prêmios.
 
-Um projeto Beyond the Work.
+No ar em **https://www.quiddo.com.br**. Um projeto Beyond the Work.
 
 ## Como rodar
 
@@ -87,6 +87,8 @@ Cada push na branch principal publica sozinho.
    - **Deploy command**: `npx wrangler deploy`
    - **Production branch**: a branch principal do repositório
 5. Clique em **Deploy**. Em 1 ou 2 minutos aparece o endereço `https://quiddo.<sua-conta>.workers.dev`.
+
+O site oficial é **https://www.quiddo.com.br**. Páginas abertas pelo endereço `workers.dev` são levadas para lá (constante `SITE` em `worker/index.ts`); a API continua respondendo nos dois.
 
 ### Caminho alternativo: publicar do seu computador
 

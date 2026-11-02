@@ -7,7 +7,7 @@ import { qrSvg } from './qr';
 import { store } from './storage';
 import { logado } from './conta';
 
-export type Plano = 'mensal' | 'semana';
+export type Plano = 'mensal' | 'semana' | 'oferta';
 
 export interface Cobranca {
   modo: 'ligada' | 'simulacao' | 'teste' | 'desligada';
@@ -16,6 +16,7 @@ export interface Cobranca {
   cartao: boolean;
   cartaoTeste: boolean;
   planos: { id: Plano; nome: string; dias: number; preco: string }[];
+  oferta?: { preco: string; de: string }; // Passe 7 dias mais barato, só com a sala grátis cheia
   gratis: number;
   pago: number;
 }
@@ -105,10 +106,12 @@ const ICONE_PIX =
  * `aoPagar` recebe o código quando o pagamento é confirmado (ou quando a pessoa usa um código que já tem).
  * `plano` já deixa um plano marcado (a página de preços manda o que a pessoa clicou).
  */
-export async function abrirPagamento(volta: string, aoPagar: (codigo: string) => void, plano: Plano = 'mensal') {
+export async function abrirPagamento(volta: string, aoPagar: (codigo: string) => void, plano: Plano = 'mensal', sala?: { codigo: string; hostKey: string }) {
   const c = await cobranca();
-  let escolhido: Plano = plano;
-  const precoDe = (p: Plano) => c?.planos.find((x) => x.id === p)?.preco || '';
+  // oferta da sala cheia: o anfitrião, com gente esperando, libera com desconto no Pix (o servidor confere na sala)
+  const oferta = !!sala && !!c?.oferta && c.pix;
+  let escolhido: Plano = oferta ? 'oferta' : plano;
+  const precoDe = (p: Plano) => (p === 'oferta' ? c?.oferta?.preco : c?.planos.find((x) => x.id === p)?.preco) || '';
   document.getElementById('pagamento')?.remove();
   const d = document.createElement('dialog');
   d.id = 'pagamento';
@@ -132,6 +135,24 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
   const inicio = (erro = '') => {
     if (!c || !(c.pix || c.cartao)) {
       d.innerHTML = `${fechar}<h2 id="pg-t">Pagamento indisponível</h2><p class="muted">O pagamento ainda não está ligado neste site. Tente mais tarde.</p>`;
+      return;
+    }
+    if (oferta) {
+      d.innerHTML = `${fechar}<span class="selo">Oferta da sala cheia</span><h2 id="pg-t">Não interrompa o jogo</h2>
+        <p class="pg-oferta">Passe 7 dias, salas de até ${c.pago} pessoas: <s>de R$ ${esc(c.oferta!.de)}</s> <b>por R$ ${esc(c.oferta!.preco)}</b></p>
+        <p class="muted">Pague com Pix agora e a sala libera em menos de um minuto. Quem está esperando entra sozinho.</p>
+        <form class="pg-form" data-pg-form novalidate>
+          ${
+            logado()
+              ? `<input type="hidden" id="pg-email" value="${esc(logado())}">`
+              : `<label for="pg-email">Seu e-mail<input type="email" id="pg-email" autocomplete="email" placeholder="voce@email.com" required></label>`
+          }
+          <p class="err" role="alert">${esc(erro)}</p>
+          <button type="submit" class="btn pg-pix" data-meio="pix">${ICONE_PIX}<span>Pagar R$ ${esc(c.oferta!.preco)} com Pix e liberar</span></button>
+        </form>
+        ${c.modo === 'teste' || c.modo === 'simulacao' ? `<p class="pg-teste">Simulação: o Pix é de mentira e aprova sozinho. Nada é cobrado de verdade.</p>` : ''}
+        ${rodape}`;
+      d.querySelector<HTMLInputElement>('input[type="email"]#pg-email, .pg-pix')?.focus();
       return;
     }
     const opcoes = c.planos
@@ -175,8 +196,11 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
 
   const pix = async (email: string) => {
     d.innerHTML = `${fechar}<h2 id="pg-t">Gerando o Pix…</h2>`;
-    const r = await post<{ ref?: string; qr?: string; qr64?: string; erro?: string; simulado?: boolean }>('/api/pix', { email, plano: escolhido });
-    if (!r?.ref) return inicio(r?.erro === 'email' ? 'Confira o e-mail.' : 'Não deu para gerar o Pix agora. Tente de novo.');
+    const r = await post<{ ref?: string; qr?: string; qr64?: string; erro?: string; simulado?: boolean }>('/api/pix', { email, plano: escolhido, sala: sala?.codigo, hostKey: sala?.hostKey });
+    if (!r?.ref)
+      return inicio(
+        r?.erro === 'email' ? 'Confira o e-mail.' : r?.erro === 'oferta' ? 'A oferta vale só enquanto tem gente esperando para entrar na sala.' : 'Não deu para gerar o Pix agora. Tente de novo.',
+      );
     const qr = r.qr64 ? `<img src="data:image/png;base64,${r.qr64}" alt="QR code do Pix" width="220" height="220">` : r.qr ? qrSvg(r.qr) : '';
     d.innerHTML = `${fechar}<h2 id="pg-t">Pague com Pix · R$ ${esc(precoDe(escolhido))}</h2><p class="muted">Abra o app do seu banco, escolha Pix e leia o QR code, ou copie o código.</p>
       <div class="pg-qr">${qr}</div>

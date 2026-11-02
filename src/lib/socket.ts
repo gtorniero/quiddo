@@ -44,7 +44,7 @@ export class RoomSocket {
         return;
       }
       if (m.type === 'state') this.offset = m.serverNow - Date.now();
-      if (m.type === 'kicked' || m.type === 'closed' || (m.type === 'error' && m.code !== 'bad_key' && m.code !== 'acesso_invalido')) this.stop();
+      if (m.type === 'kicked' || m.type === 'closed' || (m.type === 'error' && m.code !== 'bad_key' && m.code !== 'acesso_invalido' && m.code !== 'cheia_gratis')) this.stop();
       this.o.onMessage(m);
     };
     ws.onclose = () => {

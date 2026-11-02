@@ -5743,3 +5743,34 @@ body.modo-foto .btn-som {
   gap: 2px;
   line-height: 1.1;
 }
+
+/* oferta da sala cheia: gente esperando para entrar */
+.plano.oferta {
+  border: var(--bw) solid var(--line);
+  background: var(--amarelo);
+  color: #0e2a22;
+  box-shadow: var(--sh-sm);
+  animation: pop 0.4s ease-out;
+}
+.oferta-fila {
+  font: 900 clamp(22px, 3vw, 30px) / 1.1 var(--disp);
+}
+.oferta-fila b {
+  font-size: 1.3em;
+}
+.oferta-preco s {
+  opacity: 0.7;
+}
+.pg-oferta {
+  font-size: 18px;
+  margin: 0 0 6px;
+}
+.pg-oferta s {
+  color: var(--fg2);
+}
+.pg-oferta b {
+  font: 900 22px var(--disp);
+}
+.oferta-topo .plano {
+  margin-top: 0;
+}

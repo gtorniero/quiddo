@@ -5,7 +5,7 @@ import type { Page } from '../main';
 import { esc } from '../lib/dom';
 import { type Cobranca, type Plano, abrirPagamento, acessoAte, cobranca, confereVolta, meuAcesso } from '../lib/pagamento';
 
-const PADRAO: Record<Plano, string> = { mensal: '25,99', semana: '15,99' };
+const PADRAO: Record<Plano, string> = { mensal: '25,99', semana: '15,99', oferta: '11,99' };
 
 export function page(): Page {
   return { title: 'Preços', wide: true, mount };

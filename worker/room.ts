@@ -36,6 +36,12 @@ export class Room extends DurableObject<Env> {
   }
 
   /** Chamado pelo Worker para abrir a sala. Devolve false se o código já está em uso. */
+  /** A oferta da sala cheia vale? Anfitrião certo, sala grátis e alguém esperando vaga. */
+  async ofertaValida(hostKey: string): Promise<boolean> {
+    const room = this.room;
+    return !!room && !!hostKey && room.hostKey === hostKey && G.limiteDe(room) < LIMITS.maxPlayers && G.esperandoVaga(room) > 0;
+  }
+
   async create(code: string, hostKey: string, body: CreateRoomBody, maxPlayers?: number): Promise<boolean> {
     if (this.room) return false;
     const now = Date.now();
@@ -112,7 +118,10 @@ export class Room extends DurableObject<Env> {
       const res = G.join(room, msg.playerId, msg.nick, now, msg.avatar);
       if (!res.ok) {
         this.send(ws, { type: 'error', code: res.code });
-        return ws.close(4000, res.code);
+        ws.close(4000, res.code);
+        // sala grátis cheia: a tela do anfitrião mostra quantos estão esperando (agrupa as tentativas repetidas)
+        if (res.code === 'cheia_gratis') this.changed(false);
+        return;
       }
       ws.serializeAttachment({ role: 'player', pid: res.player.id } satisfies Attachment);
       return this.changed(true);

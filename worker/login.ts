@@ -45,10 +45,17 @@ let pronta = false;
 async function tabelas(db: D1Database) {
   if (pronta) return;
   await db.batch([
-    db.prepare('CREATE TABLE IF NOT EXISTS logins (id TEXT PRIMARY KEY, email TEXT, ip TEXT, codigo TEXT, criado INTEGER, tentativas INTEGER DEFAULT 0, usado INTEGER DEFAULT 0)'),
+    db.prepare('CREATE TABLE IF NOT EXISTS logins (id TEXT PRIMARY KEY, email TEXT, ip TEXT, codigo TEXT, criado INTEGER, tentativas INTEGER DEFAULT 0, usado INTEGER DEFAULT 0, simulado INTEGER NOT NULL DEFAULT 1)'),
     db.prepare('CREATE INDEX IF NOT EXISTS logins_email ON logins (email, criado)'),
-    db.prepare('CREATE TABLE IF NOT EXISTS sessoes (token TEXT PRIMARY KEY, email TEXT, criado INTEGER, expira INTEGER)'),
+    db.prepare('CREATE TABLE IF NOT EXISTS sessoes (token TEXT PRIMARY KEY, email TEXT, criado INTEGER, expira INTEGER, simulado INTEGER NOT NULL DEFAULT 1)'),
   ]);
+  // As linhas anteriores à migração pertencem à simulação.
+  for (const tabela of ['logins', 'sessoes']) {
+    const colunas = await db.prepare(`PRAGMA table_info(${tabela})`).all<{ name: string }>();
+    if (!colunas.results.some((coluna) => coluna.name === 'simulado')) {
+      await db.prepare(`ALTER TABLE ${tabela} ADD COLUMN simulado INTEGER NOT NULL DEFAULT 1`).run();
+    }
+  }
   pronta = true;
 }
 
@@ -62,7 +69,7 @@ export async function emailDaSessao(req: Request, env: LoginEnv): Promise<string
   const token = cookieDe(req);
   if (!token || !env.DB) return '';
   await tabelas(env.DB);
-  const l = await env.DB.prepare('SELECT email FROM sessoes WHERE token = ? AND expira > ?').bind(await resumo(token), Date.now()).first<{ email: string }>();
+  const l = await env.DB.prepare('SELECT email FROM sessoes WHERE token = ? AND expira > ? AND simulado = ?').bind(await resumo(token), Date.now(), loginSimulado(env) ? 1 : 0).first<{ email: string }>();
   return l?.email || '';
 }
 
@@ -84,7 +91,7 @@ async function mandaEmail(env: LoginEnv, para: string, codigo: string): Promise<
       text: `Seu código para entrar no Quiddo: ${codigo}\n\nEle vale por 10 minutos. Se não foi você que pediu, é só ignorar este e-mail.`,
     }),
   });
-  if (!r.ok) console.log('resend erro', r.status, (await r.text().catch(() => '')).slice(0, 300));
+  if (!r.ok) console.log('resend erro', r.status);
   return r.ok;
 }
 
@@ -120,7 +127,7 @@ export async function rotaLogin(req: Request, env: LoginEnv, caminho: string): P
     if ((porEmail?.n || 0) >= MAX_CODIGOS_EMAIL || (porIp?.n || 0) >= MAX_CODIGOS_IP) return json({ erro: 'muitos' }, 429);
     const codigo = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000).padStart(6, '0');
     const id = crypto.randomUUID();
-    await db.prepare('INSERT INTO logins (id, email, ip, codigo, criado) VALUES (?, ?, ?, ?, ?)').bind(id, email, ip, await resumo(id + codigo), agora).run();
+    await db.prepare('INSERT INTO logins (id, email, ip, codigo, criado, simulado) VALUES (?, ?, ?, ?, ?, ?)').bind(id, email, ip, await resumo(id + codigo), agora, loginSimulado(env) ? 1 : 0).run();
     // limpeza: códigos com mais de um dia não servem para nada
     await db.prepare('DELETE FROM logins WHERE criado < ?').bind(agora - 86400e3).run();
     if (loginSimulado(env)) return json({ ok: true, simulado: true, codigo });
@@ -136,8 +143,8 @@ export async function rotaLogin(req: Request, env: LoginEnv, caminho: string): P
     if (!email || codigo.length !== 6) return json({ erro: 'codigo' }, 400);
     const agora = Date.now();
     const l = await db
-      .prepare('SELECT id, codigo, tentativas FROM logins WHERE email = ? AND usado = 0 AND criado > ? ORDER BY criado DESC LIMIT 1')
-      .bind(email, agora - CODIGO_MS)
+      .prepare('SELECT id, codigo, tentativas FROM logins WHERE email = ? AND usado = 0 AND criado > ? AND simulado = ? ORDER BY criado DESC LIMIT 1')
+      .bind(email, agora - CODIGO_MS, loginSimulado(env) ? 1 : 0)
       .first<{ id: string; codigo: string; tentativas: number }>();
     if (!l || l.tentativas >= MAX_TENTATIVAS) return json({ erro: 'expirado' }, 400);
     if ((await resumo(l.id + codigo)) !== l.codigo) {
@@ -146,7 +153,7 @@ export async function rotaLogin(req: Request, env: LoginEnv, caminho: string): P
     }
     await db.prepare('UPDATE logins SET usado = 1 WHERE id = ?').bind(l.id).run();
     const token = [...crypto.getRandomValues(new Uint8Array(32))].map((b) => b.toString(16).padStart(2, '0')).join('');
-    await db.prepare('INSERT INTO sessoes (token, email, criado, expira) VALUES (?, ?, ?, ?)').bind(await resumo(token), email, agora, agora + SESSAO_S * 1000).run();
+    await db.prepare('INSERT INTO sessoes (token, email, criado, expira, simulado) VALUES (?, ?, ?, ?, ?)').bind(await resumo(token), email, agora, agora + SESSAO_S * 1000, loginSimulado(env) ? 1 : 0).run();
     await db.prepare('DELETE FROM sessoes WHERE expira < ?').bind(agora).run();
     return json({ ok: true, email }, 200, { 'set-cookie': `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSAO_S}` });
   }

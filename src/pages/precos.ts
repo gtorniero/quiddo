@@ -1,4 +1,5 @@
 // /precos: os planos do Quiddo. Grátis até 10 pessoas; Mensal e Passe 7 dias liberam salas de até 200.
+// O PRO (empresas e escolas: IA, login da equipe) aparece como "em breve".
 // Os preços vêm do servidor (/api/cobranca); enquanto não chegam, mostra os padrões.
 import type { Page } from '../main';
 import { esc } from '../lib/dom';
@@ -45,6 +46,13 @@ function mount(main: HTMLElement) {
           <p class="pc-preco">R$ ${esc(preco('semana'))}</p>
           <ul><li>${ok}Salas de até 200 pessoas</li><li>${ok}Jogos ilimitados por 7 dias</li><li>${ok}Para um evento, sem assinatura</li></ul>
           <button type="button" class="btn sec" data-plano="semana">Comprar o Passe</button>
+        </article>
+        <article class="pc pc-breve">
+          <span class="selo">Em breve</span>
+          <h2>PRO</h2>
+          <p class="pc-sub">Para empresas e escolas</p>
+          <ul><li>${ok}Quiz sugerido por IA a partir do tema</li><li>${ok}Login da equipe, com vários usuários</li><li>${ok}Quizzes salvos na nuvem</li><li>${ok}Tudo do Mensal</li></ul>
+          <button type="button" class="btn sec" disabled>Em breve</button>
         </article>
       </section>
       <section class="panel prose faq">

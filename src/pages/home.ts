@@ -52,11 +52,11 @@ export function page(): Page {
       main.innerHTML = `
         <section class="h-hero">
           <div class="h-texto">
-            <span class="selo">Grátis · sem cadastro · pronto em 2 minutos</span>
+            <span class="selo">Grátis até 10 pessoas · sem cadastro · pronto em 2 minutos</span>
             <h1>Crie o seu quiz e jogue ao vivo com a turma toda.</h1>
             <p>Escreva as suas perguntas, mostre a sala no telão, no projetor ou no computador, e a turma joga pelo celular. Quem acerta mais rápido ganha mais pontos, o ranking sobe a cada rodada e o pódio vira foto.</p>
             <a class="btn cta" href="/criar" data-link>Criar meu quiz grátis <span aria-hidden="true">→</span></a>
-            <p class="h-mini">Funciona em qualquer celular, sem baixar app. Até 200 pessoas por sala.</p>
+            <p class="h-mini">Funciona em qualquer celular, sem baixar app. Grátis até 10 pessoas por sala; turmas maiores, até 200, <a href="/precos" data-link>a partir de R$ 15,99</a>.</p>
           </div>
           <div class="h-demo" id="demo" aria-labelledby="demo-t">
             <div class="demo-topo"><span class="pill">Experimente agora</span><span class="timer" aria-hidden="true">${OLHO}<b id="demo-tempo">10</b></span></div>
@@ -128,7 +128,7 @@ export function page(): Page {
             <div><b>Personagens</b><p>20 bichos do Brasil com boné, coroa, óculos e mais. Cada um monta o seu.</p></div>
             <div><b>Sorteio de prêmios</b><p>Entre todos ou só entre quem pontuou, com roleta no telão.</p></div>
             <div><b>Sua marca</b><p>Nome, cor e logo da empresa ou da escola na tela e nos celulares.</p></div>
-            <div><b>Até 200 pessoas</b><p>Sem cadastro e sem app. Abre no navegador de qualquer celular.</p></div>
+            <div><b>Grátis até 10 pessoas</b><p>Sem cadastro e sem app. Para turmas de até 200, <a href="/precos" data-link>veja os planos</a>.</p></div>
           </div>
         </section>
 

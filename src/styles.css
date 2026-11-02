@@ -5774,3 +5774,9 @@ body.modo-foto .btn-som {
 .oferta-topo .plano {
   margin-top: 0;
 }
+.limite-gratis {
+  display: block;
+  font-size: 0.7em;
+  font-weight: 800;
+  opacity: 0.8;
+}

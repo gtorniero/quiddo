@@ -211,7 +211,7 @@ export const GERAIS: Guia[] = [
 <h2>7. Se alguém cair</h2>
 <p>Acontece: a bateria acaba, o celular troca de rede, alguém fecha o navegador sem querer. Fique tranquilo. A pessoa abre o link de novo, entra na mesma sala e volta com os pontos que já tinha. Avise isso antes de começar, para ninguém entrar em pânico no meio do jogo.</p>
 <h2>8. Tamanho da sala</h2>
-<p>Cada sala recebe até 200 pessoas. Se o seu evento for maior, divida em duas salas ou em dois momentos.</p>
+<p>A sala grátis recebe até 10 pessoas e, com um plano pago, até 200. Se o seu evento for maior, divida em duas salas ou em dois momentos.</p>
 <h2>Checklist rápido</h2>
 <ul>
 <li>Tela legível do fundo da sala.</li>

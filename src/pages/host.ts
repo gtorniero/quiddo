@@ -200,7 +200,7 @@ function mount(main: HTMLElement, code: string) {
         </div>
         <div class="qr">${qrSvg(link)}</div>
       </div></section>
-      <section class="panel"><div class="contador"><b>${n}</b><span>${n === 1 ? 'pessoa na sala' : 'pessoas na sala'}</span></div>${oferta ? '' : planoSala(s)}
+      <section class="panel"><div class="contador"><b>${n}</b><span>${n === 1 ? 'pessoa na sala' : 'pessoas na sala'}${s.maxPlayers < LIMITS.maxPlayers ? ` <small class="limite-gratis">de ${s.maxPlayers} na sala grátis</small>` : ''}</span></div>${oferta ? '' : planoSala(s)}
         ${
           n
             ? `<div class="jogadores">${s.players
@@ -221,7 +221,7 @@ function mount(main: HTMLElement, code: string) {
     // alguém tentou entrar com a sala cheia: oferta para liberar na hora, sem interromper o jogo
     if (s.esperando > 0)
       return `<div class="plano oferta" role="status"><p class="oferta-fila"><b>${s.esperando}</b> ${s.esperando === 1 ? 'pessoa esperando' : 'pessoas esperando'} para entrar</p>
-        <p><b>Não interrompa o jogo:</b> libere até ${LIMITS.maxPlayers} pessoas com o Passe 7 dias <span class="oferta-preco">de <s>R$ ${esc(ofertaDe)}</s> por <b>R$ ${esc(ofertaPor)}</b></span>. Faça um Pix agora e a sala libera em um minuto.</p>
+        <p>A sala grátis vai até ${s.maxPlayers} pessoas. <b>Não interrompa o jogo:</b> libere até ${LIMITS.maxPlayers} pessoas com o Passe 7 dias <span class="oferta-preco">de <s>R$ ${esc(ofertaDe)}</s> por <b>R$ ${esc(ofertaPor)}</b></span>. Faça um Pix agora e a sala libera em um minuto.</p>
         <button type="button" class="btn auto" data-act="oferta" data-focus="oferta">Pagar R$ ${esc(ofertaPor)} com Pix e liberar</button></div>`;
     const cheia = s.players.length >= s.maxPlayers;
     return `<div class="plano${cheia ? ' cheia' : ''}" role="status"><p>${cheia ? `<b>A sala encheu.</b> A sala grátis vai até ${s.maxPlayers} pessoas.` : `Sala grátis: até ${s.maxPlayers} pessoas.`}</p>

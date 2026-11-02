@@ -135,7 +135,7 @@ function mount(main: HTMLElement, code: string) {
       if (c === 'cheia_gratis') {
         esperandoVaga = true;
         main.innerHTML = `<section class="stage center espera-vaga" role="status"><div class="tag">Sala ${code}</div><div class="big">A sala encheu</div>
-          <p class="muted">Quem abriu a sala pode liberar mais vagas agora. Fique nesta tela: você entra sozinho assim que liberar<span class="dots"></span></p></section>`;
+          <p class="muted">Esta sala grátis vai até 10 pessoas. Quem abriu a sala pode liberar mais vagas agora. Fique nesta tela: você entra sozinho assim que liberar<span class="dots"></span></p></section>`;
         return;
       }
       if (c !== 'not_found') store.del('jog:' + code);

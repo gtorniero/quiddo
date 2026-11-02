@@ -5,6 +5,7 @@
 import { esc } from './dom';
 import { qrSvg } from './qr';
 import { store } from './storage';
+import { logado } from './conta';
 
 export type Plano = 'mensal' | 'semana';
 
@@ -20,7 +21,7 @@ export interface Cobranca {
 }
 
 /** Resposta do servidor quando o código vale. `expira` em ISO (vazio = sem prazo, como os códigos de cortesia). */
-interface Acesso {
+export interface Acesso {
   codigo: string;
   plano?: Plano;
   expira?: string;
@@ -62,7 +63,7 @@ export function acessoAte(): string {
   const ate = store.get<string>('acessoAte', '');
   return ate ? new Date(ate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
 }
-function guardaAcesso(a: Acesso) {
+export function guardaAcesso(a: Acesso) {
   store.set('acesso', a.codigo);
   store.set('acessoAte', a.expira || '');
 }
@@ -145,8 +146,12 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
       <p class="muted">A sala grátis vai até ${c.gratis} pessoas. Liberado, até ${c.pago}, quantos jogos quiser.</p>
       <form class="pg-form" data-pg-form novalidate>
         <fieldset class="pg-planos"><legend>Escolha o plano</legend>${opcoes}</fieldset>
-        <label for="pg-email">Seu e-mail<input type="email" id="pg-email" autocomplete="email" placeholder="voce@email.com" required></label>
-        <p class="small">Para recuperar o acesso em outro aparelho. Não mandamos propaganda.</p>
+        ${
+          logado()
+            ? `<p class="small">O plano fica na sua conta, <b>${esc(logado())}</b>, e vale em qualquer aparelho em que você entrar.</p><input type="hidden" id="pg-email" value="${esc(logado())}">`
+            : `<label for="pg-email">Seu e-mail<input type="email" id="pg-email" autocomplete="email" placeholder="voce@email.com" required></label>
+        <p class="small">O plano fica ligado a este e-mail: entre com ele em outro aparelho. Não mandamos propaganda.</p>`
+        }
         <p class="err" role="alert">${esc(erro)}</p>
         ${c.pix ? `<button type="submit" class="btn pg-pix" data-meio="pix">${ICONE_PIX}<span>Pagar com Pix · R$ <span data-preco>${esc(precoDe(escolhido))}</span></span></button>` : ''}
         ${c.cartao ? `<button type="submit" class="btn sec pg-cartao" data-meio="cartao"><span>Cartão, Apple Pay ou Google Pay · R$ <span data-preco>${esc(precoDe(escolhido))}</span></span></button>` : ''}
@@ -154,7 +159,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
       <button type="button" class="linkbtn" data-pg="codigo">Já paguei, tenho um código</button>
       ${c.modo === 'teste' || c.modo === 'simulacao' ? `<p class="pg-teste">${c.modo === 'simulacao' ? 'Simulação' : 'Modo de teste'}${c.pixSimulado ? ': o Pix é de mentira e aprova sozinho' : ''}. Nada é cobrado de verdade.</p>` : ''}
       ${rodape}`;
-    d.querySelector<HTMLInputElement>('#pg-email')?.focus();
+    d.querySelector<HTMLInputElement>('input[type="email"]#pg-email, input[name="pg-plano"]:checked')?.focus();
   };
 
   const pago = (a: Acesso) => {
@@ -196,10 +201,11 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
   const codigo = (erro = '') => {
     d.innerHTML = `${fechar}<h2 id="pg-t">Já tenho um código</h2>
       <form class="pg-form" data-pg-codigo novalidate>
-        <label for="pg-cod">Código ou e-mail do pagamento<input type="text" id="pg-cod" autocomplete="off" placeholder="QD-XXXX-XXXX ou voce@email.com"></label>
+        <label for="pg-cod">Código do pagamento<input type="text" id="pg-cod" autocomplete="off" placeholder="QD-XXXX-XXXX"></label>
         <p class="err" role="alert">${esc(erro)}</p>
         <button type="submit" class="btn">Liberar</button>
       </form>
+      <p class="small">Não tem o código? <a href="/entrar?volta=${encodeURIComponent(location.pathname)}">Entre com o e-mail do pagamento</a> e o plano volta sozinho.</p>
       <button type="button" class="linkbtn" data-pg="inicio">Voltar</button>`;
     d.querySelector<HTMLInputElement>('#pg-cod')?.focus();
   };
@@ -232,10 +238,11 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
     const f = e.target as HTMLFormElement;
     if (f.matches('[data-pg-codigo]')) {
       const v = (f.querySelector<HTMLInputElement>('#pg-cod')?.value || '').trim();
-      if (!v) return codigo('Digite o código ou o e-mail.');
-      const r = await post<{ ok: boolean } & Partial<Acesso>>('/api/acesso', v.includes('@') ? { email: v } : { codigo: v });
+      if (!v) return codigo('Digite o código.');
+      if (v.includes('@')) return codigo('Para recuperar pelo e-mail, use "Entre com o e-mail do pagamento" logo abaixo.');
+      const r = await post<{ ok: boolean } & Partial<Acesso>>('/api/acesso', { codigo: v });
       if (r?.ok && r.codigo) return pago(r as Acesso);
-      return codigo(v.includes('@') ? 'Não achamos plano em dia com esse e-mail.' : 'Esse código não vale ou o plano já venceu. Confira e tente de novo.');
+      return codigo('Esse código não vale ou o plano já venceu. Confira e tente de novo.');
     }
     const email = (f.querySelector<HTMLInputElement>('#pg-email')?.value || '').trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return inicio('Escreva um e-mail válido.');

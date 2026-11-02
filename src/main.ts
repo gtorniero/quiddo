@@ -13,6 +13,9 @@ import * as host from './pages/host';
 import * as jogador from './pages/jogador';
 import * as guias from './pages/guias';
 import * as precos from './pages/precos';
+import * as entrar from './pages/entrar';
+import * as conta from './pages/conta';
+import { logado, sincronizaConta } from './lib/conta';
 
 export type Cleanup = (() => void) | void;
 export interface Page {
@@ -26,8 +29,9 @@ function route(path: string): Page {
   const p = path.replace(/\/+$/, '') || '/';
   if (p === '/') return home.page();
   if (p === '/criar') return criar.page();
-  // /entrar fica para o login com conta, no futuro; por enquanto leva ao mesmo lugar, para links antigos
-  if (p === '/jogar' || p === '/entrar') return jogar.page();
+  if (p === '/jogar') return jogar.page();
+  if (p === '/entrar') return entrar.page();
+  if (p === '/conta') return conta.page();
   if (p === '/guias') return guias.lista();
   if (p === '/precos') return precos.page();
   let m = /^\/guias\/([a-z0-9-]+)$/.exec(p);
@@ -81,3 +85,5 @@ document.addEventListener('click', (e) => {
 });
 window.addEventListener('popstate', render);
 render();
+// quem entrou na conta traz o plano comprado em outro aparelho (a página de conta faz isso sozinha)
+if (logado() && location.pathname !== '/conta') sincronizaConta();

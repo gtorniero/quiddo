@@ -26,7 +26,9 @@ Para testar com o celular na mesma rede Wi-Fi: `npm run dev -- --host` e abra no
 | `/criar` | Editor do quiz: Meus quizzes, nome do quiz (com a marca em Corporativo e Escola), modo (Corporativo, Amigos & família, Escola), visual do jogo, tempo de cada pergunta, perguntas (2 de modelo: verdadeiro ou falso e múltipla escolha), abrir a sala |
 | `/host/{CODIGO}` | Tela do anfitrião, para a TV ou o projetor |
 | `/{CODIGO}` | Entrada e tela do jogador |
-| `/jogar` | Digitar o código da sala (`/entrar` leva ao mesmo lugar, até virar o login com conta) |
+| `/jogar` | Digitar o código da sala |
+| `/entrar` | Login sem senha (código por e-mail) |
+| `/conta` | Plano, validade e sair |
 | `/guias` e `/guias/{slug}` | Guias. Os textos ficam em `src/data/guias.ts` |
 
 Na tela do anfitrião, a seta para a direita, Page Down ou espaço avançam o jogo. Isso faz o passador de slides funcionar.
@@ -136,6 +138,21 @@ A variável `COBRANCA` em `wrangler.jsonc` decide o modo:
 5. Teste com `/criar?teste_cobranca=1` ainda no modo `teste`. Quando estiver certo, troque `COBRANCA` para `ligada` em `wrangler.jsonc` e publique.
 
 Nunca coloque as chaves no código: elas ficam só no painel do Cloudflare.
+
+## Login sem senha (`/entrar`)
+
+A pessoa digita o e-mail, recebe um código de 6 dígitos (vale 10 minutos) e entra. A sessão fica num cookie `HttpOnly` por 30 dias. Em `/conta` aparecem o plano, a validade e o código para outros aparelhos. Quem entra com o e-mail da compra recebe o plano em qualquer aparelho; recuperar o plano pelo e-mail só funciona com login daquele e-mail.
+
+- Limites: 3 códigos por e-mail a cada 15 minutos, 10 por endereço de internet por hora e 5 tentativas por código.
+- No banco (`logins`, `sessoes`) ficam só o e-mail e resumos (hash) do código e do token, nunca os valores.
+- Sem `RESEND_KEY`, e com a cobrança fora do modo `ligada`, o login é **simulado**: o código aparece na tela. Com a cobrança `ligada` e sem a chave, o login fica desligado.
+
+### Ligar o e-mail de verdade (Resend)
+
+1. Crie a conta em resend.com e, em **Domains → Add domain**, adicione o seu domínio. Se o domínio está na Cloudflare, use o botão de configurar sozinho; senão, copie os registros (TXT do SPF e do DKIM, MX de retorno) para o DNS.
+2. Em **API Keys → Create**, crie uma chave só com permissão de envio.
+3. No Cloudflare, em **Workers & Pages → quiddo → Settings → Variables and Secrets**: `RESEND_KEY` como **Secret** e `EMAIL_DE` como texto, por exemplo `Quiddo <entrar@seudominio.com.br>`.
+4. Para o site e o cookie ficarem no seu domínio: **Settings → Domains & Routes → Add → Custom domain** (ex.: `quiddo.com.br`).
 
 ## Uso e limites do plano grátis
 

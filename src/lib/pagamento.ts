@@ -15,6 +15,7 @@ export interface Cobranca {
   pixSimulado: boolean;
   cartao: boolean;
   cartaoTeste: boolean;
+  assinaturaMensal?: boolean;
   planos: { id: Plano; nome: string; dias: number; preco: string }[];
   oferta?: { preco: string; de: string }; // Passe 7 dias mais barato, só com a sala grátis cheia
   gratis: number;
@@ -33,7 +34,7 @@ let pedido: Promise<Cobranca | null> | null = null;
 /** Configuração da cobrança (uma vez por página). */
 export function cobranca(): Promise<Cobranca | null> {
   if (!pedido)
-    pedido = fetch('/api/cobranca')
+    pedido = fetch('/api/cobranca' + (testeCobranca() ? '?teste_cobranca=1' : ''))
       .then((r) => (r.ok ? (r.json() as Promise<Cobranca>) : null))
       .catch(() => null);
   return pedido;
@@ -129,7 +130,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
     d.remove();
   });
 
-  const rodape = `<p class="pg-legal">O Mensal vale 30 dias e o Passe, 7 dias, a partir do pagamento, neste navegador e, com o seu código, em qualquer aparelho. Desistiu? Devolvemos em até 7 dias. Vendido por Beyond the Work · CNPJ 69.746.447/0001-00.</p>`;
+  const rodape = `<p class="pg-legal">${c?.assinaturaMensal ? 'No cartão, o Mensal renova a cada mês; você cancela em Minha conta e usa até o fim do período pago. No Pix, o Mensal vale 30 dias, sem renovação automática.' : 'O Mensal vale 30 dias.'} O Passe vale 7 dias a partir do pagamento, sem assinatura. Use em qualquer aparelho com seu código. Desistiu? Devolvemos em até 7 dias. Vendido por Beyond the Work · CNPJ 69.746.447/0001-00.</p>`;
   const fechar = `<button type="button" class="pg-x" data-pg="fechar" aria-label="Fechar">×</button>`;
 
   const inicio = (erro = '') => {
@@ -217,7 +218,15 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
 
   const cartao = async (email: string) => {
     d.innerHTML = `${fechar}<h2 id="pg-t">Abrindo o pagamento…</h2>`;
-    const r = await post<{ url?: string; erro?: string }>('/api/cartao', { email, volta, plano: escolhido });
+    const r = await post<{ url?: string; erro?: string; login?: boolean; gerenciar?: boolean }>('/api/cartao', { email, volta, plano: escolhido, testeCobranca: testeCobranca() });
+    if (r?.login) {
+      d.innerHTML = `${fechar}<h2 id="pg-t">Entre para assinar o Mensal</h2><p>Assim você acompanha a renovação e cancela quando quiser.</p><a class="btn" href="/entrar?volta=${encodeURIComponent(volta)}">Entrar com meu e-mail</a>`;
+      return;
+    }
+    if (r?.gerenciar) {
+      d.innerHTML = `${fechar}<h2 id="pg-t">Você já tem uma assinatura</h2><p>Consulte sua assinatura ou atualize o pagamento em Minha conta.</p><a class="btn" href="/conta">Gerenciar assinatura</a>`;
+      return;
+    }
     if (!r?.url) return inicio(r?.erro === 'email' ? 'Confira o e-mail.' : 'Não deu para abrir o pagamento agora. Tente de novo.');
     location.href = r.url;
   };

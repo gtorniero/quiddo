@@ -93,8 +93,11 @@ for (let q = 0; q < NQ; q++) {
   const asked = Date.now();
   const s = await waitFor((s) => s.phase === 'reveal' && s.qIndex === q, 20000);
   log(`Pergunta ${q + 1}: ${s.answeredCount}/${N} responderam, revelada em ${((Date.now() - asked) / 1000).toFixed(1)} s · contagem ${s.counts.join('/')}`);
-  send({ type: 'showRanking' });
-  await waitFor((s) => s.phase === 'ranking' && s.qIndex === q);
+  // depois da última não tem ranking: vai direto para o pódio
+  if (q < NQ - 1) {
+    send({ type: 'showRanking' });
+    await waitFor((s) => s.phase === 'ranking' && s.qIndex === q);
+  }
   send({ type: 'next' });
 }
 const fin = await waitFor((s) => s.phase === 'final');

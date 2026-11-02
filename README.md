@@ -128,6 +128,12 @@ A variável `COBRANCA` em `wrangler.jsonc` decide o modo:
 
 Nunca coloque as chaves no código: elas ficam só no painel do Cloudflare.
 
+## Uso e limites do plano grátis
+
+`GET /api/uso` mostra, por dia (UTC), as salas abertas, os jogos começados, os jogadores e a maior sala dos últimos 14 dias. O plano grátis da Cloudflare dá cerca de 100 jogos de 15 minutos por dia; o campo `alerta` liga aos 70%. Um lembrete agendado confere isso todo dia e avisa quando for hora de assinar o plano de US$ 5.
+
+Cada sala aguenta 200 pessoas com folga (testado no site no ar). Com 1000, hoje não: as entradas e as atualizações durante a pergunta vão para todos de uma vez e o servidor atrasa.
+
 ## Referência
 
 - `docs/briefing.md`: o briefing do produto.

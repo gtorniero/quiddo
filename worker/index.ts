@@ -8,6 +8,7 @@
 import type { CreateRoomResult } from '../shared/protocol';
 import { CODE_RE, LIMITS, randomCode, validateCreate } from '../shared/rules';
 import { cobrancaVale, codigoValido, rotaCobranca } from './cobranca';
+import { anotaUso, rotaUso } from './uso';
 import type { Env } from './room';
 
 export { Room } from './room';
@@ -16,12 +17,14 @@ const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
 
 export default {
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
     const parts = url.pathname.split('/').filter(Boolean); // ['api', 'salas', 'ABCD', 'ws']
 
     if (parts[0] !== 'api') return env.ASSETS.fetch(req);
 
+    // uso por dia, para saber quando o plano grátis está chegando no limite
+    if (url.pathname === '/api/uso' && req.method === 'GET') return rotaUso(env);
     // cobrança: Pix, cartão/Apple Pay/Google Pay e conferência do código de acesso
     const cob = await rotaCobranca(req, env, url.pathname);
     if (cob) return cob;
@@ -39,7 +42,10 @@ export default {
       for (let i = 0; i < 8; i++) {
         const code = randomCode();
         const stub = env.ROOMS.get(env.ROOMS.idFromName(code));
-        if (await stub.create(code, hostKey, body, maxPlayers)) return json({ code, hostKey, maxPlayers } satisfies CreateRoomResult);
+        if (await stub.create(code, hostKey, body, maxPlayers)) {
+          ctx.waitUntil(anotaUso(env, { salas: 1 }));
+          return json({ code, hostKey, maxPlayers } satisfies CreateRoomResult);
+        }
       }
       return json({ erro: 'Não deu para abrir a sala agora. Tente de novo.' }, 503);
     }

@@ -2,6 +2,7 @@
 // mede o tempo das respostas e manda o estado absoluto para cada conexão por WebSocket.
 import { DurableObject } from 'cloudflare:workers';
 import { type CobrancaEnv, codigoValido } from './cobranca';
+import { anotaUso } from './uso';
 import { LIMITS } from '../shared/rules';
 import * as G from '../shared/game';
 import type { ClientMsg, CreateRoomBody, ServerMsg } from '../shared/protocol';
@@ -129,6 +130,7 @@ export class Room extends DurableObject<Env> {
     switch (msg.type) {
       case 'start':
         ok = G.start(room, now);
+        if (ok) this.ctx.waitUntil(anotaUso(this.env, { jogos: 1, jogadores: Object.keys(room.players).length }));
         break;
       case 'reveal':
         ok = G.reveal(room);

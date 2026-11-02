@@ -51,6 +51,7 @@ export interface Room {
   kicked: string[];
   drawn: Drawn[];
   createdAt: number;
+  mexeu?: number; // última mensagem de alguém na sala (para fechar a sala parada)
   endedAt: number; // 0 enquanto o jogo não acabou
 }
 

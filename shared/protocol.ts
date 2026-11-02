@@ -138,12 +138,12 @@ export interface PlayerState extends BaseState {
   ranking: RankRow[]; // top 5 durante o jogo, top 10 no fim
 }
 
-export type ErrorCode = 'not_found' | 'started' | 'full' | 'cheia_gratis' | 'kicked' | 'bad_key' | 'bad_nick' | 'closed' | 'acesso_invalido';
+export type ErrorCode = 'not_found' | 'started' | 'full' | 'cheia_gratis' | 'kicked' | 'bad_key' | 'bad_nick' | 'closed' | 'inativa' | 'acesso_invalido';
 
 export type ServerMsg =
   | HostState
   | PlayerState
   | { type: 'error'; code: ErrorCode }
   | { type: 'kicked' }
-  | { type: 'closed' }
+  | { type: 'closed'; motivo?: 'inativa' }
   | { type: 'pong'; serverNow: number };

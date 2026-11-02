@@ -1,9 +1,12 @@
-// Cobrança do Quiddo, no mesmo modelo do Retrozap: pagamento único libera salas com até 200 pessoas
-// naquele navegador (código QD-XXXX-XXXX, que também serve em outro aparelho). Grátis: até 10 pessoas.
+// Cobrança do Quiddo, no mesmo modelo do Retrozap. Grátis: salas de até 10 pessoas. Pago: salas de até 200,
+// quantos jogos quiser, no plano Mensal (30 dias) ou no Passe 7 dias. Quem paga recebe um código QD-XXXX-XXXX,
+// guardado no navegador, que também serve em outro aparelho até o fim do plano.
 //   Pix: Mercado Pago (segredo MP_TOKEN). Cartão, Apple Pay e Google Pay: Stripe Checkout (segredo STRIPE_KEY).
-//   Variável COBRANCA (wrangler.jsonc): "teste" = só vale com ?teste_cobranca=1 e, sem MP_TOKEN, o Pix é simulado
-//   (aprova sozinho em poucos segundos); "ligada" = vale para todos; "desligada" = sem limite e sem cobrança.
-//   Preços: variáveis PRECO_PIX e PRECO_CARTAO (padrão 19.90 e 24.90).
+//   Variável COBRANCA (wrangler.jsonc):
+//     "simulacao" = vale para todos, mas o Pix é de mentira (aprova sozinho) e o cartão não aparece;
+//     "teste" = só vale com ?teste_cobranca=1 e, sem MP_TOKEN, o Pix é simulado;
+//     "ligada" = cobrança de verdade para todos; "desligada" = sem limite e sem cobrança.
+//   Preços: variáveis PRECO_MENSAL e PRECO_SEMANA (padrão 25.99 e 15.99), iguais no Pix e no cartão.
 // Ver compras: Cloudflare > D1 > quiddo > Console:  SELECT * FROM compras ORDER BY criado DESC;
 // Só passam por aqui o e-mail de quem paga, o identificador da compra e o código. Nada do quiz.
 
@@ -12,15 +15,22 @@ export interface CobrancaEnv {
   COBRANCA?: string;
   MP_TOKEN?: string;
   STRIPE_KEY?: string;
-  PRECO_PIX?: string;
-  PRECO_CARTAO?: string;
+  PRECO_MENSAL?: string;
+  PRECO_SEMANA?: string;
   CODIGOS_AMIGOS?: string;
   MP_API?: string;
   MP_PAY_API?: string;
   STRIPE_API?: string;
 }
 
-export type Modo = 'ligada' | 'teste' | 'desligada';
+export type Modo = 'ligada' | 'simulacao' | 'teste' | 'desligada';
+export type Plano = 'mensal' | 'semana';
+
+const PLANOS: Record<Plano, { nome: string; dias: number; padrao: string }> = {
+  mensal: { nome: 'Mensal', dias: 30, padrao: '25.99' },
+  semana: { nome: 'Passe 7 dias', dias: 7, padrao: '15.99' },
+};
+const planoDe = (v: unknown): Plano => (v === 'semana' ? 'semana' : 'mensal');
 
 const MP_ORDERS = 'https://api.mercadopago.com/v1/orders';
 const MP_PAY = 'https://api.mercadopago.com/v1/payments';
@@ -31,21 +41,28 @@ export const CODIGO_RE = /^QD-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
 const json = (obj: unknown, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
 
-export const modo = (env: CobrancaEnv): Modo => (env.COBRANCA === 'ligada' ? 'ligada' : env.COBRANCA === 'desligada' ? 'desligada' : 'teste');
+export const modo = (env: CobrancaEnv): Modo =>
+  env.COBRANCA === 'ligada' || env.COBRANCA === 'simulacao' || env.COBRANCA === 'desligada' ? env.COBRANCA : 'teste';
 const tok = (env: CobrancaEnv) => String(env.MP_TOKEN || '').trim().replace(/^['"]|['"]$/g, '').replace(/^Bearer\s+/i, '').trim();
 const stripeKey = (env: CobrancaEnv) => String(env.STRIPE_KEY || '').trim();
 const stripeTeste = (env: CobrancaEnv) => /^(sk|rk)_test_/.test(stripeKey(env));
-const precoPix = (env: CobrancaEnv) => String(env.PRECO_PIX || '19.90');
-const precoCartao = (env: CobrancaEnv) => String(env.PRECO_CARTAO || '24.90');
+const preco = (env: CobrancaEnv, p: Plano) => String((p === 'mensal' ? env.PRECO_MENSAL : env.PRECO_SEMANA) || PLANOS[p].padrao);
 const virgula = (v: string) => Number(v).toFixed(2).replace('.', ',');
-// Pix simulado: só no modo teste e sem token do Mercado Pago (para testar o fluxo antes de ligar a conta)
-const pixSimulado = (env: CobrancaEnv) => modo(env) === 'teste' && !tok(env);
+// Pix simulado: na simulação, ou no modo teste sem token do Mercado Pago (para ver o fluxo antes de ligar a conta)
+const pixSimulado = (env: CobrancaEnv) => modo(env) === 'simulacao' || (modo(env) === 'teste' && !tok(env));
+// na simulação o cartão não aparece, mesmo com a chave do Stripe
+const cartaoPronto = (env: CobrancaEnv) => !!stripeKey(env) && modo(env) !== 'simulacao';
 const aleatorio = (n: number) => [...crypto.getRandomValues(new Uint8Array(n))].map((b) => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('');
 
+let colunas = false;
 async function tabela(db: D1Database) {
   await db
     .prepare('CREATE TABLE IF NOT EXISTS compras (ref TEXT PRIMARY KEY, ordem TEXT, email TEXT, status TEXT, codigo TEXT, criado TEXT, pago TEXT, valor TEXT, modo TEXT)')
     .run();
+  if (colunas) return;
+  // plano e validade entraram depois: em bancos antigos, acrescenta as colunas (se já existem, dá erro e segue)
+  for (const c of ['plano TEXT', 'expira TEXT']) await db.prepare(`ALTER TABLE compras ADD COLUMN ${c}`).run().catch(() => {});
+  colunas = true;
 }
 
 interface Ordem {
@@ -79,18 +96,29 @@ interface Compra {
   status: string;
   codigo: string | null;
   criado: string;
+  plano: string | null;
+  expira: string | null;
 }
 
-/** Marca como paga e cria o código (uma vez só). Devolve o código ou null se ainda não pagou. */
-async function confirma(env: CobrancaEnv, ref: string): Promise<string | null> {
+type Acesso = { codigo: string; plano: Plano; expira: string };
+
+/** Marca como paga e cria o código (uma vez só), válido pelos dias do plano. Devolve null se ainda não pagou. */
+async function confirma(env: CobrancaEnv, ref: string): Promise<Acesso | null> {
   const db = env.DB!;
   const c = await db.prepare('SELECT * FROM compras WHERE ref = ?').bind(ref).first<Compra>();
   if (!c) return null;
-  if (c.status === 'pago') return c.codigo;
+  const plano = planoDe(c.plano);
+  if (c.status === 'pago') return c.codigo ? { codigo: c.codigo, plano, expira: c.expira || '' } : null;
   if (!foiPago(await consultaOrdem(env, c.ordem, c.criado))) return null;
   const codigo = `QD-${aleatorio(4)}-${aleatorio(4)}`;
-  await db.prepare("UPDATE compras SET status = 'pago', codigo = ?, pago = ? WHERE ref = ? AND status != 'pago'").bind(codigo, new Date().toISOString(), ref).run();
-  return (await db.prepare('SELECT codigo FROM compras WHERE ref = ?').bind(ref).first<{ codigo: string }>())?.codigo || codigo;
+  const agora = new Date();
+  const expira = new Date(agora.getTime() + PLANOS[plano].dias * 86400e3).toISOString();
+  await db
+    .prepare("UPDATE compras SET status = 'pago', codigo = ?, pago = ?, expira = ? WHERE ref = ? AND status != 'pago'")
+    .bind(codigo, agora.toISOString(), expira, ref)
+    .run();
+  const l = await db.prepare('SELECT codigo, expira FROM compras WHERE ref = ?').bind(ref).first<{ codigo: string; expira: string }>();
+  return { codigo: l?.codigo || codigo, plano, expira: l?.expira || expira };
 }
 
 /** O código vale? Usado pela API e pela sala, na hora de abrir ou liberar mais gente. */
@@ -105,13 +133,23 @@ export async function codigoValido(env: CobrancaEnv, raw: unknown): Promise<bool
   if (amigos.includes(codigo)) return true;
   if (!CODIGO_RE.test(codigo) || !env.DB) return false;
   await tabela(env.DB);
-  // com a cobrança ligada, códigos do modo teste não valem
-  const sql = modo(env) === 'ligada' ? "SELECT ref FROM compras WHERE codigo = ? AND status = 'pago' AND modo = 'ligada'" : "SELECT ref FROM compras WHERE codigo = ? AND status = 'pago'";
-  return !!(await env.DB.prepare(sql).bind(codigo).first());
+  return !!(await acessoDo(env, codigo));
+}
+
+/** Plano e validade de um código pago e ainda válido. Com a cobrança ligada, códigos de teste e simulação não valem. */
+async function acessoDo(env: CobrancaEnv, codigo: string): Promise<Acesso | null> {
+  if (!env.DB) return null;
+  await tabela(env.DB);
+  const filtro = modo(env) === 'ligada' ? " AND modo = 'ligada'" : '';
+  const l = await env.DB.prepare(`SELECT plano, expira FROM compras WHERE codigo = ? AND status = 'pago' AND (expira IS NULL OR expira > ?)${filtro}`)
+    .bind(codigo, new Date().toISOString())
+    .first<{ plano: string | null; expira: string | null }>();
+  return l ? { codigo, plano: planoDe(l.plano), expira: l.expira || '' } : null;
 }
 
 /** A cobrança vale para este pedido? No modo teste, só quando o site manda testeCobranca. */
-export const cobrancaVale = (env: CobrancaEnv, testeCobranca: unknown) => modo(env) === 'ligada' || (modo(env) === 'teste' && testeCobranca === true);
+export const cobrancaVale = (env: CobrancaEnv, testeCobranca: unknown) =>
+  modo(env) === 'ligada' || modo(env) === 'simulacao' || (modo(env) === 'teste' && testeCobranca === true);
 
 async function lerJson(req: Request): Promise<Record<string, unknown> | null> {
   try {
@@ -139,10 +177,9 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
       modo: modo(env),
       pix: !!db && (!!tok(env) || pixSimulado(env)),
       pixSimulado: pixSimulado(env),
-      cartao: !!db && !!stripeKey(env),
+      cartao: !!db && cartaoPronto(env),
       cartaoTeste: stripeTeste(env),
-      precoPix: virgula(precoPix(env)),
-      precoCartao: virgula(precoCartao(env)),
+      planos: (Object.keys(PLANOS) as Plano[]).map((id) => ({ id, nome: PLANOS[id].nome, dias: PLANOS[id].dias, preco: virgula(preco(env, id)) })),
       gratis: 10,
       pago: 200,
     });
@@ -153,14 +190,17 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
   if (caminho === '/api/pix') {
     if (!db || !(tok(env) || pixSimulado(env))) return json({ erro: 'indisponivel' }, 503);
     if (modo(env) === 'desligada') return json({ erro: 'desligada' }, 403);
-    const email = emailDe(await lerJson(req));
+    const pedido = await lerJson(req);
+    const email = emailDe(pedido);
     if (!email) return json({ erro: 'email' }, 400);
+    const plano = planoDe(pedido?.plano);
     await tabela(db);
     const ref = crypto.randomUUID();
-    const valor = precoPix(env);
+    const valor = preco(env, plano);
     const agora = new Date().toISOString();
+    const inserir = 'INSERT INTO compras (ref, ordem, email, status, criado, valor, modo, plano) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
     if (pixSimulado(env)) {
-      await db.prepare('INSERT INTO compras (ref, ordem, email, status, criado, valor, modo) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(ref, 'sim:' + ref, email, 'pendente', agora, valor, 'teste').run();
+      await db.prepare(inserir).bind(ref, 'sim:' + ref, email, 'pendente', agora, valor, modo(env) === 'simulacao' ? 'simulacao' : 'teste', plano).run();
       return json({ ref, qr: '00020126580014BR.GOV.BCB.PIX0136quiddo-pix-de-teste-nao-pague5204000053039865802BR5906QUIDDO6009SAO PAULO', qr64: '', link: '', simulado: true });
     }
     const corpo = {
@@ -168,7 +208,7 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
       processing_mode: 'automatic',
       total_amount: valor,
       external_reference: ref,
-      description: 'Quiddo: salas com até 200 pessoas',
+      description: `Quiddo ${PLANOS[plano].nome}: salas com até 200 pessoas`,
       payer: { email },
       transactions: { payments: [{ amount: valor, payment_method: { id: 'pix', type: 'bank_transfer' }, expiration_time: 'PT30M' }] },
     };
@@ -201,7 +241,7 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
       console.log('mercado pago erro', r.status, JSON.stringify(o).slice(0, 300));
       return json({ erro: 'mp' }, 502);
     }
-    await db.prepare('INSERT INTO compras (ref, ordem, email, status, criado, valor, modo) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(ref, ordem, email, 'pendente', agora, valor, modo(env)).run();
+    await db.prepare(inserir).bind(ref, ordem, email, 'pendente', agora, valor, modo(env), plano).run();
     return json({ ref, qr: pm.qr_code || '', qr64: pm.qr_code_base64 || '', link: pm.ticket_url || '' });
   }
 
@@ -212,13 +252,13 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     const ref = String(c?.ref || '').slice(0, 60);
     if (!ref) return json({ erro: 'pedido' }, 400);
     await tabela(db);
-    const codigo = await confirma(env, ref);
-    return json(codigo ? { pago: true, codigo } : { pago: false });
+    const a = await confirma(env, ref);
+    return json(a ? { pago: true, ...a } : { pago: false });
   }
 
   // POST /api/cartao {email, volta}: cria a página de pagamento do Stripe (cartão, Apple Pay, Google Pay)
   if (caminho === '/api/cartao') {
-    if (!db || !stripeKey(env)) return json({ erro: 'indisponivel' }, 503);
+    if (!db || !cartaoPronto(env)) return json({ erro: 'indisponivel' }, 503);
     if (modo(env) === 'desligada') return json({ erro: 'desligada' }, 403);
     const c = await lerJson(req);
     const email = emailDe(c);
@@ -228,7 +268,9 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     const origem = new URL(req.url).origin;
     // volta para a página de onde a pessoa saiu (editor ou sala), sempre no mesmo site
     const volta = /^\/[A-Za-z0-9/_-]{0,40}$/.test(String(c?.volta || '')) ? String(c?.volta) : '/criar';
-    const valor = precoCartao(env);
+    // o Mensal no cartão ainda é cobrado como 30 dias avulsos; a renovação automática entra quando o Stripe for ligado
+    const plano = planoDe(c?.plano);
+    const valor = preco(env, plano);
     const f = new URLSearchParams({
       mode: 'payment',
       locale: 'pt-BR',
@@ -238,8 +280,8 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
       'line_items[0][quantity]': '1',
       'line_items[0][price_data][currency]': 'brl',
       'line_items[0][price_data][unit_amount]': String(Math.round(Number(valor) * 100)),
-      'line_items[0][price_data][product_data][name]': 'Quiddo: salas com até 200 pessoas',
-      'line_items[0][price_data][product_data][description]': 'Pagamento único. Vale para sempre neste navegador e com o seu código em qualquer aparelho.',
+      'line_items[0][price_data][product_data][name]': `Quiddo ${PLANOS[plano].nome}: salas com até 200 pessoas`,
+      'line_items[0][price_data][product_data][description]': `Jogos ilimitados por ${PLANOS[plano].dias} dias, com o seu código em qualquer aparelho.`,
       success_url: `${origem}${volta}?pagamento=ok&ref=${ref}`,
       cancel_url: `${origem}${volta}?pagamento=volta`,
     });
@@ -254,8 +296,8 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
       return json({ erro: 'stripe', detalhe: stripeTeste(env) ? s?.error?.message : undefined }, 502);
     }
     await db
-      .prepare('INSERT INTO compras (ref, ordem, email, status, criado, valor, modo) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .bind(ref, 'stripe:' + s.id, email, 'pendente', new Date().toISOString(), valor, stripeTeste(env) ? 'teste' : modo(env))
+      .prepare('INSERT INTO compras (ref, ordem, email, status, criado, valor, modo, plano) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(ref, 'stripe:' + s.id, email, 'pendente', new Date().toISOString(), valor, stripeTeste(env) ? 'teste' : modo(env), plano)
       .run();
     return json({ ref, url: s.url });
   }
@@ -267,11 +309,16 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     if (email && db) {
       await tabela(db);
       const filtro = modo(env) === 'ligada' ? " AND modo = 'ligada'" : '';
-      const l = await db.prepare(`SELECT codigo FROM compras WHERE email = ? AND status = 'pago'${filtro} ORDER BY pago DESC LIMIT 1`).bind(email).first<{ codigo: string }>();
-      return json(l?.codigo ? { ok: true, codigo: l.codigo } : { ok: false });
+      const l = await db
+        .prepare(`SELECT codigo FROM compras WHERE email = ? AND status = 'pago' AND (expira IS NULL OR expira > ?)${filtro} ORDER BY expira DESC LIMIT 1`)
+        .bind(email, new Date().toISOString())
+        .first<{ codigo: string }>();
+      const a = l?.codigo ? await acessoDo(env, l.codigo) : null;
+      return json(a ? { ok: true, ...a } : { ok: false });
     }
-    const codigo = String(c?.codigo || '').trim().toUpperCase();
-    return json({ ok: await codigoValido(env, codigo), codigo });
+    const codigo = String(c?.codigo || '').trim().toUpperCase().slice(0, 40);
+    if (!(await codigoValido(env, codigo))) return json({ ok: false, codigo });
+    return json({ ok: true, ...((await acessoDo(env, codigo)) || { codigo, plano: 'mensal', expira: '' }) });
   }
 
   // avisos dos serviços (opcionais): a confirmação é sempre conferida direto na API de quem cobrou

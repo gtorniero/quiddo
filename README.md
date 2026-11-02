@@ -101,32 +101,47 @@ npm run deploy
 
 ## Cobrança (Pix e cartão)
 
-Mesmo modelo do Retrozap. A sala grátis vai até 10 pessoas; quem paga uma vez libera salas de até 200, sem mensalidade.
+Mesmo modelo do Retrozap. Os planos estão em `/precos`:
+
+| Plano | Preço | O que libera |
+| --- | --- | --- |
+| Grátis | R$ 0 | Salas de até 10 pessoas |
+| Mensal | R$ 25,99 (`PRECO_MENSAL`) | Salas de até 200 pessoas, jogos ilimitados por 30 dias |
+| Passe 7 dias | R$ 15,99 (`PRECO_SEMANA`) | Salas de até 200 pessoas, jogos ilimitados por 7 dias |
+
+O quiz é criado e a sala abre de graça; o pagamento só aparece quando a pessoa quer mais de 10 (no editor, na sala de espera ou na página de preços). O Mensal ainda é cobrado como 30 dias avulsos; a renovação automática no cartão entra quando o Stripe for configurado.
 
 - **Pix** pelo Mercado Pago. **Cartão, Apple Pay e Google Pay** pelo Stripe Checkout.
 - Quem paga recebe um código `QD-XXXX-XXXX`, guardado no navegador. Em outro aparelho, a pessoa usa "Já paguei, tenho um código" com o código ou o e-mail do pagamento.
-- O código pode ser usado no editor (antes de abrir a sala) ou na sala de espera ("Liberar até 200 pessoas"), mesmo com a sala já cheia.
+- O código vale até o fim do plano (coluna `expira`) e pode ser usado no editor (antes de abrir a sala) ou na sala de espera ("Liberar até 200 pessoas"), mesmo com a sala já cheia.
 - As compras ficam no banco D1 `quiddo` (tabela `compras`), criado sozinho no primeiro deploy. O código é sempre conferido no servidor.
 
 A variável `COBRANCA` em `wrangler.jsonc` decide o modo:
 
 | Modo | O que acontece |
 | --- | --- |
-| `teste` (atual) | O site continua liberado para todo mundo. Para testar a cobrança, abra `/criar?teste_cobranca=1`. Sem `MP_TOKEN`, o Pix é simulado e aprova sozinho em 4 segundos. |
-| `ligada` | Salas grátis até 10 pessoas; só códigos pagos com a cobrança ligada liberam 200. |
+| `simulacao` (atual) | Vale para todos: salas grátis até 10 pessoas e a página de pagamento no ar, mas o Pix é de mentira (aprova sozinho em 4 segundos) e o cartão não aparece. |
+| `teste` | O site fica liberado para todo mundo. Para testar a cobrança, abra `/criar?teste_cobranca=1`. Sem `MP_TOKEN`, o Pix é simulado. |
+| `ligada` | Cobrança de verdade: salas grátis até 10 pessoas; só códigos pagos com a cobrança ligada liberam 200. |
 | `desligada` | Sem cobrança, salas de até 200 para todos. |
 
 ### Ligar o pagamento de verdade
 
 1. **Mercado Pago (Pix)**: em mercadopago.com.br/developers, crie uma aplicação e copie o *Access Token* de produção.
 2. **Stripe (cartão, Apple Pay, Google Pay)**: em dashboard.stripe.com, **Developers → API keys**, copie a *Secret key*. Ative Apple Pay e Google Pay em **Settings → Payment methods**.
-3. No Cloudflare, em **Workers & Pages → quiddo → Settings → Variables and Secrets**, adicione como **Secret**: `MP_TOKEN` e `STRIPE_KEY`. Opcional, como texto: `PRECO_PIX` (padrão 19.90), `PRECO_CARTAO` (padrão 24.90) e `CODIGOS_AMIGOS` (códigos de cortesia separados por vírgula).
+3. No Cloudflare, em **Workers & Pages → quiddo → Settings → Variables and Secrets**, adicione como **Secret**: `MP_TOKEN` e `STRIPE_KEY`. Opcional, como texto: `PRECO_MENSAL` (padrão 25.99), `PRECO_SEMANA` (padrão 15.99) e `CODIGOS_AMIGOS` (códigos de cortesia separados por vírgula).
 4. Webhooks (deixam a confirmação mais rápida; sem eles o site confere sozinho a cada 3 segundos):
    - Mercado Pago, em **Webhooks**: `https://SEU-SITE/api/mp-webhook`, evento *Order* (ou *Pagamentos*).
    - Stripe, em **Developers → Webhooks**: `https://SEU-SITE/api/stripe-webhook`, evento `checkout.session.completed`.
 5. Teste com `/criar?teste_cobranca=1` ainda no modo `teste`. Quando estiver certo, troque `COBRANCA` para `ligada` em `wrangler.jsonc` e publique.
 
 Nunca coloque as chaves no código: elas ficam só no painel do Cloudflare.
+
+## Uso e limites do plano grátis
+
+`GET /api/uso` mostra, por dia (UTC), as salas abertas, os jogos começados, os jogadores e a maior sala dos últimos 14 dias. O plano grátis da Cloudflare dá cerca de 100 jogos de 15 minutos por dia; o campo `alerta` liga aos 70%. Um lembrete agendado confere isso todo dia e avisa quando for hora de assinar o plano de US$ 5.
+
+Cada sala aguenta 200 pessoas com folga (testado no site no ar). Sala em que ninguém mexe por 20 minutos (nem o anfitrião, nem os jogadores) fecha sozinha e avisa as telas. Com 1000, hoje não: as entradas e as atualizações durante a pergunta vão para todos de uma vez e o servidor atrasa.
 
 ## Referência
 

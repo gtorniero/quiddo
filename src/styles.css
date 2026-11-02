@@ -5467,3 +5467,165 @@ body.modo-foto .btn-som {
 .etapa-acoes .btn[type='submit'] {
   flex: 1;
 }
+
+/* ---------- página de preços e escolha do plano no pagamento ---------- */
+.precos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  align-items: stretch;
+  margin: 26px 0 20px;
+}
+.pc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--card);
+  color: var(--fg);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--r-big);
+  box-shadow: 0 6px 0 var(--line);
+  padding: 22px 20px;
+}
+.pc h2 {
+  margin: 0;
+  font-family: var(--disp);
+  font-weight: var(--dw);
+}
+.pc-preco {
+  margin: 0;
+  white-space: nowrap;
+  font: 900 clamp(34px, 6vw, 44px) / 1 var(--disp);
+}
+.pc-preco small {
+  font-size: 18px;
+  font-weight: 800;
+  margin-left: 2px;
+}
+.pc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  flex: 1;
+  align-content: start;
+}
+.pc li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.pc-ok {
+  color: var(--good);
+  font-weight: 900;
+}
+.pc .btn {
+  width: 100%;
+  justify-content: center;
+}
+.pc-destaque {
+  background: var(--acc-soft);
+  box-shadow: 0 6px 0 var(--line), 0 0 0 4px var(--acc) inset;
+}
+.pc-destaque .selo {
+  position: absolute;
+  top: -16px;
+  right: 16px;
+  color: #0e2a22;
+}
+.faq details {
+  border-top: 2px solid var(--soft-line);
+  padding: 12px 0;
+}
+.faq summary {
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 28px;
+}
+.faq details p {
+  margin: 8px 0 0;
+}
+.plano-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.pg-planos {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.pg-planos legend {
+  font-weight: 800;
+  margin-bottom: 8px;
+  padding: 0;
+}
+.pg-plano {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 2px 10px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 2px solid var(--soft-line);
+  border-radius: 14px;
+  cursor: pointer;
+  font-weight: 400 !important;
+}
+.pg-plano:has(input:checked) {
+  border-color: var(--line);
+  background: var(--acc-soft);
+  box-shadow: 0 0 0 2px var(--acc) inset;
+}
+.pg-plano input {
+  width: 22px;
+  height: 22px;
+  min-height: 0 !important;
+  margin: 0;
+  accent-color: var(--acc);
+  grid-row: span 2;
+}
+.pg-plano-nome {
+  font-weight: 900;
+}
+.pg-vantagem {
+  font-size: 12px;
+  font-weight: 900;
+  background: var(--amarelo);
+  color: #0e2a22;
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.pg-plano-preco {
+  font: 900 20px var(--disp);
+  white-space: nowrap;
+}
+.pg-plano-preco small {
+  font-size: 13px;
+}
+.pg-plano-txt {
+  grid-column: 2 / 4;
+  font-size: 14px;
+  color: var(--fg2);
+}
+
+.pagamento {
+  overflow-x: hidden;
+}
+.pagamento form > *,
+.pg-planos {
+  min-width: 0;
+}
+
+.precos ~ .faq,
+.precos {
+  max-width: 1000px;
+  width: 100%;
+  margin-inline: auto;
+}

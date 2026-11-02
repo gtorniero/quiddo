@@ -2,6 +2,7 @@
 // mede o tempo das respostas e manda o estado absoluto para cada conexão por WebSocket.
 import { DurableObject } from 'cloudflare:workers';
 import { type CobrancaEnv, codigoValido } from './cobranca';
+import { anotaUso } from './uso';
 import { LIMITS } from '../shared/rules';
 import * as G from '../shared/game';
 import type { ClientMsg, CreateRoomBody, ServerMsg } from '../shared/protocol';
@@ -18,6 +19,7 @@ interface Attachment {
 
 const KEEP_AFTER_END = 2 * 60 * 60 * 1000; // apaga a sala 2 horas depois do fim
 const MAX_LIFETIME = 12 * 60 * 60 * 1000; // e qualquer sala esquecida depois de 12 horas
+const INATIVA_MS = 20 * 60 * 1000; // sala sem ninguém mexer por 20 minutos fecha sozinha
 const ANSWER_FLUSH_MS = 150; // agrupa as atualizações de "X de Y responderam"
 
 export class Room extends DurableObject<Env> {
@@ -96,6 +98,9 @@ export class Room extends DurableObject<Env> {
       return ws.close(4004, 'not_found');
     }
 
+    // última mensagem de alguém (o ping automático não conta); vai salva junto com a sala
+    room.mexeu = now;
+
     if (msg.type === 'host') {
       if (msg.hostKey !== room.hostKey) return this.send(ws, { type: 'error', code: 'bad_key' });
       ws.serializeAttachment({ role: 'host' } satisfies Attachment);
@@ -129,6 +134,7 @@ export class Room extends DurableObject<Env> {
     switch (msg.type) {
       case 'start':
         ok = G.start(room, now);
+        if (ok) this.ctx.waitUntil(anotaUso(this.env, { jogos: 1, jogadores: Object.keys(room.players).length }));
         break;
       case 'reveal':
         ok = G.reveal(room);
@@ -205,9 +211,9 @@ export class Room extends DurableObject<Env> {
     }
   }
 
-  private async closeRoom() {
+  private async closeRoom(motivo?: 'inativa') {
     for (const s of this.ctx.getWebSockets()) {
-      this.send(s, { type: 'closed' });
+      this.send(s, motivo ? { type: 'closed', motivo } : { type: 'closed' });
       try {
         s.close(4002, 'closed');
       } catch {}
@@ -224,7 +230,7 @@ export class Room extends DurableObject<Env> {
   private async scheduleAlarm() {
     const room = this.room;
     if (!room) return;
-    const times = [room.createdAt + MAX_LIFETIME];
+    const times = [room.createdAt + MAX_LIFETIME, (room.mexeu || room.createdAt) + INATIVA_MS];
     if (room.endedAt) times.push(room.endedAt + KEEP_AFTER_END);
     if (room.phase === 'question') times.push(room.endsAt);
     await this.ctx.storage.setAlarm(Math.min(...times));
@@ -237,6 +243,8 @@ export class Room extends DurableObject<Env> {
     if (now >= room.createdAt + MAX_LIFETIME || (room.endedAt && now >= room.endedAt + KEEP_AFTER_END)) {
       return this.closeRoom();
     }
+    // ninguém mexeu na sala por 20 minutos (nem o anfitrião, nem os jogadores): fecha sozinha
+    if (now >= (room.mexeu || room.createdAt) + INATIVA_MS) return this.closeRoom('inativa');
     if (room.phase === 'question' && now >= room.endsAt) {
       G.reveal(room);
       this.changed(true);

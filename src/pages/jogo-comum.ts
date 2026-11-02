@@ -408,6 +408,7 @@ export const ERROS: Record<string, [string, string]> = {
   cheia_gratis: ['A sala está cheia', 'Esta sala grátis vai até 10 pessoas. Peça para quem abriu a sala liberar mais vagas e tente de novo.'],
   kicked: ['Você saiu da sala', 'O anfitrião tirou você desta rodada.'],
   closed: ['A sala foi encerrada', 'O anfitrião encerrou esta rodada. Valeu por jogar!'],
+  inativa: ['A sala fechou', 'Ficou 20 minutos sem ninguém jogar e fechou sozinha. Para jogar de novo, abra a sala outra vez pelo editor.'],
   bad_key: ['Esta sala foi aberta em outro aparelho', 'Só o aparelho que abriu a sala pode comandar o jogo.'],
   bad_nick: ['Apelido inválido', 'Escreva um apelido de até 18 letras.'],
 };

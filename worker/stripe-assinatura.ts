@@ -116,7 +116,7 @@ export async function reconciliarAssinatura(env: CobrancaEnv, subscriptionId: st
   const paidUntil = Math.max(prior?.paid_until || 0, paid ? item.current_period_end : 0);
   const risk = prior?.risk || '';
   await db.prepare("INSERT INTO qd_assinaturas(id,ref,customer,status,price,paid_until,cancel_at_period_end,modo,risk,checked_at) VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET status=excluded.status,paid_until=MAX(qd_assinaturas.paid_until,excluded.paid_until),cancel_at_period_end=excluded.cancel_at_period_end,checked_at=excluded.checked_at")
-    .bind(sub.id, purchase.ref, customer, sub.status, price.id, paidUntil, sub.cancel_at_period_end ? 1 : 0, purchase.modo, risk, Date.now()).run();
+    .bind(sub.id, purchase.ref, customer, sub.status, price.id, paidUntil, (sub.cancel_at_period_end || sub.cancel_at) ? 1 : 0, purchase.modo, risk, Date.now()).run();
   const state = (await db.prepare('SELECT * FROM qd_assinaturas WHERE id=?').bind(sub.id).first<AssinaturaDB>())!;
   const expiry = paidUntil ? new Date(paidUntil * 1000).toISOString() : new Date().toISOString();
   if (acessoAssinatura(state)) {

@@ -11,12 +11,16 @@
 // Só passam por aqui o e-mail de quem paga, o identificador da compra e o código. Nada do quiz.
 
 import { emailDaSessao } from './login';
+import { checkoutMensal, confirmarAssinatura, mensalConfigurado, portalAssinatura, situacaoAssinatura, stripeAmbiente, webhookStripe } from './stripe-assinatura';
 
 export interface CobrancaEnv {
   DB?: D1Database;
   COBRANCA?: string;
   MP_TOKEN?: string;
   STRIPE_KEY?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
+  STRIPE_PRICE_MENSAL?: string;
+  STRIPE_PORTAL_CONFIG?: string;
   PRECO_MENSAL?: string;
   PRECO_SEMANA?: string;
   PRECO_OFERTA?: string;
@@ -59,7 +63,7 @@ const virgula = (v: string) => Number(v).toFixed(2).replace('.', ',');
 // Pix simulado: na simulação, ou no modo teste sem token do Mercado Pago (para ver o fluxo antes de ligar a conta)
 const pixSimulado = (env: CobrancaEnv) => modo(env) === 'simulacao' || (modo(env) === 'teste' && !tok(env));
 // na simulação o cartão não aparece, mesmo com a chave do Stripe
-const cartaoPronto = (env: CobrancaEnv) => !!stripeKey(env) && modo(env) !== 'simulacao';
+const cartaoPronto = (env: CobrancaEnv, teste = false) => !!stripeAmbiente(env) && (modo(env) !== 'simulacao' || teste);
 const aleatorio = (n: number) => [...crypto.getRandomValues(new Uint8Array(n))].map((b) => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('');
 
 let colunas = false;
@@ -69,7 +73,7 @@ async function tabela(db: D1Database) {
     .run();
   if (colunas) return;
   // plano e validade entraram depois: em bancos antigos, acrescenta as colunas (se já existem, dá erro e segue)
-  for (const c of ['plano TEXT', 'expira TEXT']) await db.prepare(`ALTER TABLE compras ADD COLUMN ${c}`).run().catch(() => {});
+  for (const c of ['plano TEXT', 'expira TEXT', 'tipo TEXT', 'stripe_price TEXT']) await db.prepare(`ALTER TABLE compras ADD COLUMN ${c}`).run().catch(() => {});
   colunas = true;
 }
 
@@ -99,6 +103,7 @@ async function consultaOrdem(env: CobrancaEnv, id: string, criado: string): Prom
 }
 
 interface Compra {
+  email: string; valor: string; modo: string; tipo: string | null; stripe_price: string | null;
   ref: string;
   ordem: string;
   status: string;
@@ -115,6 +120,7 @@ async function confirma(env: CobrancaEnv, ref: string): Promise<Acesso | null> {
   const db = env.DB!;
   const c = await db.prepare('SELECT * FROM compras WHERE ref = ?').bind(ref).first<Compra>();
   if (!c) return null;
+  if (c.tipo === 'assinatura') return confirmarAssinatura(env, c);
   const plano = planoDe(c.plano);
   if (c.status === 'pago') return c.codigo ? { codigo: c.codigo, plano, expira: c.expira || '' } : null;
   if (!foiPago(await consultaOrdem(env, c.ordem, c.criado))) return null;
@@ -149,15 +155,18 @@ async function acessoDo(env: CobrancaEnv, codigo: string): Promise<Acesso | null
   if (!env.DB) return null;
   await tabela(env.DB);
   const filtro = modo(env) === 'ligada' ? " AND modo = 'ligada'" : '';
-  const l = await env.DB.prepare(`SELECT plano, expira FROM compras WHERE codigo = ? AND status = 'pago' AND (expira IS NULL OR expira > ?)${filtro}`)
-    .bind(codigo, new Date().toISOString())
-    .first<{ plano: string | null; expira: string | null }>();
-  return l ? { codigo, plano: planoDe(l.plano), expira: l.expira || '' } : null;
+  const l = await env.DB.prepare(`SELECT * FROM compras WHERE codigo = ?${filtro}`).bind(codigo).first<Compra>();
+  if (!l) return null;
+  if (l.tipo === 'assinatura') {
+    try { return await confirmarAssinatura(env, l); } catch { return null; }
+  }
+  return l.status === 'pago' && (!l.expira || l.expira > new Date().toISOString()) ? { codigo, plano: planoDe(l.plano), expira: l.expira || '' } : null;
 }
 
 /** Plano em dia mais longo comprado com este e-mail. */
 async function acessoPorEmail(env: CobrancaEnv, email: string): Promise<Acesso | null> {
   if (!env.DB) return null;
+  await situacaoAssinatura(env, email);
   await tabela(env.DB);
   const filtro = modo(env) === 'ligada' ? " AND modo = 'ligada'" : '';
   const l = await env.DB.prepare(`SELECT codigo FROM compras WHERE email = ? AND status = 'pago' AND (expira IS NULL OR expira > ?)${filtro} ORDER BY expira DESC LIMIT 1`)
@@ -194,7 +203,8 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
   if (caminho === '/api/conta') {
     const email = await emailDaSessao(req, env);
     if (!email) return json({ email: null, acesso: null });
-    return json({ email, acesso: await acessoPorEmail(env, email) });
+    const assinatura = await situacaoAssinatura(env, email);
+    return json({ email, acesso: await acessoPorEmail(env, email), assinatura });
   }
 
   // GET /api/cobranca: o site pergunta se a cobrança está valendo e quais meios estão prontos
@@ -203,7 +213,8 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
       modo: modo(env),
       pix: !!db && (!!tok(env) || pixSimulado(env)),
       pixSimulado: pixSimulado(env),
-      cartao: !!db && cartaoPronto(env),
+      cartao: !!db && cartaoPronto(env, new URL(req.url).searchParams.get('teste_cobranca') === '1'),
+      assinaturaMensal: mensalConfigurado(env),
       cartaoTeste: stripeTeste(env),
       oferta: { preco: virgula(preco(env, 'oferta')), de: virgula(preco(env, 'semana')) },
       planos: (['mensal', 'semana'] as Plano[]).map((id) => ({ id, nome: PLANOS[id].nome, dias: PLANOS[id].dias, preco: virgula(preco(env, id)) })),
@@ -212,6 +223,11 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     });
   }
   if (req.method !== 'POST') return null;
+  if (caminho === '/api/assinatura/portal') return portalAssinatura(req, env, await emailDaSessao(req, env));
+  if (caminho === '/api/stripe-webhook') {
+    if (db) await tabela(db);
+    return webhookStripe(req, env, ref => confirma(env, ref));
+  }
 
   // POST /api/pix {email}: cria o Pix e devolve o QR
   if (caminho === '/api/pix') {
@@ -288,22 +304,27 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
 
   // POST /api/cartao {email, volta}: cria a página de pagamento do Stripe (cartão, Apple Pay, Google Pay)
   if (caminho === '/api/cartao') {
-    if (!db || !cartaoPronto(env)) return json({ erro: 'indisponivel' }, 503);
+    if (!db || !stripeAmbiente(env)) return json({ erro: 'indisponivel' }, 503);
     if (modo(env) === 'desligada') return json({ erro: 'desligada' }, 403);
     const c = await lerJson(req);
-    const email = (await emailDaSessao(req, env)) || emailDe(c);
+    if (!cartaoPronto(env, c?.testeCobranca === true)) return json({ erro: 'indisponivel' }, 503);
+    if (modo(env) !== 'ligada' && c?.testeCobranca !== true) return json({ erro: 'teste' }, 403);
+    const contaEmail = await emailDaSessao(req, env);
+    const email = contaEmail || emailDe(c);
     if (!email) return json({ erro: 'email' }, 400);
     await tabela(db);
     const ref = crypto.randomUUID();
     const origem = new URL(req.url).origin;
     // volta para a página de onde a pessoa saiu (editor ou sala), sempre no mesmo site
     const volta = /^\/[A-Za-z0-9/_-]{0,40}$/.test(String(c?.volta || '')) ? String(c?.volta) : '/criar';
-    // o Mensal no cartão ainda é cobrado como 30 dias avulsos; a renovação automática entra quando o Stripe for ligado
+    // Mensal no cartão usa Stripe Billing; o Passe continua sendo pagamento avulso.
     // a oferta da sala cheia é só no Pix; no cartão vale o preço normal do Passe
     const plano: Plano = planoDe(c?.plano) === 'oferta' ? 'semana' : planoDe(c?.plano);
+    if (plano === 'mensal') return checkoutMensal(req, env, contaEmail, volta, c || {});
     const valor = preco(env, plano);
     const f = new URLSearchParams({
       mode: 'payment',
+      integration_identifier: 'quiddo_pass_rqnvpska',
       locale: 'pt-BR',
       customer_email: email,
       client_reference_id: ref,
@@ -349,11 +370,11 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
   }
 
   // avisos dos serviços (opcionais): a confirmação é sempre conferida direto na API de quem cobrou
-  if (caminho === '/api/stripe-webhook' || caminho === '/api/mp-webhook') {
+  if (caminho === '/api/mp-webhook') {
     if (!db) return json({ ok: true });
     const c = (await lerJson(req)) as { data?: { id?: string; object?: { id?: string } } } | null;
     await tabela(db);
-    const id = String(caminho === '/api/stripe-webhook' ? c?.data?.object?.id || '' : c?.data?.id || '').slice(0, 120);
+    const id = String(c?.data?.id || '').slice(0, 120);
     if (!id) return json({ ok: true });
     const linha = await db.prepare('SELECT ref FROM compras WHERE ordem = ? OR ordem = ? OR ordem = ?').bind(id, 'pay:' + id, 'stripe:' + id).first<{ ref: string }>();
     if (linha) await confirma(env, linha.ref);

@@ -8,16 +8,18 @@
     "build": "vite build",
     "preview": "vite build && vite preview",
     "deploy": "vite build && wrangler deploy",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p worker/tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p worker/tsconfig.json --noEmit && tsc -p tsconfig.billing.json --noEmit",
     "test": "vitest run",
     "simular": "node scripts/simular.mjs"
   },
   "dependencies": {
-    "qrcode-generator": "^2.0.4"
+    "qrcode-generator": "^2.0.4",
+    "stripe": "23.0.0"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.66.0",
     "@cloudflare/workers-types": "^5.20261028.1",
+    "@types/node": "^24.19.2",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vitest": "^5.0.5",

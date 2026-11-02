@@ -3,13 +3,14 @@
 import { type Acesso, guardaAcesso } from './pagamento';
 import { store } from './storage';
 
+export interface Assinatura { status: string; renova: boolean; ate: string; teste: boolean; podeGerenciar: boolean }
 export const logado = () => store.get<string>('logado', '');
 
 /** Pergunta ao servidor quem está logado e traz o plano do e-mail para este navegador. */
-export async function sincronizaConta(): Promise<{ email: string | null; acesso: Acesso | null }> {
+export async function sincronizaConta(): Promise<{ email: string | null; acesso: Acesso | null; assinatura?: Assinatura | null }> {
   try {
     const r = await fetch('/api/conta');
-    const d = (await r.json()) as { email: string | null; acesso: Acesso | null };
+    const d = (await r.json()) as { email: string | null; acesso: Acesso | null; assinatura?: Assinatura | null };
     if (d.email) store.set('logado', d.email);
     else store.del('logado');
     if (d.acesso) guardaAcesso(d.acesso);

@@ -10,6 +10,8 @@
 // Ver compras: Cloudflare > D1 > quiddo > Console:  SELECT * FROM compras ORDER BY criado DESC;
 // Só passam por aqui o e-mail de quem paga, o identificador da compra e o código. Nada do quiz.
 
+import { emailDaSessao } from './login';
+
 export interface CobrancaEnv {
   DB?: D1Database;
   COBRANCA?: string;
@@ -147,6 +149,17 @@ async function acessoDo(env: CobrancaEnv, codigo: string): Promise<Acesso | null
   return l ? { codigo, plano: planoDe(l.plano), expira: l.expira || '' } : null;
 }
 
+/** Plano em dia mais longo comprado com este e-mail. */
+async function acessoPorEmail(env: CobrancaEnv, email: string): Promise<Acesso | null> {
+  if (!env.DB) return null;
+  await tabela(env.DB);
+  const filtro = modo(env) === 'ligada' ? " AND modo = 'ligada'" : '';
+  const l = await env.DB.prepare(`SELECT codigo FROM compras WHERE email = ? AND status = 'pago' AND (expira IS NULL OR expira > ?)${filtro} ORDER BY expira DESC LIMIT 1`)
+    .bind(email, new Date().toISOString())
+    .first<{ codigo: string }>();
+  return l?.codigo ? acessoDo(env, l.codigo) : null;
+}
+
 /** A cobrança vale para este pedido? No modo teste, só quando o site manda testeCobranca. */
 export const cobrancaVale = (env: CobrancaEnv, testeCobranca: unknown) =>
   modo(env) === 'ligada' || modo(env) === 'simulacao' || (modo(env) === 'teste' && testeCobranca === true);
@@ -171,6 +184,13 @@ function emailDe(c: Record<string, unknown> | null) {
 export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: string): Promise<Response | null> {
   const db = env.DB;
 
+  // GET /api/conta: e-mail de quem está logado e o plano em dia ligado a ele
+  if (caminho === '/api/conta') {
+    const email = await emailDaSessao(req, env);
+    if (!email) return json({ email: null, acesso: null });
+    return json({ email, acesso: await acessoPorEmail(env, email) });
+  }
+
   // GET /api/cobranca: o site pergunta se a cobrança está valendo e quais meios estão prontos
   if (caminho === '/api/cobranca') {
     return json({
@@ -191,7 +211,8 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     if (!db || !(tok(env) || pixSimulado(env))) return json({ erro: 'indisponivel' }, 503);
     if (modo(env) === 'desligada') return json({ erro: 'desligada' }, 403);
     const pedido = await lerJson(req);
-    const email = emailDe(pedido);
+    // logado, a compra fica no e-mail da conta
+    const email = (await emailDaSessao(req, env)) || emailDe(pedido);
     if (!email) return json({ erro: 'email' }, 400);
     const plano = planoDe(pedido?.plano);
     await tabela(db);
@@ -261,7 +282,7 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     if (!db || !cartaoPronto(env)) return json({ erro: 'indisponivel' }, 503);
     if (modo(env) === 'desligada') return json({ erro: 'desligada' }, 403);
     const c = await lerJson(req);
-    const email = emailDe(c);
+    const email = (await emailDaSessao(req, env)) || emailDe(c);
     if (!email) return json({ erro: 'email' }, 400);
     await tabela(db);
     const ref = crypto.randomUUID();
@@ -302,18 +323,14 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     return json({ ref, url: s.url });
   }
 
-  // POST /api/acesso {codigo} ou {email}: confere um código digitado ou recupera o código pelo e-mail do pagamento
+  // POST /api/acesso {codigo} ou {email}: confere um código digitado ou recupera o plano pelo e-mail do pagamento.
+  // Pelo e-mail, só com login daquele e-mail (senão qualquer um pegaria o código de outra pessoa).
   if (caminho === '/api/acesso') {
     const c = await lerJson(req);
     const email = emailDe(c);
-    if (email && db) {
-      await tabela(db);
-      const filtro = modo(env) === 'ligada' ? " AND modo = 'ligada'" : '';
-      const l = await db
-        .prepare(`SELECT codigo FROM compras WHERE email = ? AND status = 'pago' AND (expira IS NULL OR expira > ?)${filtro} ORDER BY expira DESC LIMIT 1`)
-        .bind(email, new Date().toISOString())
-        .first<{ codigo: string }>();
-      const a = l?.codigo ? await acessoDo(env, l.codigo) : null;
+    if (email) {
+      if ((await emailDaSessao(req, env)) !== email) return json({ ok: false, login: true });
+      const a = await acessoPorEmail(env, email);
       return json(a ? { ok: true, ...a } : { ok: false });
     }
     const codigo = String(c?.codigo || '').trim().toUpperCase().slice(0, 40);

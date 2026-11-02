@@ -9,6 +9,7 @@ import type { CreateRoomResult } from '../shared/protocol';
 import { CODE_RE, LIMITS, randomCode, validateCreate } from '../shared/rules';
 import { cobrancaVale, codigoValido, rotaCobranca } from './cobranca';
 import { anotaUso, rotaUso } from './uso';
+import { rotaLogin } from './login';
 import type { Env } from './room';
 
 export { Room } from './room';
@@ -25,6 +26,9 @@ export default {
 
     // uso por dia, para saber quando o plano grátis está chegando no limite
     if (url.pathname === '/api/uso' && req.method === 'GET') return rotaUso(env);
+    // login sem senha (código por e-mail)
+    const login = await rotaLogin(req, env, url.pathname);
+    if (login) return login;
     // cobrança: Pix, cartão/Apple Pay/Google Pay e conferência do código de acesso
     const cob = await rotaCobranca(req, env, url.pathname);
     if (cob) return cob;

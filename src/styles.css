@@ -2201,21 +2201,27 @@ body.modo-foto .palco {
     flex-wrap: nowrap;
     padding: 10px 16px;
   }
+  .logo {
+    flex-shrink: 0;
+  }
   .logo img {
-    width: 104px;
+    width: 92px;
     height: auto;
   }
   .nav {
     flex-wrap: nowrap;
-    gap: 2px;
+    gap: 0;
   }
   .nav a {
-    font-size: 15px;
-    padding: 6px 12px;
+    font-size: 14px;
+    padding: 6px 8px;
   }
   .nav .nav-criar,
   .nav-longo {
     display: none;
+  }
+  .nav .nav-curto {
+    display: inline;
   }
   .hero {
     gap: 14px;
@@ -5630,6 +5636,56 @@ body.modo-foto .btn-som {
   margin-inline: auto;
 }
 
+/* ---------- login sem senha e minha conta ---------- */
+.entrar-conta {
+  max-width: 480px;
+  width: 100%;
+  justify-self: center;
+}
+.entrar-conta form {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+.entrar-conta label {
+  display: grid;
+  gap: 6px;
+  font-weight: 800;
+}
+.entrar-conta input {
+  font: inherit;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: #0e2a22;
+}
+.entrar-conta input.code {
+  font: 900 28px var(--disp);
+  letter-spacing: 0.3em;
+  text-align: center;
+}
+.conta .btnrow {
+  align-items: center;
+}
+.nowrap {
+  white-space: nowrap;
+}
+
+.nav-curto {
+  display: none;
+}
+
+.foot-link {
+  color: inherit;
+}
+/* celular estreito: Guias sai do topo (fica no rodapé) para Entrar caber */
+@media (max-width: 420px) {
+  .nav .nav-guias {
+    display: none;
+  }
+}
 .pc-breve {
   background: transparent;
   border-style: dashed;

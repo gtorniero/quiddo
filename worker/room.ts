@@ -1,13 +1,14 @@
 // Um Durable Object por sala. É a fonte da verdade: guarda perguntas, jogadores, respostas e pontos,
 // mede o tempo das respostas e manda o estado absoluto para cada conexão por WebSocket.
 import { DurableObject } from 'cloudflare:workers';
-import { type CobrancaEnv, codigoValido } from './cobranca';
+import { codigoValido } from './cobranca';
+import type { LoginEnv } from './login';
 import { anotaUso } from './uso';
 import { LIMITS } from '../shared/rules';
 import * as G from '../shared/game';
 import type { ClientMsg, CreateRoomBody, ServerMsg } from '../shared/protocol';
 
-export interface Env extends CobrancaEnv {
+export interface Env extends LoginEnv {
   ROOMS: DurableObjectNamespace<Room>;
   ASSETS: Fetcher;
 }

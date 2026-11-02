@@ -5492,7 +5492,7 @@ body.modo-foto .btn-som {
   border: var(--bw) solid var(--line);
   border-radius: var(--r-big);
   box-shadow: 0 6px 0 var(--line);
-  padding: 22px 20px;
+  padding: 22px 18px;
 }
 .pc h2 {
   margin: 0;
@@ -5502,10 +5502,10 @@ body.modo-foto .btn-som {
 .pc-preco {
   margin: 0;
   white-space: nowrap;
-  font: 900 clamp(34px, 6vw, 44px) / 1 var(--disp);
+  font: 900 clamp(28px, 2.6vw, 34px) / 1 var(--disp);
 }
 .pc-preco small {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 800;
   margin-left: 2px;
 }
@@ -5685,4 +5685,27 @@ body.modo-foto .btn-som {
   .nav .nav-guias {
     display: none;
   }
+}
+.pc-breve {
+  background: transparent;
+  border-style: dashed;
+  box-shadow: none;
+}
+.pc-breve .selo {
+  position: absolute;
+  top: -16px;
+  right: 16px;
+  color: #0e2a22;
+}
+.pc-sub {
+  margin: -6px 0 0;
+  font-weight: 800;
+  color: var(--fg2);
+}
+.pc .btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.precos {
+  min-width: 0;
 }

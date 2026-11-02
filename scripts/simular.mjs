@@ -1,5 +1,6 @@
 // Simula uma partida inteira: 1 anfitrião e N jogadores entrando e respondendo numa sala.
 // Uso: npm run simular -- [endereço] [jogadores] [perguntas]
+//      (com a cobrança valendo, mais de 10 jogadores pede ACESSO=QD-XXXX-XXXX)
 //      npm run simular -- http://localhost:5173 200 5
 // Precisa do Node 22 ou mais novo (WebSocket nativo).
 
@@ -16,7 +17,8 @@ const log = (...a) => console.log(`[${((Date.now() - t0) / 1000).toFixed(1)}s]`,
 const r = await fetch(base + '/api/salas', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ questions, theme: 'corp', brand: { name: 'Simulação', color: '' }, logo: '' }),
+  // com a cobrança valendo, salas de mais de 10 pessoas precisam de um código pago: ACESSO=QD-XXXX-XXXX
+  body: JSON.stringify({ questions, theme: 'corp', brand: { name: 'Simulação', color: '' }, logo: '', acesso: process.env.ACESSO || undefined }),
 });
 const { code, hostKey } = await r.json();
 if (!code) throw new Error('Não abriu a sala: ' + r.status);

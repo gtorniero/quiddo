@@ -12,7 +12,7 @@ import { store } from '../lib/storage';
 import { THEME_ACC, applyTheme } from '../lib/theme';
 import { VISUAIS } from '../data/visuais';
 import { miniVisual } from '../lib/visuais-arte';
-import { type Cobranca, abrirPagamento, cobranca, cobrancaValendo, confereVolta, meuAcesso, testeCobranca } from '../lib/pagamento';
+import { type Cobranca, abrirPagamento, acessoAte, cobranca, cobrancaValendo, confereVolta, meuAcesso, testeCobranca } from '../lib/pagamento';
 
 export function page(): Page {
   return { title: 'Criar meu quiz', mount };
@@ -220,9 +220,10 @@ function mount(main: HTMLElement) {
   function plano() {
     if (!cobrancaValendo(cob) || !cob) return '';
     if (meuAcesso())
-      return `<p class="plano liberado"><span class="selo">Quiddo liberado</span> Salas de até ${cob.pago} pessoas neste navegador. Código: <strong>${esc(meuAcesso())}</strong></p>`;
-    return `<div class="plano"><p>Sala grátis: até ${cob.gratis} pessoas. Para turmas e eventos maiores, libere salas de até ${cob.pago} pessoas, com pagamento único.</p>
-      <button type="button" class="btn sec" data-act="liberar">Liberar até ${cob.pago} pessoas · a partir de R$ ${esc(cob.pix ? cob.precoPix : cob.precoCartao)}</button></div>`;
+      return `<p class="plano liberado"><span class="selo">Quiddo liberado</span> Salas de até ${cob.pago} pessoas neste navegador${acessoAte() ? `, até ${esc(acessoAte())}` : ''}. Código: <strong>${esc(meuAcesso())}</strong></p>`;
+    const menor = Math.min(...cob.planos.map((p) => Number(p.preco.replace(',', '.'))));
+    return `<div class="plano"><p>Sala grátis: até ${cob.gratis} pessoas. Vai ter mais gente? Libere salas de até ${cob.pago} pessoas, a partir de R$ ${esc(menor.toFixed(2).replace('.', ','))}. Dá para liberar também depois, com a sala aberta.</p>
+      <div class="plano-acoes"><button type="button" class="btn sec auto" data-act="liberar">Liberar até ${cob.pago} pessoas</button><a class="linkbtn" href="/precos" data-link>Ver os planos</a></div></div>`;
   }
 
   // ---------- ações ----------

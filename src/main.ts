@@ -12,6 +12,7 @@ import * as criar from './pages/criar';
 import * as host from './pages/host';
 import * as jogador from './pages/jogador';
 import * as guias from './pages/guias';
+import * as precos from './pages/precos';
 
 export type Cleanup = (() => void) | void;
 export interface Page {
@@ -28,6 +29,7 @@ function route(path: string): Page {
   // /entrar fica para o login com conta, no futuro; por enquanto leva ao mesmo lugar, para links antigos
   if (p === '/jogar' || p === '/entrar') return jogar.page();
   if (p === '/guias') return guias.lista();
+  if (p === '/precos') return precos.page();
   let m = /^\/guias\/([a-z0-9-]+)$/.exec(p);
   if (m) return guias.artigo(m[1]);
   m = /^\/host\/([A-Za-z0-9]{4})$/.exec(p);

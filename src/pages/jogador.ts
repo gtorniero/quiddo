@@ -124,7 +124,7 @@ function mount(main: HTMLElement, code: string) {
 
   function onMessage(m: ServerMsg) {
     if (m.type === 'error' || m.type === 'kicked' || m.type === 'closed') {
-      const c = m.type === 'error' ? m.code : m.type;
+      const c = m.type === 'error' ? m.code : m.type === 'closed' && m.motivo === 'inativa' ? 'inativa' : m.type;
       banner('');
       if (c === 'bad_nick') {
         etapa = 1;

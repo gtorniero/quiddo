@@ -61,7 +61,7 @@ function mount(main: HTMLElement, code: string) {
       return;
     }
     if (m.type === 'error' || m.type === 'closed') {
-      fatal = m.type === 'closed' ? 'closed' : m.code;
+      fatal = m.type === 'closed' ? (m.motivo === 'inativa' ? 'inativa' : 'closed') : m.code;
       sock.stop();
       banner('');
       main.innerHTML = errorScreen(fatal, '<a class="btn auto" href="/criar" data-link>Voltar para o editor</a>');

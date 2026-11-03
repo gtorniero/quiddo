@@ -2,6 +2,7 @@
 // (Stripe Checkout). Planos: Mensal (30 dias) e Passe 7 dias, os dois com salas de até 200 pessoas e jogos
 // ilimitados. Quem paga recebe um código QD-XXXX-XXXX, guardado neste navegador, que também vale em outro
 // aparelho até o fim do plano. A sala grátis vai até 10.
+import { track, trackPurchase, type Sale } from './measurement';
 import { esc } from './dom';
 import { qrSvg } from './qr';
 import { store } from './storage';
@@ -25,6 +26,7 @@ export interface Cobranca {
 /** Resposta do servidor quando o código vale. `expira` em ISO (vazio = sem prazo, como os códigos de cortesia). */
 export interface Acesso {
   codigo: string;
+  medicao?: Sale;
   plano?: Plano;
   expira?: string;
 }
@@ -90,6 +92,7 @@ export async function confereVolta(aoPagar: (codigo: string) => void): Promise<'
   for (let i = 0; i < 10 && ref; i++) {
     const r = await post<{ pago: boolean } & Partial<Acesso>>('/api/pix/status', { ref });
     if (r?.pago && r.codigo) {
+      await trackPurchase(r.medicao);
       guardaAcesso(r as Acesso);
       aoPagar(r.codigo);
       return 'ok';
@@ -203,6 +206,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
       return inicio(
         r?.erro === 'email' ? 'Confira o e-mail.' : r?.erro === 'oferta' ? 'A oferta vale só enquanto tem gente esperando para entrar na sala.' : 'Não deu para gerar o Pix agora. Tente de novo.',
       );
+    if (c?.modo === 'ligada' && !r.simulado) await track('begin_checkout', {plano:escolhido, payment_type:'pix', currency:'BRL', value:Number(precoDe(escolhido).replace(',', '.'))});
     const qr = r.qr64 ? `<img src="data:image/png;base64,${r.qr64}" alt="QR code do Pix" width="220" height="220">` : r.qr ? qrSvg(r.qr) : '';
     d.innerHTML = `${fechar}<h2 id="pg-t">Pague com Pix · R$ ${esc(precoDe(escolhido))}</h2><p class="muted">Abra o app do seu banco, escolha Pix e leia o QR code, ou copie o código.</p>
       <div class="pg-qr">${qr}</div>
@@ -213,7 +217,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
     const ref = r.ref;
     espera = window.setInterval(async () => {
       const s = await post<{ pago: boolean } & Partial<Acesso>>('/api/pix/status', { ref });
-      if (s?.pago && s.codigo) pago(s as Acesso);
+      if (s?.pago && s.codigo) { await trackPurchase(s.medicao); pago(s as Acesso); }
     }, 3000);
   };
 
@@ -229,6 +233,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
       return;
     }
     if (!r?.url) return inicio(r?.erro === 'email' ? 'Confira o e-mail.' : 'Não deu para abrir o pagamento agora. Tente de novo.');
+    if (c?.modo === 'ligada' && !c.cartaoTeste && !testeCobranca()) await track('begin_checkout', {plano:escolhido, payment_type:'card', currency:'BRL', value:Number(precoDe(escolhido).replace(',', '.'))});
     location.href = r.url;
   };
 

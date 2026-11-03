@@ -111,7 +111,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
   const c = await cobranca();
   // oferta da sala cheia: o anfitrião, com gente esperando, libera com desconto no Pix (o servidor confere na sala)
   const oferta = !!sala && !!c?.oferta && c.pix;
-  let escolhido: Plano = oferta ? 'oferta' : plano;
+  let escolhido: Plano = oferta ? 'oferta' : (c?.planos.some(p => p.id === plano) ? plano : 'mensal');
   const precoDe = (p: Plano) => (p === 'oferta' ? c?.oferta?.preco : c?.planos.find((x) => x.id === p)?.preco) || '';
   document.getElementById('pagamento')?.remove();
   const d = document.createElement('dialog');
@@ -130,7 +130,8 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
     d.remove();
   });
 
-  const rodape = `<p class="pg-legal">${c?.assinaturaMensal ? 'No cartão, o Mensal renova a cada mês; você cancela em Minha conta e usa até o fim do período pago. No Pix, o Mensal vale 30 dias, sem renovação automática.' : 'O Mensal vale 30 dias.'} O Passe vale 7 dias a partir do pagamento, sem assinatura. Use em qualquer aparelho com seu código. Desistiu? Devolvemos em até 7 dias. Vendido por Beyond the Work · CNPJ 69.746.447/0001-00.</p>`;
+  const apenasMensal = c?.modo === 'ligada' && c.planos.length === 1;
+  const rodape = apenasMensal ? '<p class="pg-legal">Assinatura no cartão por R$ 25,99/mês, com renovação automática. Cancele em Minha conta e use até o fim do período pago. Desistiu? Devolvemos em até 7 dias. Vendido por Beyond the Work · CNPJ 69.746.447/0001-00.</p>' : `<p class="pg-legal">${c?.assinaturaMensal ? 'No cartão, o Mensal renova a cada mês; você cancela em Minha conta e usa até o fim do período pago. No Pix, o Mensal vale 30 dias, sem renovação automática.' : 'O Mensal vale 30 dias.'} O Passe vale 7 dias a partir do pagamento, sem assinatura. Use em qualquer aparelho com seu código. Desistiu? Devolvemos em até 7 dias. Vendido por Beyond the Work · CNPJ 69.746.447/0001-00.</p>`;
   const fechar = `<button type="button" class="pg-x" data-pg="fechar" aria-label="Fechar">×</button>`;
 
   const inicio = (erro = '') => {

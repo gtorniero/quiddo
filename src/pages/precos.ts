@@ -46,13 +46,13 @@ function mount(main: HTMLElement) {
           <ul><li>${ok}Jogos ilimitados o mês todo</li><li>${ok}Use em qualquer aparelho com o seu código</li><li>${ok}Cancele quando quiser</li></ul>
           <button type="button" class="btn" data-plano="mensal">Assinar o Mensal</button>
         </article>
-        <article class="pc">
+        ${cob?.modo === 'ligada' ? '' : `<article class="pc">
           <h2>Passe 7 dias</h2>
           ${pessoas(200)}
           <p class="pc-preco">R$ ${esc(preco('semana'))}</p>
           <ul><li>${ok}Jogos ilimitados por 7 dias</li><li>${ok}Para um evento, sem assinatura</li></ul>
           <button type="button" class="btn sec" data-plano="semana">Comprar o Passe</button>
-        </article>
+        </article>`}
         <article class="pc pc-breve">
           <span class="selo">Em breve</span>
           <h2>PRO</h2>
@@ -65,7 +65,7 @@ function mount(main: HTMLElement) {
       <section class="panel prose faq">
         <h2>Perguntas</h2>
         <details><summary>Preciso pagar antes de criar o quiz?</summary><p>Não. Crie o quiz e abra a sala de graça. Se aparecerem mais de 10 pessoas, a sala de espera mostra o botão para liberar até 200, sem fechar a sala.</p></details>
-        <details><summary>Como eu pago?</summary><p>Com Pix, na hora. O cartão, o Apple Pay e o Google Pay entram em breve.</p></details>
+        <details><summary>Como eu pago?</summary><p>${cob?.modo === 'ligada' ? 'Assinatura mensal no cartão por R$ 25,99, com renovação automática. Cancele em Minha conta; o acesso continua até o fim do período pago.' : 'Em simulação, o Pix é de teste e não cobra dinheiro.'}</p></details>
         <details><summary>E se eu trocar de computador?</summary><p>Depois do pagamento você recebe um código. Use "Já paguei, tenho um código" em qualquer aparelho, com o código ou com o e-mail do pagamento.</p></details>
         <details><summary>Quem joga precisa pagar?</summary><p>Não. Só quem abre a sala. A turma entra pelo celular, sem cadastro e sem baixar app.</p></details>
         <details><summary>E se eu desistir?</summary><p>Devolvemos o valor em até 7 dias depois do pagamento.</p></details>

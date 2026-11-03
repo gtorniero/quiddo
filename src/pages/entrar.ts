@@ -39,7 +39,7 @@ function mount(main: HTMLElement) {
   let enviando = false;
 
   const passoEmail = (erro = '') => {
-    main.innerHTML = `<section class="panel entrar-conta"><h1>Entrar</h1><p class="muted">Sem senha: mandamos um código de 6 dígitos para o seu e-mail.</p>
+    main.innerHTML = `<section class="panel entrar-conta"><h1>Entrar</h1><p class="muted">Sem senha: mandamos um código de 6 dígitos para o seu e-mail.</p><p class="small">Não encontrou o e-mail? Confira também Spam ou Lixo eletrônico.</p>
       <form id="f-email" novalidate><label for="ent-email">Seu e-mail<input type="email" id="ent-email" autocomplete="email" inputmode="email" placeholder="voce@email.com" value="${esc(email)}" aria-describedby="ent-err"></label>
       <p class="err" id="ent-err" role="alert">${esc(erro)}</p><button class="btn" type="submit">Receber o código</button></form>
       <p class="small">Para jogar não precisa de conta: <a href="/jogar" data-link>digite o código da sala</a>.</p></section>`;
@@ -47,7 +47,7 @@ function mount(main: HTMLElement) {
   };
 
   const passoCodigo = (erro = '', simulado = '') => {
-    main.innerHTML = `<section class="panel entrar-conta"><h1>Confira seu e-mail</h1><p class="muted">Mandamos um código para <b>${esc(email)}</b>. Ele vale por 10 minutos.</p>
+    main.innerHTML = `<section class="panel entrar-conta"><h1>Confira seu e-mail</h1><p class="muted">Mandamos um código para <b>${esc(email)}</b>. Ele vale por 10 minutos.</p><p class="small">Confira também Spam ou Lixo eletrônico. Se encontrar nossa mensagem lá, marque como “Não é spam” para facilitar os próximos acessos.</p>
       ${simulado ? `<p class="pg-teste">Simulação: o e-mail ainda não está ligado. Seu código é <b>${esc(simulado)}</b>.</p>` : ''}
       <form id="f-codigo" novalidate><label for="ent-cod">Código<input type="text" id="ent-cod" class="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" aria-describedby="ent-err"></label>
       <p class="err" id="ent-err" role="alert">${esc(erro)}</p><button class="btn" type="submit">Entrar</button></form>

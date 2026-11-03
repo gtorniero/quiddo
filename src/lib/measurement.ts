@@ -5,7 +5,7 @@ let frame: HTMLIFrameElement | null = null;
 let ready = false;
 let currentPath: string | null = null;
 let lastPage = '';
-const pending: string[] = [];
+const pending: ((ok: boolean) => void)[] = [];
 const EVENTS = ['create_room', 'begin_checkout', 'purchase'] as const;
 let campaign = campaignQuery(location.search);
 export type Sale = { transaction_id: string; value: number; currency: 'BRL'; plano: 'mensal' | 'semana' | 'oferta' };
@@ -14,7 +14,7 @@ let sequence = 0;
 const callbacks = new Map<number, () => void>();
 
 function removeFrame() {
-  frame?.remove(); frame = null; ready = false; lastPage = ''; pending.length = 0;
+  frame?.remove(); frame = null; ready = false; lastPage = ''; for (const done of pending.splice(0)) done(false);
 }
 function send(event: string, id?: number, params: MeasureParams = {}) {
   if (!ready || !frame?.contentWindow || !currentPath || !consent) return;
@@ -32,8 +32,17 @@ function sync() {
   }
   if (ready && lastPage !== currentPath) { send('page_view'); lastPage = currentPath; }
 }
-export function track(event: typeof EVENTS[number], params: MeasureParams = {}): Promise<void> {
-  if (!currentPath || !(consent?.analytics || consent?.marketing) || !ready) return Promise.resolve();
+function bridgeReady(): Promise<boolean> {
+  if (ready) return Promise.resolve(true);
+  if (!currentPath || !(consent?.analytics || consent?.marketing)) return Promise.resolve(false);
+  return new Promise(resolve => {
+    const done = (ok: boolean) => { clearTimeout(timer); const i = pending.indexOf(done); if (i >= 0) pending.splice(i, 1); resolve(ok); };
+    const timer = window.setTimeout(() => done(false), 2000);
+    pending.push(done);
+  });
+}
+export async function track(event: typeof EVENTS[number], params: MeasureParams = {}): Promise<void> {
+  if (!currentPath || !(consent?.analytics || consent?.marketing) || !await bridgeReady()) return;
   return new Promise(resolve => {
     const id = ++sequence;
     const done = () => { clearTimeout(timer); callbacks.delete(id); resolve(); };
@@ -87,7 +96,7 @@ export function initMeasurement() {
     frame.contentWindow?.postMessage({ type: 'qd_init', analytics: !!consent?.analytics, marketing: !!consent?.marketing }, location.origin);
     ready = true;
     sync();
-    for (const event of pending.splice(0)) send(event);
+    for (const done of pending.splice(0)) done(true);
   });
   window.addEventListener('storage', e => {
     if (e.key !== CONSENT_KEY && e.key !== null) return;
@@ -100,7 +109,8 @@ export function initMeasurement() {
 
 /** Somente metadados retornados pelo status pago do servidor, nunca código de acesso. */
 export async function trackPurchase(sale?: Sale) {
-  if (!sale || !/^[a-f0-9]{64}$/.test(sale.transaction_id) || !Number.isFinite(sale.value) || sale.value <= 0 || sale.currency !== 'BRL' || !(consent?.analytics || consent?.marketing) || !ready || !currentPath) return;
+  if (!sale || !/^[a-f0-9]{64}$/.test(sale.transaction_id) || !Number.isFinite(sale.value) || sale.value <= 0 || sale.currency !== 'BRL' || !(consent?.analytics || consent?.marketing) || !currentPath) return;
+  if (!await bridgeReady()) return;
   try {
     const key = 'qd_sale_' + sale.transaction_id;
     if (localStorage.getItem(key)) return;

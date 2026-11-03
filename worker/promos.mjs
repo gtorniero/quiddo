@@ -19,7 +19,7 @@ export async function redeemPromo(db,request,site,product,raw,email){
  email=promoEmail(email);
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)||email.length>120)promoError(400,'Confira seu e-mail.');
  const code=String(raw||'').trim().toUpperCase();
- if(code.length<8||code.length>80)promoError(400,'Código inválido, vencido ou desativado.');
+ if(code.length<6||code.length>80)promoError(400,'Código inválido, vencido ou desativado.');
  const c=await db.prepare('SELECT * FROM promo_codes WHERE hash=? AND active=1 AND (expires IS NULL OR expires>?)').bind(await promoHash(code),Date.now()).first();
  if(!c||!JSON.parse(c.sites).includes(site))promoError(400,'Código inválido, vencido ou desativado.');
  const recipient=await promoHash(c.id+':'+email);

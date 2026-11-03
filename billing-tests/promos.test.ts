@@ -28,3 +28,5 @@ function testAdmin(){it('owner-only administration uses real verified session an
  const list=await (await adminPromos(new Request('https://www.quiddo.com.br/api/promos/admin',{headers:{Cookie:'qd_sessao='+token}}),env)).json() as any;
  expect(JSON.stringify(list)).not.toContain(b.codigo);expect(list.codigos).toHaveLength(2);
 });}
+
+it('accepts a six-character invitation with ampersand',async()=>{const {db}=await fixture();await db.prepare('UPDATE promo_codes SET hash=?').bind(await promoHash('AB&XYZ')).run();const g=await redeemPromo(db,req(),'quiddo','semana','ab&xyz','guest@example.com');expect(g.id).toBeTruthy();});

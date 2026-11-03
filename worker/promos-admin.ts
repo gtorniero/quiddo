@@ -20,7 +20,10 @@ export async function adminPromos(req:Request,env:LoginEnv){
  const label=String(b.label||'').trim().slice(0,80),sites=Array.isArray(b.sites)?[...new Set(b.sites)].filter(x=>['quiddo','retrozap','sportdna'].includes(String(x))):[];
  const expires=b.expires?Date.parse(b.expires):null;
  if(!label||!sites.length||(expires!==null&&(!Number.isFinite(expires)||expires<=Date.now())))return json({erro:'Confira nome, sites e validade.'},400);
- const codigo='BTW-'+crypto.randomUUID().replaceAll('-','').toUpperCase();
+ const custom=String(b.codigo||'').trim().toUpperCase();
+ if(custom&&!/^[A-Z0-9&_-]{6,80}$/.test(custom))return json({erro:'Use de 6 a 80 letras, números, &, hífen ou sublinhado.'},400);
+ const codigo=custom||'BTW-'+crypto.randomUUID().replaceAll('-','').toUpperCase();
+ if(await env.PROMOS.prepare('SELECT id FROM promo_codes WHERE hash=?').bind(await promoHash(codigo)).first())return json({erro:'Este código já existe. Use outro ou reative o existente.'},409);
  await env.PROMOS.prepare('INSERT INTO promo_codes(id,hash,label,sites,expires,created) VALUES (?,?,?,?,?,?)').bind(crypto.randomUUID(),await promoHash(codigo),label,JSON.stringify(sites),expires,Date.now()).run();
  return json({ok:true,codigo});
  }catch{return json({erro:'Não foi possível concluir. Tente novamente.'},503);}

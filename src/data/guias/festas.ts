@@ -256,4 +256,67 @@ export const FESTAS: Guia[] = [
 <li>Acabe enquanto todo mundo ainda quer mais. A próxima festa já tem atração garantida.</li>
 </ul>`,
   },
+  {
+    slug: 'quiz-de-cha-de-bebe-e-cha-revelacao',
+    titulo: 'Quiz para chá de bebê e chá revelação: perguntas e como montar',
+    resumo: 'Perguntas sobre os pais, palpites sobre o bebê e curiosidades, com a revelação do sexo na última pergunta',
+    publico: 'festas',
+    corpo: `
+<p>O quiz deixa o chá de bebê e o chá revelação muito mais animado: os convidados competem pelo celular, descobrem histórias dos pais e, no chá revelação, a grande notícia pode aparecer na última pergunta, na TV, com todo mundo olhando. Veja como montar e use as perguntas prontas abaixo.</p>
+<h2>Como montar em 15 minutos</h2>
+<ol>
+<li><strong>Escolha o modo Amigos & família</strong> no editor do Quiddo e o visual que combina com a festa. O visual Amor, com corações, fica bonito no chá.</li>
+<li><strong>Escreva de 12 a 15 perguntas</strong> em três blocos: sobre os pais, palpites sobre o bebê e curiosidades.</li>
+<li><strong>Confirme as respostas</strong> com os pais antes da festa, longe dos convidados.</li>
+<li><strong>Abra a sala</strong> na TV ou no notebook. Os convidados entram pelo celular com o código de 4 letras ou pelo QR code, sem cadastro.</li>
+<li><strong>Guarde o melhor para o fim.</strong> No chá revelação, a última pergunta é "Menino ou menina?".</li>
+</ol>
+<h2>Perguntas sobre os pais</h2>
+<p>Usamos Carla e Diego como exemplo. Troque pelos nomes reais e ajuste as alternativas para a história de vocês.</p>
+<ol>
+<li><strong>Quem vai trocar mais fraldas?</strong> A) A Carla B) O Diego</li>
+<li><strong>Quem vai acordar primeiro quando o bebê chorar de madrugada?</strong> A) A Carla B) O Diego</li>
+<li><strong>Qual foi o primeiro desejo da Carla na gravidez?</strong> A) Açaí B) Pastel C) Manga verde com sal D) Brigadeiro</li>
+<li><strong>Quem chorou primeiro ao ver o ultrassom?</strong> A) A Carla B) O Diego C) Os dois D) A avó</li>
+<li><strong>Quem vai ser o mais coruja?</strong> A) A Carla B) O Diego C) A avó D) O tio</li>
+<li><strong>Como o Diego reagiu ao saber da gravidez?</strong> A) Chorou B) Pulou de alegria C) Ficou sem palavras D) Ligou para a mãe na hora</li>
+<li><strong>Qual era o apelido do Diego quando criança?</strong> Coloque quatro apelidos parecidos e só um verdadeiro.</li>
+<li><strong>Quem vai ser mais rígido com a hora de dormir?</strong> A) A Carla B) O Diego</li>
+</ol>
+<h2>Palpites sobre o bebê</h2>
+<p>Estas perguntas têm uma resposta certa que só os pais sabem, ou que vai ser revelada na hora.</p>
+<ol start="9">
+<li><strong>Qual destes nomes está na lista dos pais?</strong> Coloque um nome da lista real e três que eles descartaram.</li>
+<li><strong>Qual é a cor principal do quarto do bebê?</strong> A) Verde B) Amarelo C) Cinza D) Bege</li>
+<li><strong>Qual tema foi escolhido para o quarto?</strong> A) Bichinhos da floresta B) Fundo do mar C) Céu e nuvens D) Safári</li>
+<li><strong>Com quem o bebê vai parecer mais, segundo a família da Carla?</strong> A) Com a Carla B) Com o Diego</li>
+<li><strong>Qual foi o primeiro presente que o bebê ganhou?</strong> A) Um macacão B) Um bichinho de pelúcia C) Um livro D) Um sapatinho</li>
+</ol>
+<h2>Curiosidades sobre bebês e gravidez</h2>
+<ol start="14">
+<li><strong>Quantas semanas dura, em média, uma gestação completa?</strong> A) 32 B) 36 C) 40 D) 44. <em>Resposta: C</em></li>
+<li><strong>No cavalo-marinho, quem carrega os filhotes até eles nascerem?</strong> A) A fêmea B) O macho C) Os dois D) Nenhum, os ovos ficam no mar. <em>Resposta: B</em></li>
+<li><strong>Qual mamífero terrestre tem a gestação mais longa, de quase dois anos?</strong> A) Girafa B) Elefante C) Rinoceronte D) Baleia. <em>Resposta: B</em></li>
+<li><strong>Como se chama o filhote da ovelha?</strong> A) Cabrito B) Cordeiro C) Bezerro D) Potro. <em>Resposta: B</em></li>
+<li><strong>Qual destes itens não costuma estar na lista do enxoval?</strong> A) Body B) Manta C) Babador D) Chuteira. <em>Resposta: D</em></li>
+<li><strong>Quantos dentes de leite tem uma criança, normalmente?</strong> A) 16 B) 20 C) 24 D) 32. <em>Resposta: B</em></li>
+</ol>
+<h2>A revelação na última pergunta</h2>
+<p>No chá revelação, o quiz pode ser o momento da notícia. Faça assim:</p>
+<ul>
+<li>Escreva a última pergunta: <strong>"Afinal, é menino ou menina?"</strong> com A) Menino e B) Menina.</li>
+<li>Peça para alguém de confiança marcar a resposta certa no editor, sem os pais verem, se eles também não sabem.</li>
+<li>Ligue a opção <strong>"A última pergunta vale o dobro"</strong>. Quem acertar o palpite pode virar o jogo.</li>
+<li>Na revelação, primeiro aparecem os votos de cada lado. Um instante depois, a resposta certa ganha o selo verde. É a hora de soltar os balões ou estourar o confete.</li>
+<li>Depois vem o pódio, com suspense, do 3º para o 1º lugar.</li>
+</ul>
+<h2>Prêmios e dicas</h2>
+<ul>
+<li><strong>Prêmio do pódio:</strong> uma caixa de bombons, um vaso de planta ou o direito de ser o primeiro a pegar o bebê no colo na visita.</li>
+<li><strong>Sorteio no fim:</strong> o Quiddo sorteia nomes entre todos ou só entre quem pontuou. Bom para distribuir as lembrancinhas.</li>
+<li><strong>Tempo de 20 segundos:</strong> no chá tem avó, tio e criança. Dê tempo para todo mundo ler.</li>
+<li><strong>Teste antes:</strong> abra a sala e jogue sozinho pelo celular uma vez, para conferir as respostas marcadas.</li>
+</ul>
+<p>Monte o quiz do chá no Quiddo, abra a sala e mande o convite no grupo da família pelo WhatsApp. Até 10 pessoas, é de graça.</p>`,
+  },
 ];

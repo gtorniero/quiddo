@@ -29,7 +29,7 @@ Para testar com o celular na mesma rede Wi-Fi: `npm run dev -- --host` e abra no
 | `/jogar` | Digitar o código da sala |
 | `/entrar` | Login sem senha (código por e-mail) |
 | `/conta` | Plano, validade e sair |
-| `/guias` e `/guias/{slug}` | Guias. Os textos ficam em `src/data/guias.ts` |
+| `/guias` e `/guias/{slug}` | Guias. Os textos ficam em `src/data/guias/*.ts`. O `npm run build` gera HTML pronto de cada guia (`scripts/prerender.mjs`), mais `sitemap.xml` e `robots.txt`, para os buscadores lerem sem JavaScript |
 
 Na tela do anfitrião, a seta para a direita, Page Down ou espaço avançam o jogo. Isso faz o passador de slides funcionar.
 

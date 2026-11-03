@@ -32,6 +32,7 @@ const NOMES = ['Ana', 'Leo', 'Duda', 'Bia', 'Caio', 'Gabi', 'Rafa', 'Teo', 'Lu',
 export function page(): Page {
   return {
     title: 'Quiddo',
+    canonical: 'https://www.quiddo.com.br/',
     wide: true,
     mount(main) {
       // a home sempre usa o visual colorido do Quiddo

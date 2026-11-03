@@ -63,7 +63,7 @@ function mount(main: HTMLElement) {
           <button type="button" class="btn sec" disabled>Em breve</button>
         </article>
       </section>
-      <section class="panel prose faq">
+      <section class="panel prose faq" id="perguntas">
         <h2>Perguntas</h2>
         <details><summary>Preciso pagar antes de criar o quiz?</summary><p>Não. Crie o quiz e abra a sala de graça. Se aparecerem mais de 10 pessoas, a sala de espera mostra o botão para liberar até 200, sem fechar a sala.</p></details>
         <details><summary>Como eu pago?</summary><p>${cob?.modo === 'ligada' ? 'Mensal por R$ 25,99 no cartão, com renovação automática. Passe de 7 dias por R$ 15,99, pago uma vez. Consulte as formas de pagamento disponíveis ao escolher o passe. Cancele em Minha conta; o acesso continua até o fim do período pago.' : 'Em simulação, o Pix é de teste e não cobra dinheiro.'}</p></details>
@@ -82,6 +82,8 @@ function mount(main: HTMLElement) {
   };
   main.addEventListener('click', onClick);
   render();
+  // link "perguntas frequentes" da janela de pagamento
+  if (location.hash === '#perguntas') requestAnimationFrame(() => main.querySelector('#perguntas')?.scrollIntoView());
   cobranca().then((c) => {
     cob = c;
     render();

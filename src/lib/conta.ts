@@ -14,6 +14,7 @@ export async function sincronizaConta(): Promise<{ email: string | null; acesso:
     if (d.email) store.set('logado', d.email);
     else store.del('logado');
     if (d.acesso) guardaAcesso(d.acesso);
+    else if (d.email) { store.del('acesso'); store.del('acessoAte'); }
     return d;
   } catch {
     return { email: logado() || null, acesso: null };
@@ -23,4 +24,6 @@ export async function sincronizaConta(): Promise<{ email: string | null; acesso:
 export async function sair() {
   await fetch('/api/sair', { method: 'POST' }).catch(() => {});
   store.del('logado');
+  store.del('acesso');
+  store.del('acessoAte');
 }

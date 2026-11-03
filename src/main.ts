@@ -1,5 +1,7 @@
 // Roteador da aplicação. Cada página monta o <main> e devolve uma função de limpeza.
 import './styles.css';
+import { initMeasurement, measurePage } from './lib/measurement';
+import * as privacidade from './pages/privacidade';
 
 // o endereço provisório da Cloudflare leva para o domínio oficial, no mesmo caminho
 if (location.hostname.endsWith('.workers.dev')) location.replace(`https://www.quiddo.com.br${location.pathname}${location.search}`);
@@ -33,6 +35,7 @@ export interface Page {
 function route(path: string): Page {
   const p = path.replace(/\/+$/, '') || '/';
   if (p === '/') return home.page();
+  if (p === '/privacidade') return privacidade.page();
   if (p === '/criar') return criar.page();
   if (p === '/jogar') return jogar.page();
   if (p === '/entrar') return entrar.page();
@@ -98,6 +101,7 @@ function render() {
   metas(page);
   main.innerHTML = '';
   cleanup = page.mount(main);
+  measurePage(location.pathname);
 }
 
 window.addEventListener('sr:nav', (e) => {
@@ -114,6 +118,7 @@ document.addEventListener('click', (e) => {
   navigate(a.getAttribute('href')!);
 });
 window.addEventListener('popstate', render);
+initMeasurement();
 render();
 // quem entrou na conta traz o plano comprado em outro aparelho (a página de conta faz isso sozinha)
 if (logado() && location.pathname !== '/conta') sincronizaConta();

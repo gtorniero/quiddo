@@ -12,7 +12,7 @@ export function header(path: string, compact = false) {
     `<a class="logo" href="/" data-link aria-label="Quiddo, página inicial">${MARCA}</a>` +
     (compact
       ? ''
-      : `<nav class="nav" aria-label="Principal"><a class="nav-criar" href="/criar" data-link${cur('/criar')}>Criar meu quiz</a><a href="/jogar" data-link${cur('/jogar')}>Jogar<span class="nav-longo">&nbsp;com código</span></a><a class="nav-guias" href="/guias" data-link${cur('/guias')}>Guias</a><a href="/precos" data-link${cur('/precos')}>Preços</a>${
+      : `<nav class="nav" aria-label="Principal"><a class="nav-criar" href="/criar" data-link${cur('/criar')}>Criar meu quiz</a><a href="/jogar" data-link${cur('/jogar')}>Jogar<span class="nav-longo">&nbsp;com código</span></a><a class="nav-guias" href="/guias" data-link${cur('/guias')}>Guias</a><a href="/precos" data-link${cur('/precos')}>Planos</a>${
           logado() ? `<a class="nav-conta" href="/conta" data-link${cur('/conta')}><span class="nav-curto">Conta</span><span class="nav-longo">Minha conta</span></a>` : `<a class="nav-conta" href="/entrar" data-link${cur('/entrar')}>Entrar</a>`
         }</nav>`);
 }

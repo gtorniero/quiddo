@@ -1,3 +1,4 @@
+import { track } from '../lib/measurement';
 // /criar: editor do quiz e configuração do anfitrião (modo, visual, tempo, marca, perguntas) e abertura da sala.
 // O visual só aparece depois do modo e lista apenas os visuais daquele modo. Floresta é o padrão.
 import type { Page } from '../main';
@@ -245,6 +246,7 @@ function mount(main: HTMLElement) {
       const d = (await r.json().catch(() => ({}))) as Partial<CreateRoomResult> & { erro?: string };
       if (!r.ok || !d.code || !d.hostKey) throw new Error(d.erro || 'Não deu para abrir a sala agora. Tente de novo.');
       store.set('host:' + d.code, d.hostKey);
+      await track('create_room');
       navigate('/host/' + d.code);
     } catch (e) {
       abrindo = false;

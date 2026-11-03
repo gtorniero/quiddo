@@ -208,7 +208,7 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     STRIPE_PRICE_MENSAL: env.STRIPE_LIVE_PRICE_MENSAL,
     STRIPE_PORTAL_CONFIG: env.STRIPE_LIVE_PORTAL_CONFIG,
   };
-  const somenteMensal = env.COBRANCA === 'ligada';
+  const somenteCartao = env.COBRANCA === 'ligada';
   const db = env.DB;
 
   // GET /api/conta: e-mail de quem está logado e o plano em dia ligado a ele
@@ -223,13 +223,13 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
   if (caminho === '/api/cobranca') {
     return json({
       modo: modo(env),
-      pix: !somenteMensal && !!db && (!!tok(env) || pixSimulado(env)),
+      pix: !somenteCartao && !!db && (!!tok(env) || pixSimulado(env)),
       pixSimulado: pixSimulado(env),
       cartao: !!db && cartaoPronto(env, new URL(req.url).searchParams.get('teste_cobranca') === '1'),
       assinaturaMensal: mensalConfigurado(env),
       cartaoTeste: stripeTeste(env),
       oferta: { preco: virgula(preco(env, 'oferta')), de: virgula(preco(env, 'semana')) },
-      planos: ((somenteMensal ? ['mensal'] : ['mensal', 'semana']) as Plano[]).map((id) => ({ id, nome: PLANOS[id].nome, dias: PLANOS[id].dias, preco: virgula(preco(env, id)) })),
+      planos: (['mensal', 'semana'] as Plano[]).map((id) => ({ id, nome: PLANOS[id].nome, dias: PLANOS[id].dias, preco: virgula(preco(env, id)) })),
       gratis: 10,
       pago: 200,
     });
@@ -243,7 +243,7 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
 
   // POST /api/pix {email}: cria o Pix e devolve o QR
   if (caminho === '/api/pix') {
-    if (somenteMensal) return json({ erro: 'indisponivel' }, 503);
+    if (somenteCartao) return json({ erro: 'indisponivel' }, 503);
     if (!db || !(tok(env) || pixSimulado(env))) return json({ erro: 'indisponivel' }, 503);
     if (modo(env) === 'desligada') return json({ erro: 'desligada' }, 403);
     const pedido = await lerJson(req);
@@ -312,7 +312,15 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     if (!ref) return json({ erro: 'pedido' }, 400);
     await tabela(db);
     const a = await confirma(env, ref);
-    return json(a ? { pago: true, ...a } : { pago: false });
+    let medicao;
+    if (a) {
+      const row = await db.prepare('SELECT ref,valor,modo,ordem,status,plano FROM compras WHERE ref = ?').bind(ref).first<Compra>();
+      if (row?.status === 'pago' && row.modo === 'ligada' && !row.ordem.startsWith('sim:') && Number(row.valor) > 0) {
+        const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('quiddo:purchase:' + row.ref));
+        medicao = { transaction_id: Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2,'0')).join(''), value:Number(row.valor), currency:'BRL', plano:planoDe(row.plano) };
+      }
+    }
+    return json(a ? { pago: true, ...a, ...(medicao ? {medicao} : {}) } : { pago: false });
   }
 
   // POST /api/cartao {email, volta}: cria a página de pagamento do Stripe (cartão, Apple Pay, Google Pay)
@@ -322,7 +330,6 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     const c = await lerJson(req);
     if (!cartaoPronto(env, c?.testeCobranca === true)) return json({ erro: 'indisponivel' }, 503);
     if (modo(env) !== 'ligada' && c?.testeCobranca !== true) return json({ erro: 'teste' }, 403);
-    if (somenteMensal && c?.plano !== 'mensal') return json({ erro: 'plano_indisponivel' }, 400);
     const contaEmail = await emailDaSessao(req, env);
     const email = contaEmail || emailDe(c);
     if (!email) return json({ erro: 'email' }, 400);

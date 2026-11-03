@@ -134,7 +134,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
   });
 
   const apenasMensal = c?.modo === 'ligada' && c.planos.length === 1;
-  const rodape = apenasMensal ? '<p class="pg-legal">Assinatura no cartão por R$ 25,99/mês, com renovação automática. Cancele em Minha conta e use até o fim do período pago. Desistiu? Devolvemos em até 7 dias. Vendido por Beyond the Work · CNPJ 69.746.447/0001-00.</p>' : `<p class="pg-legal">${c?.assinaturaMensal ? 'No cartão, o Mensal renova a cada mês; você cancela em Minha conta e usa até o fim do período pago. No Pix, o Mensal vale 30 dias, sem renovação automática.' : 'O Mensal vale 30 dias.'} O Passe vale 7 dias a partir do pagamento, sem assinatura. Use em qualquer aparelho com seu código. Desistiu? Devolvemos em até 7 dias. Vendido por Beyond the Work · CNPJ 69.746.447/0001-00.</p>`;
+  const rodape = apenasMensal ? '<p class="pg-legal">Assinatura no cartão por R$ 25,99/mês, com renovação automática. Cancele em Minha conta e use até o fim do período pago. Desistiu? Devolvemos em até 7 dias. Vendido por Beyond the Work · CNPJ 69.746.447/0001-00.</p>' : `<p class="pg-legal">${c?.assinaturaMensal ? 'No cartão, o Mensal renova a cada mês; você cancela em Minha conta e usa até o fim do período pago. ' + (c.pix ? 'No Pix, o Mensal vale 30 dias, sem renovação automática.' : '') + '' : 'O Mensal vale 30 dias.'} O Passe vale 7 dias a partir do pagamento, sem assinatura. Use em qualquer aparelho com seu código. Desistiu? Devolvemos em até 7 dias. Vendido por Beyond the Work · CNPJ 69.746.447/0001-00.</p>`;
   const fechar = `<button type="button" class="pg-x" data-pg="fechar" aria-label="Fechar">×</button>`;
 
   const inicio = (erro = '') => {

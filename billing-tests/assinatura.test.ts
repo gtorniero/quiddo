@@ -177,14 +177,14 @@ describe('Quiddo Stripe mensal', () => {
   const r = await rotaCobranca(new Request(ORIGIN + '/api/cobranca'), env, '/api/cobranca');
   const c = await r!.json() as any;
   expect(c.cartao).toBe(false); expect(c.pix).toBe(false);
-  expect(c.planos.map((p: any) => p.id)).toEqual(['mensal']);
+  expect(c.planos.map((p: any) => p.id)).toEqual(['mensal','semana']);
  });
- it('oferece só mensal no cartão e recusa Passe e Pix no servidor', async () => {
+ it('oferece mensal e avulso no cartão e recusa Pix no servidor', async () => {
   Object.assign(env, { COBRANCA: 'ligada', STRIPE_LIVE_KEY: ['rk','live','fixture'].join('_'), STRIPE_LIVE_PRICE_MENSAL:'price_live', STRIPE_LIVE_PORTAL_CONFIG:'bpc_live', STRIPE_LIVE_WEBHOOK_SECRET:'unit-live' });
   const r = await rotaCobranca(new Request(ORIGIN + '/api/cobranca'), env, '/api/cobranca');
   const c = await r!.json() as any;
   expect(c).toMatchObject({ cartao:true, cartaoTeste:false, pix:false, assinaturaMensal:true });
-  expect((await rotaCobranca(request('/api/cartao', { plano:'semana' }), env, '/api/cartao'))!.status).toBe(400);
+  expect(c.planos.map((p: any) => p.id)).toEqual(['mensal','semana']);
   expect((await rotaCobranca(request('/api/pix', { plano:'mensal' }), env, '/api/pix'))!.status).toBe(503);
   expect(apiCalls).toHaveLength(0);
  });

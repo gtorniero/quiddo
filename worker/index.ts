@@ -5,6 +5,7 @@
 //   GET  /api/salas/{CODIGO}/img/{N} imagem da pergunta N
 //   /api/cobranca, /api/pix, /api/pix/status, /api/cartao, /api/acesso: cobrança (worker/cobranca.ts)
 // O resto vai para os arquivos estáticos; rotas como /criar e /ABCD caem no index.html.
+import {adminPromos} from './promos-admin';
 import type { CreateRoomResult } from '../shared/protocol';
 import { CODE_RE, LIMITS, normalizeCode, randomCode, validateCreate } from '../shared/rules';
 import { cobrancaVale, codigoValido, rotaCobranca } from './cobranca';
@@ -23,6 +24,8 @@ export default {
     const parts = url.pathname.split('/').filter(Boolean); // ['api', 'salas', 'ABCD', 'ws']
 
     if (parts[0] !== 'api') return env.ASSETS.fetch(req);
+
+    if(url.pathname==='/api/promos/admin')return adminPromos(req,env);
 
     // uso por dia, para saber quando o plano grátis está chegando no limite
     if (url.pathname === '/api/uso' && req.method === 'GET') return rotaUso(env);

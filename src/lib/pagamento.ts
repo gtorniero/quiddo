@@ -138,6 +138,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
   const gratis = `<button type="button" class="linkbtn pg-gratis" data-pg="fechar">Continuar grátis, até ${c?.gratis || 10} pessoas</button>`;
   const fechar = `<button type="button" class="pg-x" data-pg="fechar" aria-label="Fechar">×</button>`;
 
+  const promo = '<form class="pg-form" data-pg-promo><label>Código promocional<input name="promo" autocomplete="off" maxlength="80" required></label><p class="small">Convite: 7 dias grátis, sem assinatura.</p><button class="btn sec" type="submit">Aplicar código</button><p role="alert" data-promo-error></p></form>';
   const inicio = (erro = '') => {
     if (!c || !(c.pix || c.cartao)) {
       d.innerHTML = `${fechar}<h2 id="pg-t">Pagamento indisponível</h2><p class="muted">O pagamento ainda não está ligado neste site. Tente mais tarde.</p>`;
@@ -157,7 +158,8 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
           ${c.pix ? `<button type="submit" class="btn pg-pix" data-meio="pix">${ICONE_PIX}<span>Pagar R$ ${esc(c.oferta!.preco)} com Pix e liberar</span></button>` : ''}
           ${c.cartao ? `<button type="submit" class="btn sec pg-cartao" data-meio="cartao">Pagar R$ ${esc(c.oferta!.preco)} com cartão e liberar</button>` : ''}
         </form>
-        ${gratis}
+        ${promo}
+      ${gratis}
         ${c.modo === 'teste' || c.modo === 'simulacao' ? `<p class="pg-teste">Simulação: o Pix é de mentira e aprova sozinho. Nada é cobrado de verdade.</p>` : ''}
         ${rodape}`;
       d.querySelector<HTMLInputElement>('input[type="email"]#pg-email, .pg-pix')?.focus();
@@ -184,6 +186,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
         ${c.pix ? `<button type="submit" class="btn pg-pix" data-meio="pix"${escolhido === 'mensal' ? ' hidden' : ''}>${ICONE_PIX}<span>Pagar com Pix · R$ <span data-preco>${esc(precoDe(escolhido))}</span></span></button>` : ''}
         ${c.cartao ? `<button type="submit" class="btn sec pg-cartao" data-meio="cartao"><span>Cartão, Apple Pay ou Google Pay · R$ <span data-preco>${esc(precoDe(escolhido))}</span></span></button>` : ''}
       </form>
+      ${promo}
       ${gratis}
       <button type="button" class="linkbtn" data-pg="codigo">Já paguei, tenho um código</button>
       ${c.modo === 'teste' || c.modo === 'simulacao' ? `<p class="pg-teste">${c.modo === 'simulacao' ? 'Simulação' : 'Modo de teste'}${c.pixSimulado ? ': o Pix é de mentira e aprova sozinho' : ''}. Nada é cobrado de verdade.</p>` : ''}
@@ -280,6 +283,19 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
   d.addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = e.target as HTMLFormElement;
+    if (f.matches('[data-pg-promo]')) {
+      const email=logado() || d.querySelector<HTMLInputElement>('#pg-email')?.value || '';
+      const error=f.querySelector<HTMLElement>('[data-promo-error]')!;
+      const button=f.querySelector<HTMLButtonElement>('button')!;
+      if(!email){error.textContent='Informe seu e-mail acima.';return;}
+      button.disabled=true;
+      try {
+        const r=await post<{ok?:boolean;erro?:string}&Partial<Acesso>>('/api/promo',{email,codigo:new FormData(f).get('promo')});
+        if(r?.ok&&r.codigo)return pago(r as Acesso);
+        error.textContent=r?.erro||'Não foi possível aplicar o código.';
+      } finally {button.disabled=false;}
+      return;
+    }
     if (f.matches('[data-pg-codigo]')) {
       const v = (f.querySelector<HTMLInputElement>('#pg-cod')?.value || '').trim();
       if (!v) return codigo('Digite o código.');

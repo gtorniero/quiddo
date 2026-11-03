@@ -10,11 +10,14 @@
 // Ver compras: Cloudflare > D1 > quiddo > Console:  SELECT * FROM compras ORDER BY criado DESC;
 // Só passam por aqui o e-mail de quem paga, o identificador da compra e o código. Nada do quiz.
 
+import {redeemPromo} from './promos.mjs';
 import { emailDaSessao } from './login';
 import { checkoutMensal, confirmarAssinatura, mensalConfigurado, portalAssinatura, situacaoAssinatura, stripeAmbiente, webhookStripe } from './stripe-assinatura';
 
 export interface CobrancaEnv {
   DB?: D1Database;
+  PROMOS?: D1Database;
+  PROMO_ADMIN_EMAIL?: string;
   COBRANCA?: string;
   MP_TOKEN?: string;
   STRIPE_KEY?: string;
@@ -238,6 +241,23 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
   if (caminho === '/api/stripe-webhook') {
     if (db) await tabela(db);
     return webhookStripe(req, env, ref => confirma(env, ref));
+  }
+
+  if (caminho === '/api/promo') {
+    if (!db) return json({erro:'Indisponível.'},503);
+    if (req.headers.get('Origin') !== new URL(req.url).origin) return json({erro:'Origem inválida.'},403);
+    try {
+      const b=await lerJson(req);
+      const email=(await emailDaSessao(req,env)) || emailDe(b);
+      const g=await redeemPromo(env.PROMOS,req,'quiddo','semana',b?.codigo,email);
+      const expira=new Date(g.created+7*86400000).toISOString();
+      if (expira<=new Date().toISOString()) return json({erro:'Você já utilizou os 7 dias deste código.'},409);
+      await tabela(db);
+      const ref='promo:'+g.id, codigo=`QD-${aleatorio(4)}-${aleatorio(4)}`;
+      await db.prepare("INSERT OR IGNORE INTO compras (ref,ordem,email,status,codigo,criado,pago,valor,modo,plano,expira,tipo) VALUES (?,? ,?,'pago',?,?,?,'0','ligada','semana',?,'promo')").bind(ref,ref,email,codigo,new Date(g.created).toISOString(),new Date(g.created).toISOString(),expira).run();
+      const a=await db.prepare('SELECT codigo,plano,expira FROM compras WHERE ref=?').bind(ref).first<Acesso>();
+      return json({ok:true,...a});
+    } catch(e) {const error=e as Error & {status?:number};return json({erro:error.status?error.message:'Não foi possível aplicar o código.'},error.status||503);}
   }
 
   // POST /api/pix {email}: cria o Pix e devolve o QR

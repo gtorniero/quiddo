@@ -113,6 +113,8 @@ Mesmo modelo do Retrozap. Os planos estão em `/precos`:
 | Mensal | R$ 25,99 (`PRECO_MENSAL`) | Salas de até 200 pessoas, jogos ilimitados por 30 dias |
 | Passe 7 dias | R$ 15,99 (`PRECO_SEMANA`) | Salas de até 200 pessoas, jogos ilimitados por 7 dias |
 
+**Janela de pagamento:** só os planos, o e-mail, os botões de pagar, "Continuar grátis, até 10 pessoas" (fecha a janela) e o link "Dúvidas? Veja as perguntas frequentes" (abre `/precos#perguntas` em outra aba). Regras de renovação e devolução ficam nas perguntas frequentes, não na janela.
+
 **Oferta da sala cheia:** quando alguém tenta entrar na sala grátis cheia, o celular dessa pessoa fica esperando (e entra sozinho quando liberar) e a tela do anfitrião mostra no topo quantos estão esperando, com o Passe 7 dias de R$ 15,99 por R$ 11,99 (`PRECO_OFERTA`), só no Pix. O servidor confere na própria sala: chave do anfitrião, sala grátis e gente esperando.
 
 O quiz é criado e a sala abre de graça; o pagamento só aparece quando a pessoa quer mais de 10 (no editor, na sala de espera ou na página de preços). O Mensal ainda é cobrado como 30 dias avulsos; a renovação automática no cartão entra quando o Stripe for configurado.

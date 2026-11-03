@@ -133,8 +133,9 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
     d.remove();
   });
 
-  const apenasMensal = c?.modo === 'ligada' && c.planos.length === 1;
-  const rodape = apenasMensal ? '<p class="pg-legal">Assinatura no cartão por R$ 25,99/mês, com renovação automática. Cancele em Minha conta e use até o fim do período pago. Desistiu? Devolvemos em até 7 dias. Vendido por Beyond the Work · CNPJ 69.746.447/0001-00.</p>' : `<p class="pg-legal">${c?.assinaturaMensal ? 'No cartão, o Mensal renova a cada mês; você cancela em Minha conta e usa até o fim do período pago. ' + 'O Mensal é exclusivo do cartão. ' : 'O Mensal vale 30 dias.'} O Passe vale 7 dias a partir do pagamento, sem assinatura. Use em qualquer aparelho com seu código. Desistiu? Devolvemos em até 7 dias. Vendido por Beyond the Work · CNPJ 69.746.447/0001-00.</p>`;
+  // regras e devolução ficam nas perguntas frequentes (abre em outra aba, para não sair da sala)
+  const rodape = '<p class="pg-legal"><a href="/precos#perguntas" target="_blank" rel="noopener">Dúvidas? Veja as perguntas frequentes</a></p>';
+  const gratis = `<button type="button" class="linkbtn pg-gratis" data-pg="fechar">Continuar grátis, até ${c?.gratis || 10} pessoas</button>`;
   const fechar = `<button type="button" class="pg-x" data-pg="fechar" aria-label="Fechar">×</button>`;
 
   const inicio = (erro = '') => {
@@ -156,6 +157,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
           ${c.pix ? `<button type="submit" class="btn pg-pix" data-meio="pix">${ICONE_PIX}<span>Pagar R$ ${esc(c.oferta!.preco)} com Pix e liberar</span></button>` : ''}
           ${c.cartao ? `<button type="submit" class="btn sec pg-cartao" data-meio="cartao">Pagar R$ ${esc(c.oferta!.preco)} com cartão e liberar</button>` : ''}
         </form>
+        ${gratis}
         ${c.modo === 'teste' || c.modo === 'simulacao' ? `<p class="pg-teste">Simulação: o Pix é de mentira e aprova sozinho. Nada é cobrado de verdade.</p>` : ''}
         ${rodape}`;
       d.querySelector<HTMLInputElement>('input[type="email"]#pg-email, .pg-pix')?.focus();
@@ -175,14 +177,14 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
         <fieldset class="pg-planos"><legend>Escolha o plano</legend>${opcoes}</fieldset>
         ${
           logado()
-            ? `<p class="small">O plano fica na sua conta, <b>${esc(logado())}</b>, e vale em qualquer aparelho em que você entrar.</p><input type="hidden" id="pg-email" value="${esc(logado())}">`
-            : `<label for="pg-email">Seu e-mail<input type="email" id="pg-email" autocomplete="email" placeholder="voce@email.com" required></label>
-        <p class="small">O plano fica ligado a este e-mail: entre com ele em outro aparelho. Não mandamos propaganda.</p>`
+            ? `<p class="small">O plano fica na sua conta, <b>${esc(logado())}</b>.</p><input type="hidden" id="pg-email" value="${esc(logado())}">`
+            : `<label for="pg-email">Seu e-mail<input type="email" id="pg-email" autocomplete="email" placeholder="voce@email.com" required></label>`
         }
         <p class="err" role="alert">${esc(erro)}</p>
         ${c.pix ? `<button type="submit" class="btn pg-pix" data-meio="pix"${escolhido === 'mensal' ? ' hidden' : ''}>${ICONE_PIX}<span>Pagar com Pix · R$ <span data-preco>${esc(precoDe(escolhido))}</span></span></button>` : ''}
         ${c.cartao ? `<button type="submit" class="btn sec pg-cartao" data-meio="cartao"><span>Cartão, Apple Pay ou Google Pay · R$ <span data-preco>${esc(precoDe(escolhido))}</span></span></button>` : ''}
       </form>
+      ${gratis}
       <button type="button" class="linkbtn" data-pg="codigo">Já paguei, tenho um código</button>
       ${c.modo === 'teste' || c.modo === 'simulacao' ? `<p class="pg-teste">${c.modo === 'simulacao' ? 'Simulação' : 'Modo de teste'}${c.pixSimulado ? ': o Pix é de mentira e aprova sozinho' : ''}. Nada é cobrado de verdade.</p>` : ''}
       ${rodape}`;

@@ -5784,3 +5784,12 @@ body.modo-foto .btn-som {
 /* Escolhas de medição opcionais. */
 .consent-box {position:fixed;left:0;right:0;bottom:0;z-index:9999;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 16px;padding:10px 16px;background:#fff6e6;color:#0e2a22;border-top:2px solid #0e2a22;font-size:14px;line-height:1.4}
 .consent-box p{margin:0;max-width:560px}.consent-box a{color:inherit}.consent-actions{display:flex;gap:8px}.consent-actions .btn{min-height:44px;padding:8px 18px;font-size:14px;width:auto;box-shadow:none}#privacy-preferences{font:inherit;background:none;color:inherit;border:0;text-decoration:underline;cursor:pointer;min-height:44px}
+
+.pg-gratis {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin: 8px 0 4px;
+  font-weight: 800;
+  text-align: center;
+}

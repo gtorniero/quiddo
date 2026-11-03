@@ -76,14 +76,12 @@ export function showConsent() {
   const box = document.createElement('section');
   box.id = 'qd-consent'; box.className = 'consent-box';
   box.setAttribute('aria-label', 'Preferências de privacidade');
-  box.innerHTML = `<h2>Sua privacidade</h2><p>O jogo funciona sem cookies de medição ou publicidade. Você escolhe se permite ao Google e à Meta medir visitas e ações para melhorar o Quiddo e avaliar anúncios. <a href="/privacidade" data-link>Saiba mais</a>.</p>
-    <div class="consent-options"><label><input type="checkbox" name="analytics"${consent?.analytics ? ' checked' : ''}> Medição de uso (Google Analytics)</label><label><input type="checkbox" name="marketing"${consent?.marketing ? ' checked' : ''}> Medição de anúncios (Meta)</label></div>
-    <div class="consent-actions"><button type="button" class="btn sec" data-consent="reject">Recusar opcionais</button><button type="button" class="btn sec" data-consent="save">Salvar escolhas</button><button type="button" class="btn" data-consent="accept">Aceitar opcionais</button></div>`;
+  // barra simples no pé da tela, como na maioria dos sites: uma frase e dois botões do mesmo peso
+  box.innerHTML = `<p>Usamos cookies opcionais do Google e da Meta para medir visitas e anúncios. <a href="/privacidade" data-link>Saiba mais</a></p>
+    <div class="consent-actions"><button type="button" class="btn sec" data-consent="reject">Recusar</button><button type="button" class="btn" data-consent="accept">Aceitar</button></div>`;
   box.addEventListener('click', e => {
     const action = (e.target as HTMLElement).closest<HTMLElement>('[data-consent]')?.dataset.consent;
-    if (!action) return;
-    save(action === 'accept' || (action === 'save' && box.querySelector<HTMLInputElement>('[name="analytics"]')!.checked),
-      action === 'accept' || (action === 'save' && box.querySelector<HTMLInputElement>('[name="marketing"]')!.checked));
+    if (action) save(action === 'accept', action === 'accept');
   });
   document.body.appendChild(box);
 }

@@ -102,6 +102,8 @@ export async function confereVolta(aoPagar: (codigo: string) => void): Promise<'
   return 'volta';
 }
 
+const ICONE_CARTAO =
+  '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2.5" y="5" width="19" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2.5 9.5h19" stroke="currentColor" stroke-width="2.6"/><path d="M6 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 const ICONE_PIX =
   '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2.5 9.2 5.3 12 8.1l2.8-2.8L12 2.5Zm-5.6 5.6L3.6 10.9a1.6 1.6 0 0 0 0 2.2l2.8 2.8 2.8-2.8a1.6 1.6 0 0 0 0-2.2L6.4 8.1Zm11.2 0-2.8 2.8a1.6 1.6 0 0 0 0 2.2l2.8 2.8 2.8-2.8a1.6 1.6 0 0 0 0-2.2l-2.8-2.8ZM12 15.9l-2.8 2.8L12 21.5l2.8-2.8-2.8-2.8Z"/></svg>';
 
@@ -135,10 +137,10 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
 
   // regras e devolução ficam nas perguntas frequentes (abre em outra aba, para não sair da sala)
   const rodape = '<p class="pg-legal"><a href="/precos#perguntas" target="_blank" rel="noopener">Dúvidas? Veja as perguntas frequentes</a></p>';
-  const gratis = `<button type="button" class="linkbtn pg-gratis" data-pg="fechar">Continuar grátis, até ${c?.gratis || 10} pessoas</button>`;
+  const gratis = `<div class="pg-ou" aria-hidden="true"><span>ou</span></div><button type="button" class="btn sec pg-gratis" data-pg="fechar">Continuar grátis, até ${c?.gratis || 10} pessoas</button>`;
   const fechar = `<button type="button" class="pg-x" data-pg="fechar" aria-label="Fechar">×</button>`;
 
-  const promo = '<form class="pg-form" data-pg-promo><label>Código promocional<input name="promo" autocomplete="off" maxlength="80" required></label><p class="small">Convite: 7 dias grátis, sem assinatura.</p><button class="btn sec" type="submit">Aplicar código</button><p role="alert" data-promo-error></p></form>';
+  const promo = '<details class="pg-promo"><summary>Tenho um código promocional</summary><form class="pg-form" data-pg-promo><label>Código promocional<input name="promo" autocomplete="off" maxlength="80" required></label><button class="btn sec" type="submit">Aplicar código</button><p role="alert" data-promo-error></p></form></details>';
   const inicio = (erro = '') => {
     if (!c || !(c.pix || c.cartao)) {
       d.innerHTML = `${fechar}<h2 id="pg-t">Pagamento indisponível</h2><p class="muted">O pagamento ainda não está ligado neste site. Tente mais tarde.</p>`;
@@ -156,10 +158,10 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
           }
           <p class="err" role="alert">${esc(erro)}</p>
           ${c.pix ? `<button type="submit" class="btn pg-pix" data-meio="pix">${ICONE_PIX}<span>Pagar R$ ${esc(c.oferta!.preco)} com Pix e liberar</span></button>` : ''}
-          ${c.cartao ? `<button type="submit" class="btn sec pg-cartao" data-meio="cartao">Pagar R$ ${esc(c.oferta!.preco)} com cartão e liberar</button>` : ''}
+          ${c.cartao ? `<button type="submit" class="btn sec pg-cartao" data-meio="cartao">${ICONE_CARTAO}<span>Pagar R$ ${esc(c.oferta!.preco)} com cartão e liberar</span></button>` : ''}
         </form>
-        ${promo}
-      ${gratis}
+        ${gratis}
+        <div class="pg-links">${promo}</div>
         ${c.modo === 'teste' || c.modo === 'simulacao' ? `<p class="pg-teste">Simulação: o Pix é de mentira e aprova sozinho. Nada é cobrado de verdade.</p>` : ''}
         ${rodape}`;
       d.querySelector<HTMLInputElement>('input[type="email"]#pg-email, .pg-pix')?.focus();
@@ -184,11 +186,10 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
         }
         <p class="err" role="alert">${esc(erro)}</p>
         ${c.pix ? `<button type="submit" class="btn pg-pix" data-meio="pix"${escolhido === 'mensal' ? ' hidden' : ''}>${ICONE_PIX}<span>Pagar com Pix · R$ <span data-preco>${esc(precoDe(escolhido))}</span></span></button>` : ''}
-        ${c.cartao ? `<button type="submit" class="btn sec pg-cartao" data-meio="cartao"><span>Cartão, Apple Pay ou Google Pay · R$ <span data-preco>${esc(precoDe(escolhido))}</span></span></button>` : ''}
+        ${c.cartao ? `<button type="submit" class="btn ${c.pix && escolhido !== 'mensal' ? 'sec ' : ''}pg-cartao" data-meio="cartao">${ICONE_CARTAO}<span>Pagar com cartão · R$ <span data-preco>${esc(precoDe(escolhido))}</span></span></button><p class="pg-carteiras">Aceita Apple Pay e Google Pay</p>` : ''}
       </form>
-      ${promo}
       ${gratis}
-      <button type="button" class="linkbtn" data-pg="codigo">Já paguei, tenho um código</button>
+      <div class="pg-links">${promo}<button type="button" class="linkbtn" data-pg="codigo">Já paguei, tenho um código</button></div>
       ${c.modo === 'teste' || c.modo === 'simulacao' ? `<p class="pg-teste">${c.modo === 'simulacao' ? 'Simulação' : 'Modo de teste'}${c.pixSimulado ? ': o Pix é de mentira e aprova sozinho' : ''}. Nada é cobrado de verdade.</p>` : ''}
       ${rodape}`;
     d.querySelector<HTMLInputElement>('input[type="email"]#pg-email, input[name="pg-plano"]:checked')?.focus();
@@ -278,6 +279,8 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
     escolhido = t.value === 'semana' ? 'semana' : 'mensal';
     const botaoPix = d.querySelector<HTMLElement>('[data-meio="pix"]');
     if (botaoPix) botaoPix.hidden = escolhido === 'mensal';
+    // o cartão é o botão principal quando é o único meio (Mensal); com Pix, fica em segundo
+    d.querySelector('[data-meio="cartao"]')?.classList.toggle('sec', !!botaoPix && escolhido !== 'mensal');
     d.querySelectorAll('[data-preco]').forEach((el) => (el.textContent = precoDe(escolhido)));
   });
   d.addEventListener('submit', async (e) => {

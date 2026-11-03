@@ -5786,10 +5786,72 @@ body.modo-foto .btn-som {
 .consent-box p{margin:0;max-width:560px}.consent-box a{color:inherit}.consent-actions{display:flex;gap:8px}.consent-actions .btn{min-height:44px;padding:8px 18px;font-size:14px;width:auto;box-shadow:none}#privacy-preferences{font:inherit;background:none;color:inherit;border:0;text-decoration:underline;cursor:pointer;min-height:44px}
 
 .pg-gratis {
-  display: block;
   width: 100%;
-  min-height: 44px;
-  margin: 8px 0 4px;
-  font-weight: 800;
+}
+.pg-cartao svg {
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+  flex: none;
+}
+.pg-carteiras {
+  margin: -2px 0 0;
   text-align: center;
+  font-size: 13px;
+  color: var(--fg2);
+}
+.pg-ou {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 10px;
+  color: var(--fg2);
+  font-size: 14px;
+  font-weight: 800;
+}
+.pg-ou::before,
+.pg-ou::after {
+  content: '';
+  flex: 1;
+  border-top: 2px solid var(--soft-line);
+}
+.pg-links {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+}
+.pg-promo summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  text-decoration: underline;
+  font-size: 15px;
+}
+.pg-promo[open] summary {
+  margin-bottom: 6px;
+}
+/* janela de pagamento: botões numa linha só no celular */
+.pagamento .pg-pix,
+.pagamento .pg-cartao,
+.pagamento .pg-gratis {
+  font-size: 16px;
+  padding-inline: 14px;
+  white-space: nowrap;
+}
+.pg-links {
+  justify-items: center;
+}
+.pg-promo {
+  width: 100%;
+}
+.pg-promo summary {
+  justify-content: center;
+}
+@media (max-width: 359px) {
+  .pagamento .pg-pix,
+  .pagamento .pg-cartao,
+  .pagamento .pg-gratis {
+    white-space: normal;
+  }
 }

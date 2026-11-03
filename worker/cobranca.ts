@@ -312,7 +312,15 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     if (!ref) return json({ erro: 'pedido' }, 400);
     await tabela(db);
     const a = await confirma(env, ref);
-    return json(a ? { pago: true, ...a } : { pago: false });
+    let medicao;
+    if (a) {
+      const row = await db.prepare('SELECT ref,valor,modo,ordem,status,plano FROM compras WHERE ref = ?').bind(ref).first<Compra>();
+      if (row?.status === 'pago' && row.modo === 'ligada' && !row.ordem.startsWith('sim:') && Number(row.valor) > 0) {
+        const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('quiddo:purchase:' + row.ref));
+        medicao = { transaction_id: Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2,'0')).join(''), value:Number(row.valor), currency:'BRL', plano:planoDe(row.plano) };
+      }
+    }
+    return json(a ? { pago: true, ...a, ...(medicao ? {medicao} : {}) } : { pago: false });
   }
 
   // POST /api/cartao {email, volta}: cria a página de pagamento do Stripe (cartão, Apple Pay, Google Pay)

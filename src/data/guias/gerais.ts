@@ -2,6 +2,73 @@ import type { Guia } from '../guias';
 
 export const GERAIS: Guia[] = [
   {
+    slug: 'como-fazer-quiz-online-ao-vivo',
+    titulo: 'Como fazer um quiz online ao vivo, de graça, em 5 minutos',
+    resumo: 'Passo a passo para criar o quiz, abrir a sala com código de 4 letras e jogar com a turma pelo celular, na sala ou por chamada de vídeo',
+    publico: 'todos',
+    corpo: `
+<p>Um quiz ao vivo é aquele em que todo mundo responde ao mesmo tempo, cada um no próprio celular, enquanto as perguntas aparecem numa tela grande. Quem acerta mais rápido ganha mais pontos, o ranking muda a cada pergunta e no fim tem pódio. Com o Quiddo, dá para montar um em 5 minutos, de graça, sem instalar nada. Veja o passo a passo.</p>
+<h2>O que você precisa</h2>
+<ul>
+<li><strong>Uma tela para todos verem:</strong> TV, projetor ou notebook. Se o jogo for a distância, a tela compartilhada da chamada de vídeo.</li>
+<li><strong>Um celular por jogador</strong> (ou por dupla), com internet.</li>
+<li><strong>As perguntas.</strong> Pode escrever as suas ou usar as listas prontas dos nossos guias.</li>
+</ul>
+<p>Não precisa de cadastro para criar o quiz nem para jogar. O jogador só escolhe um apelido.</p>
+<h2>Passo 1: crie o quiz</h2>
+<p>Entre em <strong>quiddo.com.br/criar</strong>. Escolha o modo do seu evento: Corporativo, Amigos & família ou Escola. Depois, escolha o visual do jogo, que muda as cores, o relógio e o cenário do pódio. Dê um nome ao quiz.</p>
+<p>No Corporativo e na Escola, dá para colocar o nome e o logo da empresa ou da escola. Eles aparecem na tela grande e no celular de cada jogador.</p>
+<h2>Passo 2: escreva as perguntas</h2>
+<p>Cada pergunta pode ser de dois tipos:</p>
+<ul>
+<li><strong>Múltipla escolha:</strong> de 2 a 4 respostas, identificadas pelas letras A, B, C e D. Você marca a certa.</li>
+<li><strong>Verdadeiro ou falso:</strong> só duas opções. Ótimo para aquecer.</li>
+</ul>
+<p>Qualquer pergunta pode ter uma imagem, que aparece na tela grande e nos celulares. O quiz aceita até 50 perguntas, mas de 10 a 20 é o ideal para um jogo de 10 a 20 minutos.</p>
+<p>Escolha também o tempo de cada pergunta: 10, 15, 20 ou 30 segundos. Na dúvida, fique com 15 ou 20. Se quiser emoção no fim, ligue a opção <strong>"A última pergunta vale o dobro"</strong>.</p>
+<p>O quiz fica salvo no seu navegador, em "Meus quizzes". Para levar para outro computador, use "Exportar este quiz" e depois "Importar arquivo".</p>
+<h2>Passo 3: abra a sala</h2>
+<p>Clique em <strong>Abrir a sala</strong>. A tela do anfitrião mostra:</p>
+<ul>
+<li>um <strong>código de 4 letras</strong>, grande, para todo mundo ver;</li>
+<li>um <strong>QR code</strong> que leva direto para a sala;</li>
+<li>o botão <strong>Mandar convite no WhatsApp</strong>, com o link pronto para o grupo.</li>
+</ul>
+<p>Deixe essa tela na TV ou no projetor. Se você usa um passador de slides, ele funciona: a seta para a direita, o Page Down e o espaço avançam o jogo.</p>
+<h2>Passo 4: a turma entra pelo celular</h2>
+<p>Cada pessoa aponta a câmera para o QR code, toca no link do WhatsApp ou abre quiddo.com.br e digita o código. Escolhe um apelido de até 18 letras e um bicho do Brasil com acessórios. Pronto: o nome aparece na tela grande, na sala de espera.</p>
+<p>Se a internet de alguém cair, é só abrir o link de novo. A pessoa volta para a mesma sala com os pontos.</p>
+<h2>Passo 5: jogue</h2>
+<ol>
+<li>Clique em começar. Cada pergunta aparece primeiro com um "Prepare-se" de 5 segundos, para todo mundo ler.</li>
+<li>Depois, os celulares liberam as letras. Cada um toca na resposta.</li>
+<li>Quando o tempo acaba, ou quando todos respondem, a tela mostra quantos votaram em cada letra e, em seguida, a certa.</li>
+<li>Quem acertou ganha de 500 a 1000 pontos: quanto mais rápido, mais perto de 1000. Quem errou fica com zero naquela pergunta.</li>
+<li>O ranking aparece depois de cada pergunta, com quem subiu e quem caiu.</li>
+</ol>
+<p>Depois da última pergunta, o ranking não aparece, para não entregar o vencedor. O jogo vai direto para o pódio, revelado do 3º para o 1º lugar.</p>
+<h2>Passo 6: pódio e sorteio</h2>
+<p>No fim, além do pódio, você pode sortear prêmios entre todos ou só entre quem pontuou. Cada sorteio tira um nome que ainda não saiu. É um jeito de premiar quem não ficou entre os primeiros. Quer jogar outra rodada com as mesmas pessoas? É só começar de novo.</p>
+<h2>E se o quiz for online, por chamada de vídeo?</h2>
+<p>Funciona do mesmo jeito. Abra a tela do anfitrião no computador e compartilhe essa janela na chamada (Meet, Zoom, Teams ou a que você usa). Mande o link da sala no chat. Os participantes assistem à chamada no computador e respondem pelo celular. Quem só tem um aparelho pode abrir o link numa outra aba do navegador, mas o celular é mais confortável.</p>
+<p>Dicas para o online:</p>
+<ul>
+<li>Teste o compartilhamento de tela antes de a reunião começar.</li>
+<li>Use 20 segundos por pergunta: a tela compartilhada chega com um pequeno atraso para alguns.</li>
+<li>Peça para todo mundo ligar o som. A comemoração no fim faz parte da graça.</li>
+</ul>
+<h2>Quanto custa</h2>
+<p>Criar o quiz e abrir a sala é grátis, com salas de até 10 pessoas. Para turmas maiores, de até 200 pessoas, existem planos pagos por período. Veja os valores na página de preços.</p>
+<h2>Erros comuns, e como evitar</h2>
+<ul>
+<li><strong>Resposta certa marcada errada.</strong> Antes do evento, abra a sala e jogue sozinho pelo celular, do começo ao fim.</li>
+<li><strong>Perguntas longas demais.</strong> Se não cabe numa olhada para a TV, encurte.</li>
+<li><strong>Wi-Fi fraco no local.</strong> Peça para a turma usar os dados móveis se a rede travar.</li>
+<li><strong>Tela pequena.</strong> Em sala grande, use projetor ou TV. O código precisa ser lido do fundo.</li>
+</ul>
+<p>Pronto: em 5 minutos você tem um quiz ao vivo com ranking, pódio e sorteio. Crie o seu agora no Quiddo.</p>`,
+  },
+  {
     slug: 'como-escrever-boas-perguntas',
     titulo: 'Como escrever boas perguntas',
     resumo: 'Regras simples e exemplos para o quiz render na sala',

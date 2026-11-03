@@ -316,4 +316,195 @@ export const EMPRESAS: Guia[] = [
 </ul>
 <p>Com uma boa tela e perguntas da casa, o quiz vira a atração que junta a escola inteira.</p>`,
   },
+  {
+    slug: 'quiz-sipat-seguranca-do-trabalho',
+    titulo: 'Quiz para SIPAT: perguntas de segurança do trabalho',
+    resumo: 'Perguntas prontas sobre EPI, CIPA, normas regulamentadoras, incêndio, mapa de riscos e primeiros passos em emergências, para a SIPAT e o DDS',
+    publico: 'empresas',
+    corpo: `
+<p>A SIPAT (Semana Interna de Prevenção de Acidentes do Trabalho) precisa de atividades que prendam a atenção de verdade. Palestra longa cansa. Um quiz ao vivo, com ranking e prêmio, faz o time revisar as regras de segurança brincando e mostra para a CIPA o que a turma já sabe e o que precisa reforçar.</p>
+<p>Abaixo estão 30 perguntas prontas, com alternativas e resposta certa. Ajuste ao dia a dia da sua empresa: os riscos de um escritório são diferentes dos de uma obra ou de uma fábrica.</p>
+<h2>Siglas e conceitos</h2>
+<ol>
+<li><strong>O que significa a sigla SIPAT?</strong> A) Sistema Integrado de Proteção ao Trabalhador B) Semana Interna de Prevenção de Acidentes do Trabalho C) Serviço de Inspeção e Prevenção de Acidentes D) Semana Interna de Proteção Ambiental. <em>Resposta: B</em></li>
+<li><strong>O que significa EPI?</strong> A) Equipamento de Proteção Individual B) Equipamento de Prevenção Interna C) Exame Periódico Individual D) Equipe de Proteção Interna. <em>Resposta: A</em></li>
+<li><strong>O que é um EPC?</strong> A) Um exame médico B) Um equipamento de proteção coletiva, como guarda-corpo e exaustor C) Um tipo de extintor D) Um documento da CIPA. <em>Resposta: B</em></li>
+<li><strong>Qual norma regulamentadora trata dos EPIs?</strong> A) NR-5 B) NR-6 C) NR-10 D) NR-35. <em>Resposta: B</em></li>
+<li><strong>Qual norma regulamentadora trata da CIPA?</strong> A) NR-5 B) NR-6 C) NR-12 D) NR-17. <em>Resposta: A</em></li>
+<li><strong>Desde 2022, como se chama a CIPA por extenso?</strong> A) Comissão Interna de Prevenção de Acidentes e de Assédio B) Comissão Interna de Proteção Ambiental C) Comitê de Inspeção e Prevenção de Acidentes D) Comissão de Investigação de Acidentes. <em>Resposta: A</em></li>
+<li><strong>O que é o CA de um EPI?</strong> A) Código de Acesso B) Certificado de Aprovação C) Cadastro de Acidente D) Controle de Almoxarifado. <em>Resposta: B</em></li>
+<li><strong>Qual documento comunica oficialmente um acidente de trabalho?</strong> A) CAT B) CIPA C) PGR D) ASO. <em>Resposta: A</em> (Comunicação de Acidente de Trabalho)</li>
+<li><strong>O que significa PGR, previsto na NR-1?</strong> A) Plano Geral de Reformas B) Programa de Gerenciamento de Riscos C) Procedimento de Guarda de Resíduos D) Programa de Ginástica e Relaxamento. <em>Resposta: B</em></li>
+</ol>
+<h2>Normas regulamentadoras</h2>
+<ol start="10">
+<li><strong>Qual NR trata do trabalho em altura?</strong> A) NR-10 B) NR-12 C) NR-33 D) NR-35. <em>Resposta: D</em></li>
+<li><strong>Pela NR-35, a partir de que altura o trabalho é considerado trabalho em altura?</strong> A) 1 metro B) 2 metros C) 3 metros D) 5 metros. <em>Resposta: B</em> (acima de 2 metros do nível inferior, com risco de queda)</li>
+<li><strong>Qual NR trata da segurança em instalações e serviços com eletricidade?</strong> A) NR-6 B) NR-10 C) NR-17 D) NR-23. <em>Resposta: B</em></li>
+<li><strong>Qual NR trata da segurança no trabalho em máquinas e equipamentos?</strong> A) NR-5 B) NR-12 C) NR-17 D) NR-35. <em>Resposta: B</em></li>
+<li><strong>Qual NR trata da ergonomia?</strong> A) NR-10 B) NR-12 C) NR-17 D) NR-33. <em>Resposta: C</em></li>
+<li><strong>Quem deve fornecer o EPI ao trabalhador?</strong> A) O próprio trabalhador B) O sindicato C) A empresa, de graça D) A CIPA, mediante pagamento. <em>Resposta: C</em></li>
+</ol>
+<h2>Incêndio</h2>
+<ol start="16">
+<li><strong>Quais são os três elementos do triângulo do fogo?</strong> A) Combustível, oxigênio e calor B) Água, ar e calor C) Gás, faísca e papel D) Madeira, vento e sol. <em>Resposta: A</em></li>
+<li><strong>Fogo em papel, madeira e tecido é de qual classe?</strong> A) Classe A B) Classe B C) Classe C D) Classe D. <em>Resposta: A</em></li>
+<li><strong>Fogo em líquidos inflamáveis, como gasolina, é de qual classe?</strong> A) Classe A B) Classe B C) Classe C D) Classe K. <em>Resposta: B</em></li>
+<li><strong>Fogo em equipamento elétrico ligado é de qual classe?</strong> A) Classe A B) Classe B C) Classe C D) Classe D. <em>Resposta: C</em></li>
+<li><strong>Qual extintor nunca deve ser usado em equipamento elétrico ligado?</strong> A) Pó químico B) Gás carbônico (CO2) C) Água D) Pó ABC. <em>Resposta: C</em></li>
+<li><strong>Qual é o telefone do Corpo de Bombeiros?</strong> A) 190 B) 192 C) 193 D) 199. <em>Resposta: C</em></li>
+<li><strong>Qual cor identifica os equipamentos de combate a incêndio?</strong> A) Amarelo B) Vermelho C) Verde D) Azul. <em>Resposta: B</em></li>
+</ol>
+<h2>Mapa de riscos e dia a dia</h2>
+<ol start="23">
+<li><strong>No mapa de riscos, qual cor representa os riscos químicos?</strong> A) Verde B) Vermelho C) Marrom D) Azul. <em>Resposta: B</em></li>
+<li><strong>No mapa de riscos, qual cor representa os riscos físicos, como ruído e calor?</strong> A) Verde B) Amarelo C) Marrom D) Vermelho. <em>Resposta: A</em></li>
+<li><strong>No mapa de riscos, qual cor representa os riscos ergonômicos?</strong> A) Azul B) Amarelo C) Verde D) Marrom. <em>Resposta: B</em></li>
+<li><strong>No mapa de riscos, o tamanho do círculo indica o quê?</strong> A) O número de pessoas no setor B) A intensidade do risco C) A área do setor D) O tempo de exposição. <em>Resposta: B</em></li>
+<li><strong>Qual é o jeito certo de levantar uma caixa pesada do chão?</strong> A) Dobrar a coluna com as pernas retas B) Dobrar os joelhos e manter a coluna reta C) Puxar com um braço só D) Girar o tronco enquanto levanta. <em>Resposta: B</em></li>
+<li><strong>Qual é o telefone do SAMU?</strong> A) 190 B) 192 C) 193 D) 199. <em>Resposta: B</em></li>
+<li><strong>Que campanha dedica um mês à saúde e segurança no trabalho?</strong> A) Abril Verde B) Maio Amarelo C) Setembro Amarelo D) Outubro Rosa. <em>Resposta: A</em></li>
+<li><strong>O EPI está com o CA vencido ou danificado. O que fazer?</strong> A) Usar até o fim do turno B) Pedir a troca antes de começar o trabalho C) Consertar com fita D) Trabalhar sem ele. <em>Resposta: B</em></li>
+</ol>
+<h2>Como fazer o quiz na SIPAT</h2>
+<ul>
+<li><strong>Escolha o modo Corporativo.</strong> Coloque o nome e o logo da empresa. Eles aparecem na TV e no celular de cada um.</li>
+<li><strong>Entre 10 e 15 perguntas</strong> bastam. O jogo dura uns 15 minutos e cabe no intervalo entre as palestras.</li>
+<li><strong>Adapte ao setor.</strong> Use fotos do próprio ambiente: "O que está errado nesta foto?" com quatro opções. Cada pergunta pode ter uma imagem.</li>
+<li><strong>Explique na revelação.</strong> Quando muita gente erra, pare 30 segundos e explique. O gráfico de votos mostra na hora o que precisa de reforço.</li>
+<li><strong>Turnos diferentes:</strong> repita o mesmo quiz em cada turno. Dá para salvar o quiz e jogar de novo.</li>
+<li><strong>Prêmio:</strong> o pódio ganha brindes da SIPAT, e o sorteio entre todos garante que ninguém sai de mãos vazias.</li>
+</ul>
+<p>As normas mudam de tempos em tempos. Peça para o técnico de segurança revisar as perguntas antes do evento. Depois, é só criar o quiz no Quiddo e abrir a sala no auditório ou no refeitório.</p>`,
+  },
+  {
+    slug: 'dinamicas-de-quebra-gelo-para-reuniao',
+    titulo: '20 dinâmicas de quebra-gelo para reunião (presencial e online)',
+    resumo: 'Atividades de 2 a 15 minutos para abrir reuniões, treinamentos e integrações, com o que precisa e como adaptar para chamada de vídeo',
+    publico: 'empresas',
+    corpo: `
+<p>Os primeiros minutos de uma reunião decidem se as pessoas vão participar ou ficar caladas olhando o celular. Um quebra-gelo curto acorda a sala, aproxima quem não se conhece e deixa todo mundo mais à vontade para falar. Aqui estão 20 dinâmicas testadas, com o tempo de cada uma e como fazer no presencial e no online.</p>
+<h2>Rápidas, de 2 a 5 minutos</h2>
+<ol>
+<li><strong>Uma palavra.</strong> Cada pessoa diz uma palavra que resume como está chegando hoje. Sem explicar. Online: todo mundo escreve no chat ao mesmo tempo.</li>
+<li><strong>Nota de 0 a 10.</strong> "De 0 a 10, quanta energia você tem agora?" Mostre com os dedos ou no chat. Ajuda quem conduz a ajustar o ritmo.</li>
+<li><strong>Foto do celular.</strong> Cada um mostra a última foto que tirou, se puder mostrar, e conta a história em uma frase. Online: compartilha no chat.</li>
+<li><strong>Isso ou aquilo.</strong> Café ou chá? Praia ou montanha? Cachorro ou gato? Quem conduz lê e todo mundo levanta a mão. Online: reações da chamada.</li>
+<li><strong>Emoji do dia.</strong> Cada pessoa manda no chat o emoji que representa a semana. Quem quiser, explica.</li>
+<li><strong>Pergunta rápida.</strong> Uma pergunta leve para todos: "Qual foi a melhor coisa que você comeu esta semana?". Uma frase por pessoa.</li>
+</ol>
+<h2>Para conhecer o time, de 5 a 10 minutos</h2>
+<ol start="7">
+<li><strong>Duas verdades e uma mentira.</strong> Cada pessoa conta três fatos sobre si. O grupo tenta adivinhar qual é a mentira. Funciona igual no online.</li>
+<li><strong>Linha do tempo.</strong> Todos se organizam em fila pela data de aniversário, sem falar, só com gestos. Online: cada um escreve o mês no chat e o grupo ordena.</li>
+<li><strong>Bingo de pessoas.</strong> Uma cartela com frases como "já morou em outro estado" ou "toca um instrumento". Cada um procura colegas que combinam. Online: cada um marca os quadrados que valem para si e compara.</li>
+<li><strong>O que temos em comum.</strong> Em duplas ou trios, encontrem três coisas que todos têm em comum, sem valer o óbvio, como "trabalhamos aqui". Online: salas separadas de 3 minutos.</li>
+<li><strong>Objeto da mesa.</strong> Cada pessoa pega um objeto que está por perto e conta por que ele está ali. Ótimo no online, com todo mundo em casa.</li>
+<li><strong>Superpoder do trabalho.</strong> "Se você tivesse um superpoder só para o trabalho, qual seria?" Rende risadas e mostra dores reais do time.</li>
+<li><strong>Mapa de origem.</strong> Num mapa na parede ou num quadro on-line, cada um marca a cidade onde nasceu. Bom para times espalhados.</li>
+</ol>
+<h2>Com mais energia, de 10 a 15 minutos</h2>
+<ol start="14">
+<li><strong>Quiz ao vivo sobre o time.</strong> Monte de 5 a 8 perguntas sobre a empresa e as pessoas: "Quem do time já correu uma maratona?", "Em que ano a empresa abriu?". Projete na TV ou compartilhe a tela na chamada. Cada pessoa responde pelo celular e o ranking aparece a cada pergunta.</li>
+<li><strong>Quem é quem.</strong> Antes da reunião, cada pessoa manda uma curiosidade sobre si para quem conduz. Na hora, as curiosidades viram perguntas: "Quem já morou no Japão?", com quatro nomes nas alternativas.</li>
+<li><strong>Desenho às cegas.</strong> Em duplas, um descreve uma imagem e o outro desenha sem ver. Comparem no fim. Online: quadro branco da chamada.</li>
+<li><strong>Construção em equipe.</strong> Grupos pequenos têm 10 minutos para montar a torre mais alta com papel e fita. Mostra como cada um trabalha sob pressão.</li>
+<li><strong>História coletiva.</strong> Uma pessoa começa uma história com uma frase. Cada um continua com mais uma. Online: na ordem da lista de participantes.</li>
+<li><strong>Caça ao tesouro em casa.</strong> Só no online: quem conduz pede um objeto ("algo amarelo", "um livro") e ganha quem aparece primeiro na câmera com ele.</li>
+<li><strong>Retrospectiva em verdadeiro ou falso.</strong> Cinco afirmações sobre o último trimestre do time: "Batemos a meta de março". Todo mundo vota. Bom para abrir reunião de resultados.</li>
+</ol>
+<h2>Como escolher a dinâmica certa</h2>
+<ul>
+<li><strong>Pelo tempo:</strong> reunião de 30 minutos pede quebra-gelo de 2 a 3 minutos. Treinamento de um dia aguenta 15 minutos.</li>
+<li><strong>Pelo grupo:</strong> com gente que não se conhece, prefira as de conhecer o time. Com time antigo, as de energia.</li>
+<li><strong>Pelo formato:</strong> no online, escolha dinâmicas com chat ou celular. Ninguém quer esperar 20 pessoas falarem uma por uma.</li>
+<li><strong>Sem constranger:</strong> nada de expor quem é tímido. Dê a opção de passar a vez e evite perguntas pessoais demais.</li>
+<li><strong>Conecte ao tema:</strong> o melhor quebra-gelo já puxa o assunto da reunião. Um quiz com três perguntas sobre o projeto aquece e revisa ao mesmo tempo.</li>
+</ul>
+<h2>Como fazer o quiz no presencial e no online</h2>
+<p>No presencial, abra a tela do anfitrião no notebook ligado à TV ou ao projetor. No online, compartilhe essa tela na chamada de vídeo. Nos dois casos, cada pessoa entra pelo celular com o código de 4 letras, escolhe um apelido e responde. Não precisa instalar nada nem fazer cadastro.</p>
+<p>Monte o seu quebra-gelo em forma de quiz no Quiddo: escolha o modo Corporativo, escreva cinco perguntas sobre o time e abra a sala.</p>`,
+  },
+  {
+    slug: 'quiz-para-sala-de-aula-perguntas-por-materia',
+    titulo: 'Perguntas de quiz para sala de aula por matéria',
+    resumo: 'Português, matemática, ciências, história, geografia, inglês, artes e educação física, com alternativas e respostas para revisão',
+    publico: 'escola',
+    corpo: `
+<p>O quiz ao vivo transforma a revisão em competição saudável: a turma inteira responde ao mesmo tempo pelo celular, o professor vê na hora quantos acertaram e explica o que ficou confuso. Aqui estão 40 perguntas prontas, cinco por matéria, pensadas para o ensino fundamental. Use como modelo e troque pelo conteúdo da sua aula.</p>
+<h2>Português</h2>
+<ol>
+<li><strong>Qual é o plural de "cidadão"?</strong> A) Cidadões B) Cidadãos C) Cidadães D) Cidadans. <em>Resposta: B</em></li>
+<li><strong>Qual é o coletivo de lobos?</strong> A) Manada B) Alcateia C) Cardume D) Enxame. <em>Resposta: B</em></li>
+<li><strong>Qual destas palavras é oxítona?</strong> A) Mesa B) Lâmpada C) Café D) Livro. <em>Resposta: C</em></li>
+<li><strong>Em "Os alunos chegaram cedo", qual é o sujeito?</strong> A) Os alunos B) Chegaram C) Cedo D) Não há sujeito. <em>Resposta: A</em></li>
+<li><strong>Qual é o antônimo de "generoso"?</strong> A) Bondoso B) Avarento C) Gentil D) Alegre. <em>Resposta: B</em></li>
+</ol>
+<h2>Matemática</h2>
+<ol start="6">
+<li><strong>Quanto é 7 vezes 8?</strong> A) 48 B) 54 C) 56 D) 64. <em>Resposta: C</em></li>
+<li><strong>Quanto é 25% de 80?</strong> A) 15 B) 20 C) 25 D) 40. <em>Resposta: B</em></li>
+<li><strong>Qual destes números é primo?</strong> A) 9 B) 15 C) 13 D) 21. <em>Resposta: C</em></li>
+<li><strong>Qual é a soma dos ângulos internos de um triângulo?</strong> A) 90° B) 180° C) 270° D) 360°. <em>Resposta: B</em></li>
+<li><strong>Qual é a área de um retângulo de 5 cm por 3 cm?</strong> A) 8 cm² B) 15 cm² C) 16 cm² D) 30 cm². <em>Resposta: B</em></li>
+</ol>
+<h2>Ciências</h2>
+<ol start="11">
+<li><strong>Qual é a unidade básica dos seres vivos?</strong> A) Átomo B) Célula C) Órgão D) Tecido. <em>Resposta: B</em></li>
+<li><strong>Em que parte da célula vegetal acontece a fotossíntese?</strong> A) Núcleo B) Cloroplasto C) Mitocôndria D) Parede celular. <em>Resposta: B</em></li>
+<li><strong>Qual planeta é conhecido como planeta vermelho?</strong> A) Vênus B) Marte C) Júpiter D) Saturno. <em>Resposta: B</em></li>
+<li><strong>Qual parte do sangue leva o oxigênio pelo corpo?</strong> A) Glóbulos brancos B) Plaquetas C) Glóbulos vermelhos D) Plasma. <em>Resposta: C</em></li>
+<li><strong>Como se chama a passagem da água do estado líquido para o gasoso?</strong> A) Fusão B) Solidificação C) Vaporização D) Condensação. <em>Resposta: C</em></li>
+</ol>
+<h2>História</h2>
+<ol start="16">
+<li><strong>Em que ano o Brasil declarou a independência?</strong> A) 1500 B) 1808 C) 1822 D) 1889. <em>Resposta: C</em></li>
+<li><strong>Como se chamavam os reis do antigo Egito?</strong> A) Imperadores B) Faraós C) Czares D) Sultões. <em>Resposta: B</em></li>
+<li><strong>Em que ano começou a Revolução Francesa?</strong> A) 1776 B) 1789 C) 1815 D) 1848. <em>Resposta: B</em></li>
+<li><strong>Em que período aconteceu a Segunda Guerra Mundial?</strong> A) 1914 a 1918 B) 1929 a 1933 C) 1939 a 1945 D) 1950 a 1953. <em>Resposta: C</em></li>
+<li><strong>Em que ano a família real portuguesa chegou ao Brasil?</strong> A) 1500 B) 1750 C) 1808 D) 1822. <em>Resposta: C</em></li>
+</ol>
+<h2>Geografia</h2>
+<ol start="21">
+<li><strong>Em quantas regiões o IBGE divide o Brasil?</strong> A) 4 B) 5 C) 6 D) 7. <em>Resposta: B</em></li>
+<li><strong>Que linha imaginária divide a Terra em hemisfério norte e hemisfério sul?</strong> A) Meridiano de Greenwich B) Linha do Equador C) Trópico de Câncer D) Círculo Polar. <em>Resposta: B</em></li>
+<li><strong>Que meridiano é a referência para as longitudes?</strong> A) Meridiano de Greenwich B) Meridiano de Tordesilhas C) Meridiano de Paris D) Linha do Equador. <em>Resposta: A</em></li>
+<li><strong>Em que continente fica o Egito?</strong> A) Ásia B) Europa C) África D) Oceania. <em>Resposta: C</em></li>
+<li><strong>Qual é o maior oceano do planeta?</strong> A) Atlântico B) Índico C) Pacífico D) Ártico. <em>Resposta: C</em></li>
+</ol>
+<h2>Inglês</h2>
+<ol start="26">
+<li><strong>Como se diz "maçã" em inglês?</strong> A) Orange B) Apple C) Grape D) Pear. <em>Resposta: B</em></li>
+<li><strong>Que dia da semana é "Thursday"?</strong> A) Terça-feira B) Quarta-feira C) Quinta-feira D) Sábado. <em>Resposta: C</em></li>
+<li><strong>Qual é o plural de "child"?</strong> A) Childs B) Childes C) Children D) Childrens. <em>Resposta: C</em></li>
+<li><strong>Complete: "I ___ a student."</strong> A) is B) am C) are D) be. <em>Resposta: B</em></li>
+<li><strong>Qual é o passado de "go"?</strong> A) Goed B) Gone C) Went D) Going. <em>Resposta: C</em></li>
+</ol>
+<h2>Artes</h2>
+<ol start="31">
+<li><strong>Quem pintou o "Abaporu"?</strong> A) Anita Malfatti B) Tarsila do Amaral C) Candido Portinari D) Di Cavalcanti. <em>Resposta: B</em></li>
+<li><strong>Quem pintou a Mona Lisa?</strong> A) Michelangelo B) Van Gogh C) Leonardo da Vinci D) Picasso. <em>Resposta: C</em></li>
+<li><strong>Na mistura de tintas da escola, quais são as cores primárias?</strong> A) Verde, laranja e roxo B) Vermelho, amarelo e azul C) Preto, branco e cinza D) Rosa, verde e azul. <em>Resposta: B</em></li>
+<li><strong>Em que cidade aconteceu a Semana de Arte Moderna de 1922?</strong> A) Rio de Janeiro B) São Paulo C) Salvador D) Recife. <em>Resposta: B</em></li>
+<li><strong>Quantas linhas tem a pauta musical?</strong> A) 4 B) 5 C) 6 D) 7. <em>Resposta: B</em></li>
+</ol>
+<h2>Educação física</h2>
+<ol start="36">
+<li><strong>Quantos jogadores de cada time ficam em quadra no basquete?</strong> A) 4 B) 5 C) 6 D) 7. <em>Resposta: B</em></li>
+<li><strong>Quantos jogadores de cada time ficam em quadra no vôlei?</strong> A) 5 B) 6 C) 7 D) 9. <em>Resposta: B</em></li>
+<li><strong>Quantos jogadores de cada time ficam em quadra no handebol, contando o goleiro?</strong> A) 5 B) 6 C) 7 D) 11. <em>Resposta: C</em></li>
+<li><strong>Quantos jogadores de cada time ficam em quadra no futsal, contando o goleiro?</strong> A) 4 B) 5 C) 6 D) 7. <em>Resposta: B</em></li>
+<li><strong>De quanto em quanto tempo acontecem os Jogos Olímpicos de verão?</strong> A) 2 anos B) 3 anos C) 4 anos D) 5 anos. <em>Resposta: C</em></li>
+</ol>
+<h2>Como usar na aula</h2>
+<ul>
+<li><strong>Escolha o modo Escola</strong> no editor. Os visuais Sala de aula e Álbum de figurinhas fazem sucesso com os alunos.</li>
+<li><strong>Revisão antes da prova:</strong> de 10 a 15 perguntas da matéria da semana. Cabe nos últimos 15 minutos da aula.</li>
+<li><strong>Use o gráfico de votos.</strong> Depois de cada pergunta aparecem quantos escolheram cada letra. Se metade errou, vale parar e explicar.</li>
+<li><strong>Sem celular para todos?</strong> Monte duplas ou trios num celular só. Discutir a resposta também é aprender.</li>
+<li><strong>Tempo:</strong> 20 segundos para perguntas de leitura, 30 para as de conta.</li>
+<li><strong>Interdisciplinar:</strong> misture as matérias numa gincana de fim de bimestre, com uma rodada para cada professor.</li>
+</ul>
+<p>Os alunos entram pelo celular com o código de 4 letras e um apelido, sem cadastro e sem e-mail. Crie o seu quiz de revisão no Quiddo e abra a sala no projetor.</p>`,
+  },
 ];

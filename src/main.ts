@@ -27,6 +27,8 @@ export interface Page {
   title: string;
   wide?: boolean;
   compact?: boolean; // cabeçalho sem navegação (tela da TV e do jogador)
+  description?: string; // meta description da página (senão, a do site)
+  canonical?: string; // endereço oficial da página, para buscadores
   mount(main: HTMLElement): Cleanup;
 }
 
@@ -59,6 +61,30 @@ function naoEncontrada(): Page {
   };
 }
 
+// descrição e endereço oficial acompanham a navegação (o pré-render já traz os certos na primeira carga)
+// igual à do index.html (não dá para ler do HTML: numa página pré-renderizada ela é a do guia)
+const DESCRICAO_PADRAO =
+  'Crie um quiz com as suas perguntas, abra uma sala e jogue ao vivo com todo mundo pelo celular. Ranking a cada pergunta, pódio e sorteio de prêmios.';
+function metas(page: Page) {
+  const desc = page.description ?? DESCRICAO_PADRAO;
+  for (const sel of ['meta[name="description"]', 'meta[property="og:description"]']) document.querySelector<HTMLMetaElement>(sel)?.setAttribute('content', desc);
+  document.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.setAttribute('content', document.title);
+  let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  if (page.canonical) {
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'canonical';
+      document.head.appendChild(link);
+    }
+    link.href = page.canonical;
+  } else link?.remove();
+  document.querySelector('meta[property="og:url"]')?.remove();
+  // dados estruturados do pré-render valem só para a página em que se entrou
+  if (primeira) primeira = false;
+  else document.querySelectorAll('script[type="application/ld+json"]').forEach((el) => el.remove());
+}
+let primeira = true;
+
 let cleanup: Cleanup;
 
 function render() {
@@ -72,6 +98,7 @@ function render() {
   main.className = page.wide ? 'wide' : '';
   header(location.pathname, page.compact);
   document.title = page.title === 'Quiddo' ? 'Quiddo · Quizz do seu jeito' : `${page.title} · Quiddo`;
+  metas(page);
   main.innerHTML = '';
   cleanup = page.mount(main);
   measurePage(location.pathname);

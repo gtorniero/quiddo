@@ -66,7 +66,7 @@ function mount(main: HTMLElement) {
       <section class="panel prose faq">
         <h2>Perguntas</h2>
         <details><summary>Preciso pagar antes de criar o quiz?</summary><p>Não. Crie o quiz e abra a sala de graça. Se aparecerem mais de 10 pessoas, a sala de espera mostra o botão para liberar até 200, sem fechar a sala.</p></details>
-        <details><summary>Como eu pago?</summary><p>${cob?.modo === 'ligada' ? 'No cartão: Mensal por R$ 25,99 com renovação automática ou Passe de 7 dias por R$ 15,99, pago uma vez. Cancele em Minha conta; o acesso continua até o fim do período pago.' : 'Em simulação, o Pix é de teste e não cobra dinheiro.'}</p></details>
+        <details><summary>Como eu pago?</summary><p>${cob?.modo === 'ligada' ? 'Mensal por R$ 25,99 no cartão, com renovação automática. Passe de 7 dias por R$ 15,99, pago uma vez. Consulte as formas de pagamento disponíveis ao escolher o passe. Cancele em Minha conta; o acesso continua até o fim do período pago.' : 'Em simulação, o Pix é de teste e não cobra dinheiro.'}</p></details>
         <details><summary>E se eu trocar de computador?</summary><p>Depois do pagamento você recebe um código. Use "Já paguei, tenho um código" em qualquer aparelho, com o código ou com o e-mail do pagamento.</p></details>
         <details><summary>Quem joga precisa pagar?</summary><p>Não. Só quem abre a sala. A turma entra pelo celular, sem cadastro e sem baixar app.</p></details>
         <details><summary>E se eu desistir?</summary><p>Devolvemos o valor em até 7 dias depois do pagamento.</p></details>

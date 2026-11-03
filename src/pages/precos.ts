@@ -3,12 +3,13 @@
 // Os preços vêm do servidor (/api/cobranca); enquanto não chegam, mostra os padrões.
 import type { Page } from '../main';
 import { esc } from '../lib/dom';
+import { sincronizaConta } from '../lib/conta';
 import { type Cobranca, type Plano, abrirPagamento, acessoAte, cobranca, confereVolta, meuAcesso } from '../lib/pagamento';
 
 const PADRAO: Record<Plano, string> = { mensal: '25,99', semana: '15,99', oferta: '11,99' };
 
 export function page(): Page {
-  return { title: 'Preços', wide: true, mount };
+  return { title: 'Planos', wide: true, mount };
 }
 
 function mount(main: HTMLElement) {
@@ -28,7 +29,7 @@ function mount(main: HTMLElement) {
       cob && (cob.modo === 'simulacao' || cob.modo === 'teste')
         ? '<p class="pg-teste">Simulação: o pagamento ainda é de mentira e nada é cobrado. Dá para testar o caminho todo.</p>'
         : '';
-    main.innerHTML = `<section class="hero"><h1>Preços</h1><p>Comece grátis. Pague só quando a turma passar de 10 pessoas.</p></section>
+    main.innerHTML = `<section class="hero"><h1>Planos</h1><p>Comece grátis. Pague só quando a turma passar de 10 pessoas.</p></section>
       ${aviso}${meu}
       <section class="precos" aria-label="Planos">
         <article class="pc">
@@ -46,13 +47,13 @@ function mount(main: HTMLElement) {
           <ul><li>${ok}Jogos ilimitados o mês todo</li><li>${ok}Use em qualquer aparelho com o seu código</li><li>${ok}Cancele quando quiser</li></ul>
           <button type="button" class="btn" data-plano="mensal">Assinar o Mensal</button>
         </article>
-        ${cob?.modo === 'ligada' ? '' : `<article class="pc">
+        <article class="pc">
           <h2>Passe 7 dias</h2>
           ${pessoas(200)}
           <p class="pc-preco">R$ ${esc(preco('semana'))}</p>
           <ul><li>${ok}Jogos ilimitados por 7 dias</li><li>${ok}Para um evento, sem assinatura</li></ul>
           <button type="button" class="btn sec" data-plano="semana">Comprar o Passe</button>
-        </article>`}
+        </article>
         <article class="pc pc-breve">
           <span class="selo">Em breve</span>
           <h2>PRO</h2>
@@ -65,7 +66,7 @@ function mount(main: HTMLElement) {
       <section class="panel prose faq">
         <h2>Perguntas</h2>
         <details><summary>Preciso pagar antes de criar o quiz?</summary><p>Não. Crie o quiz e abra a sala de graça. Se aparecerem mais de 10 pessoas, a sala de espera mostra o botão para liberar até 200, sem fechar a sala.</p></details>
-        <details><summary>Como eu pago?</summary><p>${cob?.modo === 'ligada' ? 'Assinatura mensal no cartão por R$ 25,99, com renovação automática. Cancele em Minha conta; o acesso continua até o fim do período pago.' : 'Em simulação, o Pix é de teste e não cobra dinheiro.'}</p></details>
+        <details><summary>Como eu pago?</summary><p>${cob?.modo === 'ligada' ? 'No cartão: Mensal por R$ 25,99 com renovação automática ou Passe de 7 dias por R$ 15,99, pago uma vez. Cancele em Minha conta; o acesso continua até o fim do período pago.' : 'Em simulação, o Pix é de teste e não cobra dinheiro.'}</p></details>
         <details><summary>E se eu trocar de computador?</summary><p>Depois do pagamento você recebe um código. Use "Já paguei, tenho um código" em qualquer aparelho, com o código ou com o e-mail do pagamento.</p></details>
         <details><summary>Quem joga precisa pagar?</summary><p>Não. Só quem abre a sala. A turma entra pelo celular, sem cadastro e sem baixar app.</p></details>
         <details><summary>E se eu desistir?</summary><p>Devolvemos o valor em até 7 dias depois do pagamento.</p></details>
@@ -85,6 +86,7 @@ function mount(main: HTMLElement) {
     cob = c;
     render();
   });
+  sincronizaConta().then(() => render());
   confereVolta(() => render());
   return () => main.removeEventListener('click', onClick);
 }

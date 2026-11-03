@@ -82,7 +82,7 @@ describe('Quiddo Stripe mensal', () => {
   expect(r!.status).toBe(200);
   const call = apiCalls.find(x => x.path === '/v1/checkout/sessions' && x.method === 'POST')!;
   expect(call.body.get('mode')).toBe('subscription'); expect(call.body.get('line_items[0][price]')).toBe('price_qd_month_test');
-  expect(call.body.has('payment_method_types[0]')).toBe(false);
+  expect(call.body.get('allowed_payment_method_types[0]')).toBe('card');
   expect(read('SELECT email,tipo,modo FROM compras')).toMatchObject({ email: EMAIL, tipo: 'assinatura', modo: 'teste' });
   expect(apiCalls.find(x => x.path === '/v1/customers')!.body.get('email')).toBe(EMAIL);
  });
@@ -168,5 +168,24 @@ describe('Quiddo Stripe mensal', () => {
  it('risk, expiry and unpaid status fail closed in the entitlement predicate', () => {
   expect(acessoAssinatura({ status: 'active', paid_until: Date.now()/1000 + 100, risk: '' })).toBe(true);
   for (const a of [{ status: 'active', paid_until: Date.now()/1000 - 1, risk: '' }, { status: 'incomplete', paid_until: Date.now()/1000 + 100, risk: '' }, { status: 'active', paid_until: Date.now()/1000 + 100, risk: 'disputa' }]) expect(acessoAssinatura(a)).toBe(false);
+ });
+});
+
+ describe('ativação mensal em produção', () => {
+ it('não usa credenciais de teste como fallback de produção', async () => {
+  env.COBRANCA = 'ligada';
+  const r = await rotaCobranca(new Request(ORIGIN + '/api/cobranca'), env, '/api/cobranca');
+  const c = await r!.json() as any;
+  expect(c.cartao).toBe(false); expect(c.pix).toBe(false);
+  expect(c.planos.map((p: any) => p.id)).toEqual(['mensal']);
+ });
+ it('oferece só mensal no cartão e recusa Passe e Pix no servidor', async () => {
+  Object.assign(env, { COBRANCA: 'ligada', STRIPE_LIVE_KEY: ['rk','live','fixture'].join('_'), STRIPE_LIVE_PRICE_MENSAL:'price_live', STRIPE_LIVE_PORTAL_CONFIG:'bpc_live', STRIPE_LIVE_WEBHOOK_SECRET:'unit-live' });
+  const r = await rotaCobranca(new Request(ORIGIN + '/api/cobranca'), env, '/api/cobranca');
+  const c = await r!.json() as any;
+  expect(c).toMatchObject({ cartao:true, cartaoTeste:false, pix:false, assinaturaMensal:true });
+  expect((await rotaCobranca(request('/api/cartao', { plano:'semana' }), env, '/api/cartao'))!.status).toBe(400);
+  expect((await rotaCobranca(request('/api/pix', { plano:'mensal' }), env, '/api/pix'))!.status).toBe(503);
+  expect(apiCalls).toHaveLength(0);
  });
 });

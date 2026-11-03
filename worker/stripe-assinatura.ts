@@ -67,6 +67,7 @@ export async function checkoutMensal(req: Request, env: CobrancaEnv, email: stri
     const ref = crypto.randomUUID(), origin = new URL(req.url).origin;
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription', customer, client_reference_id: ref, locale: 'pt-BR',
+      allowed_payment_method_types: ['card'],
       line_items: [{ price: price.id, quantity: 1 }], integration_identifier: 'quiddo_monthly_rqnvpska',
       success_url: `${origin}${volta}?pagamento=ok&ref=${ref}`, cancel_url: `${origin}${volta}?pagamento=volta`,
     }, { idempotencyKey: ref });

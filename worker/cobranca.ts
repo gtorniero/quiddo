@@ -208,7 +208,6 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     STRIPE_PRICE_MENSAL: env.STRIPE_LIVE_PRICE_MENSAL,
     STRIPE_PORTAL_CONFIG: env.STRIPE_LIVE_PORTAL_CONFIG,
   };
-  const somenteCartao = env.COBRANCA === 'ligada';
   const db = env.DB;
 
   // GET /api/conta: e-mail de quem está logado e o plano em dia ligado a ele
@@ -223,7 +222,7 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
   if (caminho === '/api/cobranca') {
     return json({
       modo: modo(env),
-      pix: !somenteCartao && !!db && (!!tok(env) || pixSimulado(env)),
+      pix: !!db && (!!tok(env) || pixSimulado(env)),
       pixSimulado: pixSimulado(env),
       cartao: !!db && cartaoPronto(env, new URL(req.url).searchParams.get('teste_cobranca') === '1'),
       assinaturaMensal: mensalConfigurado(env),
@@ -243,7 +242,6 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
 
   // POST /api/pix {email}: cria o Pix e devolve o QR
   if (caminho === '/api/pix') {
-    if (somenteCartao) return json({ erro: 'indisponivel' }, 503);
     if (!db || !(tok(env) || pixSimulado(env))) return json({ erro: 'indisponivel' }, 503);
     if (modo(env) === 'desligada') return json({ erro: 'desligada' }, 403);
     const pedido = await lerJson(req);
@@ -251,6 +249,7 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     const email = (await emailDaSessao(req, env)) || emailDe(pedido);
     if (!email) return json({ erro: 'email' }, 400);
     const plano = planoDe(pedido?.plano);
+    if (plano === 'mensal') return json({ erro: 'mensal_so_cartao' }, 400);
     // a oferta só sai pelo Pix e só para o anfitrião da sala cheia, conferido na própria sala
     if (plano === 'oferta' && !(ofertaValida && (await ofertaValida(String(pedido?.sala || ''), String(pedido?.hostKey || ''))))) return json({ erro: 'oferta' }, 403);
     await tabela(db);
@@ -339,12 +338,14 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     // volta para a página de onde a pessoa saiu (editor ou sala), sempre no mesmo site
     const volta = /^\/[A-Za-z0-9/_-]{0,40}$/.test(String(c?.volta || '')) ? String(c?.volta) : '/criar';
     // Mensal no cartão usa Stripe Billing; o Passe continua sendo pagamento avulso.
-    // a oferta da sala cheia é só no Pix; no cartão vale o preço normal do Passe
-    const plano: Plano = planoDe(c?.plano) === 'oferta' ? 'semana' : planoDe(c?.plano);
+    // O desconto vale nos dois meios, somente após validar o anfitrião e a sala cheia.
+    const plano = planoDe(c?.plano);
+    if (plano === 'oferta' && !(ofertaValida && (await ofertaValida(String(c?.sala || ''), String(c?.hostKey || ''))))) return json({ erro: 'oferta' }, 403);
     if (plano === 'mensal') return checkoutMensal(req, env, contaEmail, volta, c || {});
     const valor = preco(env, plano);
     const f = new URLSearchParams({
       mode: 'payment',
+      'allowed_payment_method_types[0]': 'card',
       integration_identifier: 'quiddo_pass_rqnvpska',
       locale: 'pt-BR',
       customer_email: email,

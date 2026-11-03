@@ -189,3 +189,34 @@ describe('Quiddo Stripe mensal', () => {
   expect(apiCalls).toHaveLength(0);
  });
 });
+
+describe('Pix avulso e oferta com desconto', () => {
+ it('expõe Pix quando configurado mas recusa Mensal por Pix', async () => {
+  Object.assign(env, {COBRANCA:'ligada',MP_TOKEN:'mp-unit'});
+  const c=await (await rotaCobranca(new Request(ORIGIN+'/api/cobranca'),env,'/api/cobranca'))!.json() as any;
+  expect(c.pix).toBe(true);
+  const r=await rotaCobranca(request('/api/pix',{plano:'mensal',email:EMAIL}),env,'/api/pix');
+  expect(r!.status).toBe(400); expect(apiCalls).toHaveLength(0);
+ });
+ it('recusa desconto no cartão sem validar sala e anfitrião',async()=>{
+  env.COBRANCA='teste';
+  const r=await rotaCobranca(request('/api/cartao',{plano:'oferta',testeCobranca:true,email:EMAIL,sala:'ABCD',hostKey:'errado'}),env,'/api/cartao',async()=>false);
+  expect(r!.status).toBe(403);expect(apiCalls).toHaveLength(0);
+ });
+ it('cobra R$11,99 no cartão para oferta validada e mantém 7 dias',async()=>{
+  env.COBRANCA='teste';
+  const valid=vi.fn(async()=>true);
+  const r=await rotaCobranca(request('/api/cartao',{plano:'oferta',testeCobranca:true,email:EMAIL,sala:'ABCD',hostKey:'certo',valor:1}),env,'/api/cartao',valid);
+  expect(r!.status).toBe(200);expect(valid).toHaveBeenCalledWith('ABCD','certo');
+  const call=apiCalls.find(x=>x.method==='POST'&&x.path==='/v1/checkout/sessions')!;
+  expect(call.body.get('line_items[0][price_data][unit_amount]')).toBe('1199');expect(call.body.get('mode')).toBe('payment');
+  expect(read('SELECT plano,valor FROM compras')).toMatchObject({plano:'oferta',valor:'11.99'});
+ });
+ it('gera Pix avulso pelo preço do servidor',async()=>{
+  Object.assign(env,{COBRANCA:'ligada',MP_TOKEN:'mp-unit'});
+  vi.stubGlobal('fetch',vi.fn(async(_url,init)=>{const b=JSON.parse(String(init.body));expect(b.total_amount).toBe('15.99');return response({id:'ORDUNIT',transactions:{payments:[{payment_method:{qr_code:'pix-unit'}}]}})}));
+  const r=await rotaCobranca(request('/api/pix',{plano:'semana',email:EMAIL,valor:1}),env,'/api/pix');
+  expect(r!.status).toBe(200);expect(await r!.json()).toMatchObject({qr:'pix-unit'});
+  expect(read('SELECT plano,valor FROM compras')).toMatchObject({plano:'semana',valor:'15.99'});
+ });
+});

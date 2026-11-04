@@ -128,6 +128,10 @@ export class Room extends DurableObject<Env> {
     }
 
     if (att.role === 'player' && att.pid) {
+      if (msg.type === 'avatar') {
+        if (G.setAvatar(room, att.pid, msg.avatar)) this.changed(true);
+        return;
+      }
       if (msg.type === 'answer' && G.answer(room, att.pid, msg.qIndex, msg.choice, now)) {
         if (G.everyoneAnswered(room)) {
           G.reveal(room);

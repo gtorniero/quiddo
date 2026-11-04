@@ -336,6 +336,17 @@ export function hostView(room: Room, now: number, rk: RankRow[] = ranking(room))
   };
 }
 
+/** Troca o personagem de quem já está na sala (o lápis no celular). Mantém o visual único na sala. */
+export function setAvatar(room: Room, playerId: string, raw: unknown): boolean {
+  const p = room.players[playerId];
+  if (!p) return false;
+  const outros = Object.values(room.players).filter((x) => x.id !== playerId).map((x) => avatarOf(x));
+  const novo = uniqueAvatar(cleanAvatar(raw), outros);
+  if (novo === p.avatar) return false;
+  p.avatar = novo;
+  return true;
+}
+
 export function playerView(room: Room, playerId: string, now: number, rk: RankRow[] = ranking(room)): PlayerState | null {
   const p = room.players[playerId];
   if (!p) return null;
@@ -356,8 +367,18 @@ export function playerView(room: Room, playerId: string, now: number, rk: RankRo
       prevRank: mine ? mine.prevRank : 0,
       streak: showRank ? p.streak || 0 : 0,
       choice: a ? a.choice : null,
+      vizinho: showRank && mine ? vizinhoDe(rk, mine.rank) : null,
     },
     // no fim, todo mundo vê os 10 primeiros depois do pódio
     ranking: room.phase === 'final' ? rk.slice(0, 10) : showRank ? rk.slice(0, 5) : [],
   };
+}
+
+/** Quem está logo à frente no ranking e por quantos pontos; para o 1º, quem vem logo atrás. */
+function vizinhoDe(rk: RankRow[], rank: number): { nick: string; pontos: number; atras: boolean } | null {
+  const eu = rk[rank - 1];
+  if (!eu) return null;
+  if (rank > 1) return { nick: rk[rank - 2].nick, pontos: rk[rank - 2].score - eu.score, atras: true };
+  const segundo = rk[1];
+  return segundo ? { nick: segundo.nick, pontos: eu.score - segundo.score, atras: false } : null;
 }

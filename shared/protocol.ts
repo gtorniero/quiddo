@@ -46,6 +46,7 @@ export type ClientMsg =
   | { type: 'host'; hostKey: string }
   | { type: 'join'; nick: string; playerId: string; avatar?: string } // avatar: "bicho.cabeca.rosto.cor" (shared/avatar.ts)
   | { type: 'answer'; qIndex: number; choice: number }
+  | { type: 'avatar'; avatar: string } // jogador troca o personagem depois de entrar
   | { type: 'start' }
   | { type: 'reveal' }
   | { type: 'showRanking' }
@@ -135,6 +136,8 @@ export interface PlayerState extends BaseState {
     prevRank: number; // posição antes da última pergunta (0 = não tinha)
     streak: number; // acertos seguidos (0 antes da revelação)
     choice: number | null; // o que respondeu nesta pergunta
+    // depois da revelação: quem está logo à frente (ou, para o 1º, logo atrás) e a diferença em pontos
+    vizinho: { nick: string; pontos: number; atras: boolean } | null;
   };
   ranking: RankRow[]; // top 5 durante o jogo, top 10 no fim
 }

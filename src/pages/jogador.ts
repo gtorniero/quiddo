@@ -9,8 +9,11 @@ import { RoomSocket } from '../lib/socket';
 import { store, uid } from '../lib/storage';
 import { applyTheme } from '../lib/theme';
 import { palco } from '../lib/podio';
-import { BICHOS, CABECA, ROSTO, encodeAvatar, parseAvatar, randomAvatar, startAvatar } from '../../shared/avatar';
+import { BICHOS, CABECA, ROSTO, encodeAvatar, parseAvatar, randomAvatar } from '../../shared/avatar';
 import type { Avatar, Bicho, ItemCabeca, ItemRosto } from '../../shared/avatar';
+
+const LAPIS =
+  '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 20h4L19 9l-4-4L4 16v4Z" fill="#fff" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m13.5 6.5 4 4" stroke="currentColor" stroke-width="2"/></svg>';
 import { avatarSvg, comMoldura } from '../lib/avatar-art';
 import { simbolo } from '../lib/simbolos';
 import { FOGO, MOEDA, SUSPENSE_MS, agendaPodio, novosNoPodio, answersStatic, aplaude, prepare, preparando, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick, top10 } from './jogo-comum';
@@ -40,22 +43,26 @@ function mount(main: HTMLElement, code: string) {
   let passoTimers: number[] = [];
   let lastHtml = '';
   let prepTimer = 0;
-  let av: Avatar = parseAvatar(store.get('avatar', '')) || startAvatar();
+  // quem volta mantém o personagem; quem chega ganha um sorteado e edita depois, com o lápis na sala de espera
+  let av: Avatar = parseAvatar(store.get('avatar', '')) || randomAvatar();
+  let editando = false; // editor de personagem aberto na sala de espera
 
   const sair = () => {
     store.del('jog:' + code);
     navigate('/');
   };
 
-  // entrada em telas: 1 nome, 2 bicho, 3 cabeça, 4 rosto (uma tela por vez)
-  let etapa = 1;
+  // entrada numa tela só: o nome, com um personagem já sorteado
   let nome = store.get('nick', '');
-  const TITULOS = ['', 'Qual é o seu nome?', 'Escolha o seu bicho', 'Algo na cabeça?', 'E no rosto?'];
 
   const opcao = (k: string, v: string | number, on: boolean, inner: string, label: string) =>
     `<button type="button" data-act="av" data-k="${k}" data-v="${v}" data-focus="av-${k}-${v}" aria-pressed="${on}" aria-label="${esc(label)}">${inner}</button>`;
 
+  /** Opções do editor de personagem: bicho, cabeça e rosto, um bloco embaixo do outro. */
   function picker() {
+    return `<h2 class="ed-t">Bicho</h2>${pickerParte(2)}<h2 class="ed-t">Na cabeça</h2>${pickerParte(3)}<h2 class="ed-t">No rosto</h2>${pickerParte(4)}`;
+  }
+  function pickerParte(etapa: number) {
     if (etapa === 2)
       return `<div class="avgrid grande">${(Object.keys(BICHOS) as Bicho[])
         .map((a) => opcao('a', a, av.a === a, avatarSvg({ a, h: null, f: null, c: av.c }, 64), BICHOS[a]))
@@ -83,32 +90,16 @@ function mount(main: HTMLElement, code: string) {
   }
 
   function form(err = '') {
-    const pontos = [1, 2, 3, 4].map((i) => `<i class="${i < etapa ? 'feito' : i === etapa ? 'agora' : ''}"></i>`).join('');
-    const corpo =
-      etapa === 1
-        ? `<input type="text" id="nick" maxlength="${LIMITS.nick}" value="${esc(nome)}" autocomplete="nickname" placeholder="Como vai aparecer no ranking" aria-labelledby="etapa-t" aria-describedby="nick-err"><p class="err" id="nick-err" role="alert">${esc(err)}</p>`
-        : `<div id="avp" class="avpick">${picker()}</div>`;
-    const botao = etapa === 1 ? 'Próximo' : etapa === 2 ? '' : etapa === 3 ? 'Próximo' : 'Jogar!';
     main.innerHTML = `<section class="panel entrada"><div class="tag">Sala ${code}</div>
       <form id="fj" novalidate>
-        <div class="av-fixo"><span id="avprev" class="av-fixo-bicho">${previa()}</span><span class="av-fixo-nome" id="av-nome">${esc(nome) || 'Seu nome'}</span>${
-          etapa > 1 ? '<button type="button" class="btn sec small auto" data-act="sortear" data-focus="sortear">Sortear</button>' : ''
-        }</div>
-        <div class="etapa-topo"><span class="etapa-pontos" aria-hidden="true">${pontos}</span><span class="small">Passo ${etapa} de 4</span></div>
-        <h1 id="etapa-t" tabindex="-1">${TITULOS[etapa]}</h1>
-        ${etapa === 2 ? '<p class="small">Toque no seu bicho.</p>' : ''}
-        ${corpo}
-        <div class="etapa-acoes">${etapa > 1 ? '<button type="button" class="btn sec auto" data-act="voltar">Voltar</button>' : ''}${botao ? `<button class="btn" type="submit">${botao}</button>` : ''}</div>
+        <div class="av-fixo"><span id="avprev" class="av-fixo-bicho">${previa()}</span><span class="av-fixo-nome" id="av-nome">${esc(nome) || 'Seu nome'}</span><button type="button" class="btn sec small auto" data-act="sortear" data-focus="sortear">Sortear</button></div>
+        <h1 id="etapa-t" tabindex="-1">Qual é o seu nome?</h1>
+        <input type="text" id="nick" maxlength="${LIMITS.nick}" value="${esc(nome)}" autocomplete="nickname" placeholder="Como vai aparecer no ranking" aria-labelledby="etapa-t" aria-describedby="nick-err"><p class="err" id="nick-err" role="alert">${esc(err)}</p>
+        <div class="etapa-acoes"><button class="btn" type="submit">Jogar!</button></div>
       </form>
-      <p class="small">Sem cadastro. Seu nome e seu bicho só aparecem nesta rodada.</p></section>`;
+      <p class="small">Sem cadastro. Dá para mudar o seu bicho depois, na sala de espera.</p></section>`;
     window.scrollTo(0, 0);
-    if (etapa === 1) main.querySelector<HTMLInputElement>('#nick')!.focus({ preventScroll: true });
-    else main.querySelector<HTMLElement>('#etapa-t')!.focus({ preventScroll: true });
-  }
-
-  function irPara(n: number) {
-    etapa = Math.max(1, Math.min(4, n));
-    form();
+    main.querySelector<HTMLInputElement>('#nick')!.focus({ preventScroll: true });
   }
 
   function connect() {
@@ -128,7 +119,6 @@ function mount(main: HTMLElement, code: string) {
       const c = m.type === 'error' ? m.code : m.type === 'closed' && m.motivo === 'inativa' ? 'inativa' : m.type;
       banner('');
       if (c === 'bad_nick') {
-        etapa = 1;
         return form('Escreva um apelido para aparecer no ranking.');
       }
       // sala grátis cheia: fica esperando; o celular tenta de novo sozinho e entra quando o anfitrião liberar
@@ -232,7 +222,11 @@ function mount(main: HTMLElement, code: string) {
   // ---------- telas ----------
 
   function lobby(s: PlayerState) {
-    return `<section class="stage center"><div class="tag">Você está na sala ${code}</div><span class="fig grande" style="--r:-4deg">${avatarSvg(s.me.avatar, 132, true, { vivo: true })}</span><div class="big">${esc(s.me.nick)}</div>
+    if (editando)
+      return `<section class="panel entrada editor-av"><div class="av-fixo"><span id="avprev" class="av-fixo-bicho">${previa()}</span><span class="av-fixo-nome">${esc(s.me.nick)}</span><button type="button" class="btn sec small auto" data-act="sortear" data-focus="sortear">Sortear</button></div>
+        <h1 tabindex="-1" id="ed-h">Seu personagem</h1><div id="avp" class="avpick">${picker()}</div>
+        <div class="etapa-acoes"><button type="button" class="btn sec auto" data-act="ed-cancelar">Cancelar</button><button type="button" class="btn" data-act="ed-pronto" data-focus="ed-pronto">Pronto</button></div></section>`;
+    return `<section class="stage center"><div class="tag">Você está na sala ${code}</div><span class="fig grande editavel" style="--r:-4deg">${avatarSvg(s.me.avatar, 132, true, { vivo: true })}<button type="button" class="lapis" data-act="editar" data-focus="editar" aria-label="Editar o seu personagem">${LAPIS}</button></span><div class="big">${esc(s.me.nick)}</div>
       <p class="muted">Prontinho! Olhe para a tela: seu bicho já apareceu lá e o quiz vai começar.</p><div class="contador pequeno"><b>${s.playerCount}</b><span>${s.playerCount === 1 ? 'pessoa na sala' : 'pessoas na sala'}</span></div></section>`;
   }
 
@@ -278,9 +272,17 @@ function mount(main: HTMLElement, code: string) {
     // na última não mostra a posição: ela entregaria o pódio
     const ultima = s.qIndex >= s.total - 1;
     const fogo = ok && s.me.streak >= FOGO ? `<div class="fogo-selo">${comMoldura(avatarSvg(s.me.avatar, 56), 'fogo')}<span><b>${s.me.streak} acertos seguidos!</b> Você está pegando fogo.</span></div>` : '';
-    return `<section class="stage revelada">${questionHead(s)}<div class="verdict ${ok ? 'ok' : 'no'}" role="status">${answered ? (ok ? `Mandou bem! +${fmt(s.me.delta)}` : 'Quase!') : 'Não respondeu'}</div>${fogo}
-      ${answersStatic(s, s.me.choice)}
-      <p class="hint" style="font-size:19px">${ultima ? '<b>Olhe para a tela:</b> o pódio vem aí!' : `Você está em <b>${s.me.rank}º</b> de ${s.playerCount}, com ${fmt(s.me.score)} pontos.`}</p></section>`;
+    return `<section class="stage revelada">${questionHead(s)}<div class="verdict ${ok ? 'ok' : 'no'}" role="status">${answered ? (ok ? `Mandou bem! +${fmt(s.me.delta)}` : 'Quase!') : 'Não respondeu'}</div>
+      <p class="hint minha-posicao">${ultima ? '<b>Olhe para a tela:</b> o pódio vem aí!' : `Você está em <b>${s.me.rank}º lugar</b>, com ${fmt(s.me.score)} pontos.${vizinhoTxt(s)}`}</p>${fogo}
+      ${answersStatic(s, s.me.choice)}</section>`;
+  }
+
+  /** "120 pontos atrás de Ana" (ou, para quem lidera, "120 pontos à frente de Bia"). */
+  function vizinhoTxt(s: PlayerState) {
+    const v = s.me.vizinho;
+    if (!v) return '';
+    if (!v.pontos) return `<br><span class="vizinho">Empatado com ${esc(v.nick)}</span>`;
+    return `<br><span class="vizinho">${fmt(v.pontos)} ${v.pontos === 1 ? 'ponto' : 'pontos'} ${v.atras ? 'atrás de' : 'à frente de'} ${esc(v.nick)}</span>`;
   }
 
   function ranking(s: PlayerState) {
@@ -316,15 +318,10 @@ function mount(main: HTMLElement, code: string) {
   const onSubmit = (e: Event) => {
     if ((e.target as HTMLElement).id !== 'fj') return;
     e.preventDefault();
-    if (etapa === 1) {
-      nome = cleanNick(main.querySelector<HTMLInputElement>('#nick')!.value);
-      if (!nome) return form('Escreva seu apelido para aparecer no ranking.');
-      store.set('nick', nome);
-      return irPara(2);
-    }
-    if (etapa < 4) return irPara(etapa + 1);
-    const nick = cleanNick(nome);
-    if (!nick) return irPara(1);
+    nome = cleanNick(main.querySelector<HTMLInputElement>('#nick')!.value);
+    if (!nome) return form('Escreva seu apelido para aparecer no ranking.');
+    store.set('nick', nome);
+    const nick = nome;
     const avatar = encodeAvatar(av);
     store.set('avatar', avatar);
     seat = { pid: uid(), nick, avatar };
@@ -345,11 +342,29 @@ function mount(main: HTMLElement, code: string) {
       if (k === 'f') next.f = v === '-' ? null : (v as ItemRosto);
       if (k === 'c') next.c = Number(v);
       setAv(next);
-      // escolheu o bicho: vai sozinho para a próxima tela, depois de ver o personagem mudar
-      if (k === 'a' && etapa === 2) window.setTimeout(() => etapa === 2 && irPara(3), 280);
       return;
     }
-    if (b.dataset.act === 'voltar') return irPara(etapa - 1);
+    // lápis na sala de espera: abre o editor com o personagem atual
+    if (b.dataset.act === 'editar' && s) {
+      av = parseAvatar(s.me.avatar) || av;
+      editando = true;
+      render();
+      window.scrollTo(0, 0);
+      main.querySelector<HTMLElement>('#ed-h')?.focus({ preventScroll: true });
+      return;
+    }
+    if (b.dataset.act === 'ed-cancelar' || b.dataset.act === 'ed-pronto') {
+      if (b.dataset.act === 'ed-pronto' && sock) {
+        const avatar = encodeAvatar(av);
+        store.set('avatar', avatar);
+        if (seat) store.set('jog:' + code, { ...seat, avatar });
+        sock.send({ type: 'avatar', avatar });
+      }
+      editando = false;
+      render();
+      main.querySelector<HTMLElement>('[data-focus="editar"]')?.focus({ preventScroll: true });
+      return;
+    }
     if (b.dataset.act === 'sair') {
       if (confirm('Sair da sala? Você perde a vaga nesta rodada.')) sair();
       return;

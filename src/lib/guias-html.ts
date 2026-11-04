@@ -39,15 +39,39 @@ export function descricao(g: Guia) {
   return r.length >= 110 ? `${r}.` : `${r}. ${g.titulo.length < 60 ? 'Guia grátis do Quiddo, o quiz ao vivo que a turma joga pelo celular.' : 'Guia grátis do Quiddo.'}`;
 }
 
-const cartao = (g: Guia) => `<a href="/guias/${g.slug}" data-link><b>${esc(g.titulo)}</b><span>${esc(g.resumo)}</span></a>`;
+const cartao = (g: Guia) => `<a href="/guias/${g.slug}" data-link data-slug="${g.slug}" data-pub="${g.publico}"><b>${esc(g.titulo)}</b><span>${esc(g.resumo)}</span></a>`;
+
+/** Filtros por assunto na página de guias: o valor é o `publico` dos guias (vazio = todos). */
+export const FILTROS_GUIAS: [string, string][] = [
+  ['', 'Tudo'],
+  ['perguntas', 'Perguntas prontas'],
+  ['todos', 'Como montar o quiz'],
+  ['festas', 'Festas e fim de ano'],
+  ['casamento', 'Despedida e chá bar'],
+  ['empresas', 'Empresas'],
+  ['escola', 'Escola'],
+];
+
+/** Busca e filtros. Sem JavaScript (robô de busca), a lista completa continua logo abaixo. */
+const buscaHtml = () =>
+  `<section class="panel busca-guias" aria-label="Buscar nos guias">
+    <label for="busca-guias">O que você procura?</label>
+    <input type="search" id="busca-guias" placeholder="Ex.: Natal, despedida, prêmios, futebol" autocomplete="off">
+    <div class="chips filtros-guias" role="group" aria-label="Filtrar por assunto">${FILTROS_GUIAS.map(
+      ([v, n]) => `<button type="button" data-filtro="${v}" aria-pressed="${v === ''}">${esc(n)}</button>`,
+    ).join('')}</div>
+    <p class="small" id="guias-n" role="status" aria-live="polite">${publicados().length} guias</p>
+  </section>
+  <section class="panel center" id="guias-vazio" hidden><p>Nenhum guia encontrado.</p><button type="button" class="btn sec auto" data-filtro-limpar>Ver todos os guias</button></section>`;
 
 export function listaHtml() {
   return (
     `<section class="hero"><h1>Guias</h1><p>Perguntas prontas com respostas, dicas de como montar o quiz e de como animar a turma: na festa, na despedida, na empresa, na igreja ou na escola.</p></section>` +
+    buscaHtml() +
     GRUPOS_GUIAS.map(([pubs, nome, sub]) => {
       const gs = publicados().filter((g) => pubs.includes(g.publico));
       if (!gs.length) return '';
-      return `<section class="panel"><h2>${esc(nome)}</h2><p class="small">${esc(sub)}</p><div class="guias">${gs.map(cartao).join('')}</div></section>`;
+      return `<section class="panel grupo-guias"><h2>${esc(nome)}</h2><p class="small">${esc(sub)}</p><div class="guias">${gs.map(cartao).join('')}</div></section>`;
     }).join('') +
     `<section class="panel"><h2>Pronto para jogar?</h2><a class="btn auto" href="/criar" data-link>Criar meu quiz</a></section>`
   );

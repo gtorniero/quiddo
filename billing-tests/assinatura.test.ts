@@ -26,24 +26,25 @@ function d1(db: DatabaseSync): D1Database {
  });
  return { prepare, batch: async (statements: any[]) => { const out = []; for (const s of statements) out.push(await s.run()); return out; } } as unknown as D1Database;
 }
-const price = () => ({ id: 'price_qd_month_test', object: 'price', active: true, livemode: false, currency: 'brl', unit_amount: 2599, recurring: { interval: 'month', interval_count: 1, usage_type: 'licensed' } });
+const price = () => ({ id: 'price_qd_month_test', object: 'price', active: true, livemode: false, currency: 'brl', unit_amount: 1599, recurring: { interval: 'month', interval_count: 1, usage_type: 'licensed' } });
 async function api(input: string | URL | Request, options?: RequestInit) {
  const url = new URL(String(input)), method = options?.method || 'GET', body = new URLSearchParams(String(options?.body || ''));
  apiCalls.push({ path: url.pathname, method, body });
  if (url.pathname === '/v1/prices/price_qd_month_test') return response(price());
+ if (url.pathname === '/v1/prices/price_qd_year_test') return response({ ...price(), id: 'price_qd_year_test', unit_amount: 15600, recurring: { interval: 'year', interval_count: 1, usage_type: 'licensed' } });
  if (url.pathname === '/v1/customers' && method === 'POST') return response({ id: 'cus_quiddo', object: 'customer', livemode: false });
  if (url.pathname === '/v1/checkout/sessions' && method === 'POST') return response({ ...session, client_reference_id: body.get('client_reference_id'), mode: body.get('mode'), url: 'https://checkout.stripe.com/c/pay/unit' });
  if (url.pathname === '/v1/checkout/sessions' && method === 'GET') return response({ object: 'list', data: [session], has_more: false });
  if (url.pathname === '/v1/checkout/sessions/cs_quiddo') return response(session);
  if (url.pathname === '/v1/subscriptions/sub_quiddo') return response(sub);
- if (url.pathname === '/v1/charges/ch_quiddo') return response({ id: 'ch_quiddo', livemode: false, payment_intent: 'pi_quiddo', refunded: true, amount_refunded: 2599 });
+ if (url.pathname === '/v1/charges/ch_quiddo') return response({ id: 'ch_quiddo', livemode: false, payment_intent: 'pi_quiddo', refunded: true, amount_refunded: 1599 });
  if (url.pathname === '/v1/invoice_payments') return response({ object: 'list', data: [{ id: 'inpay_unit', invoice: invoice.id }], has_more: false });
  if (url.pathname.startsWith('/v1/invoices/')) return response(invoice);
  if (url.pathname === '/v1/billing_portal/sessions') return response({ id: 'bps_unit', url: 'https://billing.stripe.com/p/session/unit' });
  throw new Error('Unmocked endpoint ' + method + ' ' + url.pathname + ' ' + checkoutMode);
 }
 async function seedPurchase() {
- sqlite.prepare("INSERT INTO compras(ref,ordem,email,status,criado,valor,modo,plano,tipo,stripe_price) VALUES (?,?,?,'pendente',?,'25.99','teste','mensal','assinatura','price_qd_month_test')").run(REF, 'stripe:cs_quiddo', EMAIL, new Date().toISOString());
+ sqlite.prepare("INSERT INTO compras(ref,ordem,email,status,criado,valor,modo,plano,tipo,stripe_price) VALUES (?,?,?,'pendente',?,'15.99','teste','mensal','assinatura','price_qd_month_test')").run(REF, 'stripe:cs_quiddo', EMAIL, new Date().toISOString());
  sqlite.prepare('INSERT INTO qd_clientes_stripe(email,modo,customer) VALUES (?,?,?)').run(EMAIL, 'teste', 'cus_quiddo');
 }
 async function webhook(type: string, object: unknown, live = false, valid = true) {
@@ -58,9 +59,9 @@ beforeEach(async () => {
  env = { DB: d1(sqlite), COBRANCA: 'simulacao', STRIPE_KEY: TEST_KEY, STRIPE_PRICE_MENSAL: 'price_qd_month_test', STRIPE_WEBHOOK_SECRET: SECRET, STRIPE_PORTAL_CONFIG: 'bpc_quiddo_test' };
  await tabelasStripe(env.DB!);
  const end = Math.floor(Date.now() / 1000) + 30 * 86400;
- invoice = { id: 'in_quiddo', object: 'invoice', status: 'paid', currency: 'brl', amount_paid: 2599, parent: { type: 'subscription_details', subscription_details: { subscription: 'sub_quiddo' } } };
+ invoice = { id: 'in_quiddo', object: 'invoice', status: 'paid', currency: 'brl', amount_paid: 1599, parent: { type: 'subscription_details', subscription_details: { subscription: 'sub_quiddo' } } };
  sub = { id: 'sub_quiddo', object: 'subscription', customer: 'cus_quiddo', status: 'active', livemode: false, cancel_at_period_end: false, latest_invoice: invoice, items: { data: [{ id: 'si_quiddo', quantity: 1, price: price(), current_period_end: end }] } };
- session = { id: 'cs_quiddo', object: 'checkout.session', client_reference_id: REF, mode: 'subscription', livemode: false, currency: 'brl', amount_total: 2599, subscription: 'sub_quiddo', customer: 'cus_quiddo', status: 'complete', payment_status: 'paid' };
+ session = { id: 'cs_quiddo', object: 'checkout.session', client_reference_id: REF, mode: 'subscription', livemode: false, currency: 'brl', amount_total: 1599, subscription: 'sub_quiddo', customer: 'cus_quiddo', status: 'complete', payment_status: 'paid' };
  apiCalls = []; checkoutMode = 'subscription'; vi.stubGlobal('fetch', vi.fn(api));
 });
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); sqlite.close(); });
@@ -98,7 +99,7 @@ describe('Quiddo Stripe mensal', () => {
   const r = await rotaCobranca(request('/api/cartao', { email: EMAIL, plano: 'semana', testeCobranca: true }, false), env, '/api/cartao');
   expect(r!.status).toBe(200);
   const call = apiCalls.find(x => x.path === '/v1/checkout/sessions' && x.method === 'POST')!;
-  expect(call.body.get('mode')).toBe('payment'); expect(call.body.get('line_items[0][price_data][unit_amount]')).toBe('1599');
+  expect(call.body.get('mode')).toBe('payment'); expect(call.body.get('line_items[0][price_data][unit_amount]')).toBe('1299');
  });
  it('signed checkout confirms first period and repeated events keep one access code', async () => {
   await seedPurchase(); expect((await webhook('checkout.session.completed', session))!.status).toBe(200);
@@ -136,7 +137,7 @@ describe('Quiddo Stripe mensal', () => {
  });
  it.each(['charge.refunded','charge.dispute.created','radar.early_fraud_warning.created'])('risk event %s revokes access and a later invoice cannot clear it', async (kind) => {
   await seedPurchase(); await webhook('checkout.session.completed', session); const code = read('SELECT codigo FROM compras')!.codigo;
-  const object = kind === 'charge.refunded' ? { id: 'ch_quiddo', refunded: true, amount_refunded: 2599 } : { id: 'risk_unit', charge: 'ch_quiddo' };
+  const object = kind === 'charge.refunded' ? { id: 'ch_quiddo', refunded: true, amount_refunded: 1599 } : { id: 'risk_unit', charge: 'ch_quiddo' };
   expect((await webhook(kind, object))!.status).toBe(200); expect(await codigoValido(env, code)).toBe(false);
   await webhook('invoice.paid', invoice); expect(await codigoValido(env, code)).toBe(false);
  });
@@ -177,14 +178,14 @@ describe('Quiddo Stripe mensal', () => {
   const r = await rotaCobranca(new Request(ORIGIN + '/api/cobranca'), env, '/api/cobranca');
   const c = await r!.json() as any;
   expect(c.cartao).toBe(false); expect(c.pix).toBe(false);
-  expect(c.planos.map((p: any) => p.id)).toEqual(['mensal','semana']);
+  expect(c.planos.map((p: any) => p.id)).toEqual(['semana','mensal']);
  });
  it('oferece mensal e avulso no cartão e recusa Pix no servidor', async () => {
   Object.assign(env, { COBRANCA: 'ligada', STRIPE_LIVE_KEY: ['rk','live','fixture'].join('_'), STRIPE_LIVE_PRICE_MENSAL:'price_live', STRIPE_LIVE_PORTAL_CONFIG:'bpc_live', STRIPE_LIVE_WEBHOOK_SECRET:'unit-live' });
   const r = await rotaCobranca(new Request(ORIGIN + '/api/cobranca'), env, '/api/cobranca');
   const c = await r!.json() as any;
   expect(c).toMatchObject({ cartao:true, cartaoTeste:false, pix:false, assinaturaMensal:true });
-  expect(c.planos.map((p: any) => p.id)).toEqual(['mensal','semana']);
+  expect(c.planos.map((p: any) => p.id)).toEqual(['semana','mensal']);
   expect((await rotaCobranca(request('/api/pix', { plano:'mensal' }), env, '/api/pix'))!.status).toBe(503);
   expect(apiCalls).toHaveLength(0);
  });
@@ -203,20 +204,44 @@ describe('Pix avulso e oferta com desconto', () => {
   const r=await rotaCobranca(request('/api/cartao',{plano:'oferta',testeCobranca:true,email:EMAIL,sala:'ABCD',hostKey:'errado'}),env,'/api/cartao',async()=>false);
   expect(r!.status).toBe(403);expect(apiCalls).toHaveLength(0);
  });
- it('cobra R$11,99 no cartão para oferta validada e mantém 7 dias',async()=>{
+ it('cobra R$9,99 no cartão para oferta validada e mantém 7 dias',async()=>{
   env.COBRANCA='teste';
   const valid=vi.fn(async()=>true);
   const r=await rotaCobranca(request('/api/cartao',{plano:'oferta',testeCobranca:true,email:EMAIL,sala:'ABCD',hostKey:'certo',valor:1}),env,'/api/cartao',valid);
   expect(r!.status).toBe(200);expect(valid).toHaveBeenCalledWith('ABCD','certo');
   const call=apiCalls.find(x=>x.method==='POST'&&x.path==='/v1/checkout/sessions')!;
-  expect(call.body.get('line_items[0][price_data][unit_amount]')).toBe('1199');expect(call.body.get('mode')).toBe('payment');
-  expect(read('SELECT plano,valor FROM compras')).toMatchObject({plano:'oferta',valor:'11.99'});
+  expect(call.body.get('line_items[0][price_data][unit_amount]')).toBe('999');expect(call.body.get('mode')).toBe('payment');
+  expect(read('SELECT plano,valor FROM compras')).toMatchObject({plano:'oferta',valor:'9.99'});
  });
  it('gera Pix avulso pelo preço do servidor',async()=>{
   Object.assign(env,{COBRANCA:'ligada',MP_TOKEN:'mp-unit'});
-  vi.stubGlobal('fetch',vi.fn(async(_url,init)=>{const b=JSON.parse(String(init.body));expect(b.total_amount).toBe('15.99');return response({id:'ORDUNIT',transactions:{payments:[{payment_method:{qr_code:'pix-unit'}}]}})}));
+  vi.stubGlobal('fetch',vi.fn(async(_url,init)=>{const b=JSON.parse(String(init.body));expect(b.total_amount).toBe('12.99');return response({id:'ORDUNIT',transactions:{payments:[{payment_method:{qr_code:'pix-unit'}}]}})}));
   const r=await rotaCobranca(request('/api/pix',{plano:'semana',email:EMAIL,valor:1}),env,'/api/pix');
   expect(r!.status).toBe(200);expect(await r!.json()).toMatchObject({qr:'pix-unit'});
-  expect(read('SELECT plano,valor FROM compras')).toMatchObject({plano:'semana',valor:'15.99'});
+  expect(read('SELECT plano,valor FROM compras')).toMatchObject({plano:'semana',valor:'12.99'});
+ });
+});
+
+describe('Quiddo Stripe anual', () => {
+ it('só oferece o Anual com o preço anual configurado', async () => {
+  const sem = await (await rotaCobranca(new Request(ORIGIN + '/api/cobranca?teste_cobranca=1'), env, '/api/cobranca'))!.json() as any;
+  expect(sem.planos.map((p: any) => p.id)).toEqual(['semana', 'mensal']);
+  env.STRIPE_PRICE_ANUAL = 'price_qd_year_test';
+  const com = await (await rotaCobranca(new Request(ORIGIN + '/api/cobranca?teste_cobranca=1'), env, '/api/cobranca'))!.json() as any;
+  expect(com.planos.map((p: any) => [p.id, p.preco])).toEqual([['semana', '12,99'], ['mensal', '15,99'], ['anual', '156,00']]);
+ });
+ it('cria a assinatura anual no preço anual do servidor e grava o plano', async () => {
+  env.STRIPE_PRICE_ANUAL = 'price_qd_year_test';
+  const r = await rotaCobranca(request('/api/cartao', { plano: 'anual', testeCobranca: true }), env, '/api/cartao');
+  expect(r!.status).toBe(200);
+  const call = apiCalls.find(x => x.path === '/v1/checkout/sessions' && x.method === 'POST')!;
+  expect(call.body.get('mode')).toBe('subscription'); expect(call.body.get('line_items[0][price]')).toBe('price_qd_year_test');
+  expect(read('SELECT plano,valor,tipo FROM compras')).toMatchObject({ plano: 'anual', valor: '156.00', tipo: 'assinatura' });
+ });
+ it('recusa o Anual no Pix e quando o preço do Stripe não bate', async () => {
+  env.STRIPE_PRICE_ANUAL = 'price_qd_year_test';
+  expect((await rotaCobranca(request('/api/pix', { email: EMAIL, plano: 'anual' }), env, '/api/pix'))!.status).toBe(400);
+  env.PRECO_ANUAL = '120.00';
+  expect((await rotaCobranca(request('/api/cartao', { plano: 'anual', testeCobranca: true }), env, '/api/cartao'))!.status).toBe(503);
  });
 });

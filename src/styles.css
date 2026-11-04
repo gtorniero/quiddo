@@ -5994,3 +5994,25 @@ body.modo-foto .btn-som {
   padding: 2px 8px;
   margin-right: 4px;
 }
+
+/* pergunta comprida: letra menor na TV, para as respostas caberem */
+.tv .qt.qt-media {
+  font-size: clamp(26px, 3.4vw, 44px);
+}
+.tv .qt.qt-longa {
+  font-size: clamp(22px, 2.6vw, 34px);
+}
+/* celular com respostas muito compridas: só letras e cores, em 2 x 2 */
+.answers.so-letras {
+  grid-template-columns: 1fr 1fr;
+}
+.ans.so-letra {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  min-height: 140px;
+}
+.ans.so-letra .lt {
+  width: 64px;
+  height: 64px;
+  font-size: 30px;
+}

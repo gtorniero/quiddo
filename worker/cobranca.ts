@@ -6,13 +6,14 @@
 //     "simulacao" = vale para todos, mas o Pix é de mentira (aprova sozinho) e o cartão não aparece;
 //     "teste" = só vale com ?teste_cobranca=1 e, sem MP_TOKEN, o Pix é simulado;
 //     "ligada" = cobrança de verdade para todos; "desligada" = sem limite e sem cobrança.
-//   Preços: variáveis PRECO_MENSAL e PRECO_SEMANA (padrão 25.99 e 15.99), iguais no Pix e no cartão.
+//   Preços: PRECO_SEMANA (Passe avulso, padrão 12.99), PRECO_MENSAL (15.99), PRECO_ANUAL (156.00) e PRECO_OFERTA (9.99).
+//   Mensal e Anual são assinaturas no cartão (Stripe Billing); o Passe aceita Pix e cartão.
 // Ver compras: Cloudflare > D1 > quiddo > Console:  SELECT * FROM compras ORDER BY criado DESC;
 // Só passam por aqui o e-mail de quem paga, o identificador da compra e o código. Nada do quiz.
 
 import {redeemPromo} from './promos.mjs';
 import { emailDaSessao } from './login';
-import { checkoutMensal, confirmarAssinatura, mensalConfigurado, portalAssinatura, situacaoAssinatura, stripeAmbiente, webhookStripe } from './stripe-assinatura';
+import { anualConfigurado, checkoutMensal, confirmarAssinatura, mensalConfigurado, portalAssinatura, situacaoAssinatura, stripeAmbiente, webhookStripe } from './stripe-assinatura';
 
 export interface CobrancaEnv {
   DB?: D1Database;
@@ -24,11 +25,14 @@ export interface CobrancaEnv {
   STRIPE_LIVE_KEY?: string;
   STRIPE_LIVE_WEBHOOK_SECRET?: string;
   STRIPE_LIVE_PRICE_MENSAL?: string;
+  STRIPE_LIVE_PRICE_ANUAL?: string;
   STRIPE_LIVE_PORTAL_CONFIG?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   STRIPE_PRICE_MENSAL?: string;
+  STRIPE_PRICE_ANUAL?: string;
   STRIPE_PORTAL_CONFIG?: string;
   PRECO_MENSAL?: string;
+  PRECO_ANUAL?: string;
   PRECO_SEMANA?: string;
   PRECO_OFERTA?: string;
   CODIGOS_AMIGOS?: string;
@@ -39,14 +43,17 @@ export interface CobrancaEnv {
 
 export type Modo = 'ligada' | 'simulacao' | 'teste' | 'desligada';
 // oferta: o mesmo Passe 7 dias, mais barato, só para o anfitrião de uma sala grátis cheia com gente esperando
-export type Plano = 'mensal' | 'semana' | 'oferta';
+export type Plano = 'mensal' | 'anual' | 'semana' | 'oferta';
 
 const PLANOS: Record<Plano, { nome: string; dias: number; padrao: string }> = {
-  mensal: { nome: 'Mensal', dias: 30, padrao: '25.99' },
-  semana: { nome: 'Passe 7 dias', dias: 7, padrao: '15.99' },
-  oferta: { nome: 'Passe 7 dias', dias: 7, padrao: '11.99' },
+  mensal: { nome: 'Mensal', dias: 30, padrao: '15.99' },
+  anual: { nome: 'Anual', dias: 365, padrao: '156.00' },
+  semana: { nome: 'Passe 7 dias', dias: 7, padrao: '12.99' },
+  oferta: { nome: 'Passe 7 dias', dias: 7, padrao: '9.99' },
 };
-const planoDe = (v: unknown): Plano => (v === 'semana' || v === 'oferta' ? v : 'mensal');
+const planoDe = (v: unknown): Plano => (v === 'semana' || v === 'oferta' || v === 'anual' ? v : 'mensal');
+/** Mensal e Anual são assinaturas: só no cartão. */
+const assinatura = (p: Plano) => p === 'mensal' || p === 'anual';
 
 /** Confere com a sala se a oferta vale: anfitrião certo, sala grátis cheia e alguém esperando. */
 export type OfertaValida = (sala: string, hostKey: string) => Promise<boolean>;
@@ -65,7 +72,8 @@ export const modo = (env: CobrancaEnv): Modo =>
 const tok = (env: CobrancaEnv) => String(env.MP_TOKEN || '').trim().replace(/^['"]|['"]$/g, '').replace(/^Bearer\s+/i, '').trim();
 const stripeKey = (env: CobrancaEnv) => String(env.STRIPE_KEY || '').trim();
 const stripeTeste = (env: CobrancaEnv) => /^(sk|rk)_test_/.test(stripeKey(env));
-const preco = (env: CobrancaEnv, p: Plano) => String((p === 'mensal' ? env.PRECO_MENSAL : p === 'oferta' ? env.PRECO_OFERTA : env.PRECO_SEMANA) || PLANOS[p].padrao);
+const preco = (env: CobrancaEnv, p: Plano) =>
+  String((p === 'mensal' ? env.PRECO_MENSAL : p === 'anual' ? env.PRECO_ANUAL : p === 'oferta' ? env.PRECO_OFERTA : env.PRECO_SEMANA) || PLANOS[p].padrao);
 const virgula = (v: string) => Number(v).toFixed(2).replace('.', ',');
 // Pix simulado: na simulação, ou no modo teste sem token do Mercado Pago (para ver o fluxo antes de ligar a conta)
 const pixSimulado = (env: CobrancaEnv) => modo(env) === 'simulacao' || (modo(env) === 'teste' && !tok(env));
@@ -209,6 +217,7 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     ...env, STRIPE_KEY: env.STRIPE_LIVE_KEY,
     STRIPE_WEBHOOK_SECRET: env.STRIPE_LIVE_WEBHOOK_SECRET,
     STRIPE_PRICE_MENSAL: env.STRIPE_LIVE_PRICE_MENSAL,
+    STRIPE_PRICE_ANUAL: env.STRIPE_LIVE_PRICE_ANUAL,
     STRIPE_PORTAL_CONFIG: env.STRIPE_LIVE_PORTAL_CONFIG,
   };
   const db = env.DB;
@@ -229,9 +238,11 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
       pixSimulado: pixSimulado(env),
       cartao: !!db && cartaoPronto(env, new URL(req.url).searchParams.get('teste_cobranca') === '1'),
       assinaturaMensal: mensalConfigurado(env),
+      assinaturaAnual: anualConfigurado(env),
       cartaoTeste: stripeTeste(env),
       oferta: { preco: virgula(preco(env, 'oferta')), de: virgula(preco(env, 'semana')) },
-      planos: (['mensal', 'semana'] as Plano[]).map((id) => ({ id, nome: PLANOS[id].nome, dias: PLANOS[id].dias, preco: virgula(preco(env, id)) })),
+      // o Anual só aparece com o preço anual configurado no Stripe
+      planos: (['semana', 'mensal', 'anual'] as Plano[]).filter((id) => id !== 'anual' || anualConfigurado(env)).map((id) => ({ id, nome: PLANOS[id].nome, dias: PLANOS[id].dias, preco: virgula(preco(env, id)) })),
       gratis: 10,
       pago: 200,
     });
@@ -269,7 +280,7 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     const email = (await emailDaSessao(req, env)) || emailDe(pedido);
     if (!email) return json({ erro: 'email' }, 400);
     const plano = planoDe(pedido?.plano);
-    if (plano === 'mensal') return json({ erro: 'mensal_so_cartao' }, 400);
+    if (assinatura(plano)) return json({ erro: 'mensal_so_cartao' }, 400);
     // a oferta só sai pelo Pix e só para o anfitrião da sala cheia, conferido na própria sala
     if (plano === 'oferta' && !(ofertaValida && (await ofertaValida(String(pedido?.sala || ''), String(pedido?.hostKey || ''))))) return json({ erro: 'oferta' }, 403);
     await tabela(db);
@@ -361,7 +372,7 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     // O desconto vale nos dois meios, somente após validar o anfitrião e a sala cheia.
     const plano = planoDe(c?.plano);
     if (plano === 'oferta' && !(ofertaValida && (await ofertaValida(String(c?.sala || ''), String(c?.hostKey || ''))))) return json({ erro: 'oferta' }, 403);
-    if (plano === 'mensal') return checkoutMensal(req, env, contaEmail, volta, c || {});
+    if (assinatura(plano)) return checkoutMensal(req, env, contaEmail, volta, c || {}, plano === 'anual' ? 'anual' : 'mensal');
     const valor = preco(env, plano);
     const f = new URLSearchParams({
       mode: 'payment',

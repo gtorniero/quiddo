@@ -245,19 +245,31 @@ function mount(main: HTMLElement, code: string) {
             )}<span>${esc(nick)}${nick === s.me.nick ? ' (você)' : ''}</span></button>`,
         )
         .join('');
-      return `<section class="stage">${questionHead(s)}<div class="quem-grid" role="group" aria-label="Escolha alguém da sala">${pessoas}</div>
+      return `<section class="stage">${questionHead(s, true)}<div class="quem-grid" role="group" aria-label="Escolha alguém da sala">${pessoas}</div>
         <p class="hint" role="status">${chosen != null ? 'Voto enviado. Espere o resultado.' : 'Toque em alguém da sala. Vale votar em você.'}</p></section>`;
     }
+    // respostas muito compridas não cabem numa tela de celular: só as letras e as cores (o texto fica na TV)
+    const soLetras = q.o.some((o) => o.length > 45);
     const buttons = q.o
       .map(
         (o, k) =>
-          `<button class="ans c${k}${tamanhoResposta(o)}${chosen != null && chosen !== k ? ' dim' : ''}${chosen === k ? ' mine' : ''}" data-act="ans" data-v="${k}" data-focus="a${k}"${chosen != null ? ' disabled' : ''}${
+          `<button class="ans c${k}${soLetras ? ' so-letra' : tamanhoResposta(o)}${chosen != null && chosen !== k ? ' dim' : ''}${chosen === k ? ' mine' : ''}" data-act="ans" data-v="${k}" data-focus="a${k}"${chosen != null ? ' disabled' : ''}${
             chosen === k ? ' aria-pressed="true"' : ''
-          }>${simbolo(k)}<span class="lt">${LETRAS[k]}</span><span>${esc(o)}</span><span></span></button>`,
+          }${soLetras ? ` aria-label="${LETRAS[k]}: ${esc(o)}"` : ''}>${simbolo(k)}<span class="lt">${LETRAS[k]}</span>${soLetras ? '' : `<span>${esc(o)}</span><span></span>`}</button>`,
       )
       .join('');
-    return `<section class="stage">${questionHead(s)}<div class="answers" role="group" aria-label="Respostas">${buttons}</div>
-      <p class="hint" role="status">${chosen != null ? (s.me.choice != null ? 'Resposta enviada. Espere a revelação.' : 'Enviando…') : q.tipo === 'opiniao' ? 'Não tem resposta certa: vote no que você acha.' : 'Toque na sua resposta. Quanto mais rápido, mais pontos.'}</p></section>`;
+    const dica =
+      chosen != null
+        ? s.me.choice != null
+          ? 'Resposta enviada. Espere a revelação.'
+          : 'Enviando…'
+        : soLetras
+          ? 'Leia as respostas na tela e toque na letra.'
+          : q.tipo === 'opiniao'
+            ? 'Não tem resposta certa: vote no que você acha.'
+            : 'Toque na sua resposta. Quanto mais rápido, mais pontos.';
+    return `<section class="stage">${questionHead(s, true)}<div class="answers${soLetras ? ' so-letras' : ''}" role="group" aria-label="Respostas">${buttons}</div>
+      <p class="hint" role="status">${dica}</p></section>`;
   }
 
   function reveal(s: PlayerState) {

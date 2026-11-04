@@ -45,11 +45,14 @@ export function prepare(s: BaseState, top3: RankRow[] = []) {
 }
 
 /** Cabeçalho da pergunta com cronômetro e barra. Os ids são atualizados pelo relógio da página. */
-export function questionHead(s: BaseState) {
+/** Cabeçalho da pergunta. `semPergunta`: o celular, na hora de responder, não repete o texto (ele já apareceu na leitura). */
+export function questionHead(s: BaseState, semPergunta = false) {
   const q = s.question!;
+  // pergunta comprida ganha letra menor, para as respostas caberem na TV
+  const tam = q.t.length > 140 ? ' qt-longa' : q.t.length > 80 ? ' qt-media' : '';
   return `<div class="meta"><span class="pill">Pergunta ${s.qIndex + 1} de ${s.total}</span>${q.dobro ? '<span class="pill dobro">Vale o dobro</span>' : ''}${
     s.phase === 'question' ? `<span class="timer" aria-hidden="true">${OLHO}<b id="tempo">${q.tl}</b></span>` : ''
-  }</div>${s.phase === 'question' ? '<div class="bar" aria-hidden="true"><i id="barra"></i></div>' : ''}<div class="qt">${esc(q.t)}</div>${
+  }</div>${s.phase === 'question' ? '<div class="bar" aria-hidden="true"><i id="barra"></i></div>' : ''}${semPergunta ? '' : `<div class="qt${tam}">${esc(q.t)}</div>`}${
     q.img ? `<img class="qimg" src="/api/salas/${s.code}/img/${s.qIndex}?v=${q.img}" alt="Imagem da pergunta">` : ''
   }`;
 }

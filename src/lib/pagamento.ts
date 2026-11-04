@@ -112,11 +112,12 @@ const ICONE_PIX =
  * `aoPagar` recebe o código quando o pagamento é confirmado (ou quando a pessoa usa um código que já tem).
  * `plano` já deixa um plano marcado (a página de preços manda o que a pessoa clicou).
  */
-export async function abrirPagamento(volta: string, aoPagar: (codigo: string) => void, plano: Plano = 'mensal', sala?: { codigo: string; hostKey: string }) {
+export async function abrirPagamento(volta: string, aoPagar: (codigo: string) => void, plano: Plano = 'anual', sala?: { codigo: string; hostKey: string }) {
   const c = await cobranca();
   // oferta da sala cheia: o anfitrião, com gente esperando, libera com desconto no Pix (o servidor confere na sala)
   const oferta = !!sala && !!c?.oferta && (c.pix || c.cartao);
-  let escolhido: Plano = oferta ? 'oferta' : (c?.planos.some(p => p.id === plano) ? plano : 'mensal');
+  const tem = (p: Plano) => !!c?.planos.some((x) => x.id === p);
+  let escolhido: Plano = oferta ? 'oferta' : tem(plano) ? plano : tem('anual') ? 'anual' : 'mensal';
   const precoDe = (p: Plano) => ((p === 'oferta' ? c?.oferta?.preco : c?.planos.find((x) => x.id === p)?.preco) || '').replace(/,00$/, '');
   document.getElementById('pagamento')?.remove();
   const d = document.createElement('dialog');
@@ -169,14 +170,14 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
     }
     const opcoes = c.planos
       .map(
-        (p) => `<label class="pg-plano${p.id === 'mensal' ? ' melhor' : ''}"><input type="radio" name="pg-plano" value="${p.id}"${p.id === escolhido ? ' checked' : ''}>
+        (p) => `<label class="pg-plano${p.id === 'anual' ? ' melhor' : ''}"><input type="radio" name="pg-plano" value="${p.id}"${p.id === escolhido ? ' checked' : ''}>
           <span class="pg-plano-nome">${esc(p.nome)}</span>
           <span class="pg-plano-preco">R$ ${esc(p.preco.replace(/,00$/, ''))}${p.id === 'mensal' ? '<small>/mês</small>' : p.id === 'anual' ? '<small>/ano</small>' : ''}</span>
           <span class="pg-plano-txt">${
             p.id === 'anual'
-              ? '<small class="pg-vantagem">mais vantagem</small> Sai por R$ 10 por mês.'
+              ? `<small class="pg-vantagem">mais vantagem</small> Sai por R$ ${esc((Number(p.preco.replace(',', '.')) / 12).toFixed(2).replace('.', ',').replace(/,00$/, ''))} por mês.`
               : p.id === 'mensal'
-                ? 'Jogos ilimitados o mês todo.'
+                ? 'Cobrança mensal, renova a cada mês.'
                 : '<small class="pg-avulso">avulso</small> Para um evento: 7 dias.'
           }</span></label>`,
       )
@@ -238,7 +239,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
     d.innerHTML = `${fechar}<h2 id="pg-t">Abrindo o pagamento…</h2>`;
     const r = await post<{ url?: string; erro?: string; login?: boolean; gerenciar?: boolean }>('/api/cartao', { email, volta, plano: escolhido, sala: sala?.codigo, hostKey: sala?.hostKey, testeCobranca: testeCobranca() });
     if (r?.login) {
-      d.innerHTML = `${fechar}<h2 id="pg-t">Entre para assinar o Mensal</h2><p>Assim você acompanha a renovação e cancela quando quiser.</p><a class="btn" href="/entrar?volta=${encodeURIComponent(volta)}">Entrar com meu e-mail</a>`;
+      d.innerHTML = `${fechar}<h2 id="pg-t">Entre para assinar</h2><p>A assinatura fica ligada à sua conta, onde você acompanha a renovação.</p><a class="btn" href="/entrar?volta=${encodeURIComponent(volta)}">Entrar com meu e-mail</a>`;
       return;
     }
     if (r?.gerenciar) {

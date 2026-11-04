@@ -5,6 +5,7 @@ import type { Page } from '../main';
 import type { CreateRoomBody, CreateRoomResult, Theme, Visual } from '../../shared/protocol';
 import { LIMITS, VISUAIS_DO_MODO, compactQuestion, isReady, visualDoModo } from '../../shared/rules';
 import { CORES_MARCA, TEMAS } from '../data/pacotes';
+import { MODELOS, type Modelo } from '../data/modelos';
 import { LETRAS, esc } from '../lib/dom';
 import { readFoto, readLogo } from '../lib/logo';
 import { navigate } from '../lib/nav';
@@ -28,6 +29,28 @@ function mount(main: HTMLElement) {
     q.visual = visualDoModo(q.tema, q.visual);
   }
   store.del('temaNovo');
+
+  /** Troca as perguntas pelas 10 de um quiz pronto (respostas embaralhadas, menos as de duas opções). */
+  const usarModelo = (m: Modelo) => {
+    q.tema = 'festa';
+    q.visual = visualDoModo(q.tema, q.visual);
+    q.perguntas = m.perguntas.map((x) => {
+      if (x.o.length <= 2) return { t: x.t, o: [...x.o], c: x.c, tl: q.tempo };
+      const idx = x.o.map((_, k) => k).sort(() => Math.random() - 0.5);
+      return { t: x.t, o: idx.map((k) => x.o[k]), c: idx.indexOf(x.c), tl: q.tempo };
+    });
+    q.dobroUltima = true;
+    // troca o nome só se ainda for um nome padrão (o do modo ou o de outro quiz pronto)
+    const padroes = ['Quiz da galera', 'Quiz da equipe', 'Quiz da turma', ...MODELOS.map((x) => x.titulo)];
+    if (!q.titulo.trim() || padroes.includes(q.titulo)) q.titulo = m.titulo;
+  };
+  // link direto para um quiz pronto (ex.: /criar?modelo=natal): começa um quiz novo com ele
+  const modeloUrl = MODELOS.find((m) => m.id === new URLSearchParams(location.search).get('modelo'));
+  if (modeloUrl) {
+    q = novoQuiz('festa');
+    usarModelo(modeloUrl);
+    history.replaceState(null, '', location.pathname);
+  }
   let msg = ''; // aviso geral (importação, espaço cheio)
   let erro = ''; // erro ao abrir a sala
   let abrindo = false;
@@ -152,6 +175,7 @@ function mount(main: HTMLElement) {
     const n = q.perguntas.length;
     const cheio = n >= LIMITS.maxQuestions;
     return `<section class="panel" aria-labelledby="h-perg">${passo('Perguntas', 'h-perg')}
+      ${q.tema === 'festa' ? secModelos() : ''}
       <div class="add-topo" role="group" aria-labelledby="h-add-topo">
         <span class="add-topo-tit" id="h-add-topo"><span class="mais-ic" aria-hidden="true">+</span>Adicionar pergunta</span>
         <div class="add-topo-ops">
@@ -168,6 +192,12 @@ function mount(main: HTMLElement) {
       </div>
       <button class="toggle" data-act="dobro" aria-pressed="${!!q.dobroUltima}"><span class="chave" aria-hidden="true"></span><span><b>A última pergunta vale o dobro</b><br><small>Dá chance de virada no fim. Vale para a última pergunta com resposta certa.</small></span></button>
     </section>`;
+  }
+
+  /** Quizzes prontos do modo Amigos & família: um toque carrega as 10 perguntas, e dá para editar tudo. */
+  function secModelos() {
+    return `<div class="modelos" role="group" aria-labelledby="h-modelos"><h3 id="h-modelos">Comece com um quiz pronto</h3><p class="small">10 perguntas prontas. Dá para editar, tirar ou acrescentar.</p>
+      <div class="modelos-lista">${MODELOS.map((m) => `<button class="btn sec modelo" data-act="modelo" data-v="${m.id}"><b>${esc(m.nome)}</b><span>${esc(m.desc)}</span></button>`).join('')}</div></div>`;
   }
 
   const nomeTipo = (p: Quiz['perguntas'][number]) => (p.vf ? 'Verdadeiro ou falso' : p.tipo === 'opiniao' ? 'Enquete' : p.tipo === 'quem' ? 'Quem é mais provável' : 'Múltipla escolha');
@@ -264,6 +294,16 @@ function mount(main: HTMLElement) {
     const p = q.perguntas[i];
     msg = '';
     switch (a) {
+      case 'modelo': {
+        const m = MODELOS.find((x) => x.id === v);
+        if (!m) return;
+        const padrao = new Set(TEMAS[q.tema].pacote.map((x) => x.t));
+        const mexeu = q.perguntas.some((x) => x.t.trim() && !padrao.has(x.t));
+        if (mexeu && !confirm(`Trocar as perguntas atuais pelas 10 do quiz "${m.nome}"?`)) return;
+        usarModelo(m);
+        persist(true);
+        return render('textarea[data-i="0"]');
+      }
       case 'novo':
         q = novoQuiz(q.tema);
         persist(true);

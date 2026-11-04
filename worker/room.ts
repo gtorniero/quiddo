@@ -150,6 +150,9 @@ export class Room extends DurableObject<Env> {
         ok = G.start(room, now);
         if (ok) this.ctx.waitUntil(anotaUso(this.env, { jogos: 1, jogadores: Object.keys(room.players).length }));
         break;
+      case 'mostrar':
+        ok = G.mostrarRespostas(room, now);
+        break;
       case 'reveal':
         ok = G.reveal(room);
         break;

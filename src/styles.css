@@ -5907,3 +5907,43 @@ body.modo-foto .btn-som {
 .tv .ans.longa {
   font-size: clamp(19px, 2vw, 26px);
 }
+
+/* quizzes prontos do modo Amigos & família */
+.modelos {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 2px dashed var(--soft-line);
+  border-radius: var(--r);
+}
+.modelos h3 {
+  margin: 0;
+  font-size: 18px;
+}
+.modelos-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  margin-top: 4px;
+}
+.modelo {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  text-align: left;
+  padding: 10px 14px;
+  min-height: 64px;
+  width: 100%;
+}
+.modelo span {
+  font-size: 13px;
+  font-weight: 600;
+}
+.btn.modelo {
+  display: grid;
+  justify-items: start;
+  justify-content: stretch;
+  text-align: left;
+  border-radius: 16px;
+}

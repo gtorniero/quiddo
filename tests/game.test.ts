@@ -345,3 +345,32 @@ describe('visual e ranking do fim', () => {
     expect(v.podium).toHaveLength(3);
   });
 });
+
+describe('personagem e vizinho no ranking', () => {
+  it('troca o personagem depois de entrar, sem repetir o de outra pessoa', () => {
+    G.setAvatar(room, 'p1', 'onca.-.-.0');
+    expect(room.players.p1.avatar).toBe('onca.-.-.0');
+    expect(G.setAvatar(room, 'p2', 'onca.-.-.0')).toBe(true);
+    expect(room.players.p2.avatar).not.toBe('onca.-.-.0');
+    expect(G.setAvatar(room, 'ninguem', 'onca.-.-.0')).toBe(false);
+  });
+
+  it('mostra quem está logo à frente e, para o 1º, quem vem atrás', () => {
+    G.start(room, S);
+    G.answer(room, 'p1', 0, 0, T0 + 1000);
+    G.answer(room, 'p2', 0, 0, T0 + 5000);
+    G.answer(room, 'p3', 0, 1, T0 + 2000);
+    G.reveal(room);
+    const ana = G.playerView(room, 'p1', T0)!.me.vizinho!;
+    const bia = G.playerView(room, 'p2', T0)!.me.vizinho!;
+    expect(ana.atras).toBe(false);
+    expect(ana.nick).toBe('Bia');
+    expect(bia).toEqual({ nick: 'Ana', pontos: room.players.p1.score - room.players.p2.score, atras: true });
+    expect(bia.pontos).toBeGreaterThan(0);
+  });
+
+  it('antes da revelação não mostra vizinho', () => {
+    G.start(room, S);
+    expect(G.playerView(room, 'p1', T0)!.me.vizinho).toBeNull();
+  });
+});

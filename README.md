@@ -110,12 +110,15 @@ Mesmo modelo do Retrozap. Os planos estão em `/precos`:
 | Plano | Preço | O que libera |
 | --- | --- | --- |
 | Grátis | R$ 0 | Salas de até 10 pessoas |
-| Mensal | R$ 25,99 (`PRECO_MENSAL`) | Salas de até 200 pessoas, jogos ilimitados por 30 dias |
-| Passe 7 dias | R$ 15,99 (`PRECO_SEMANA`) | Salas de até 200 pessoas, jogos ilimitados por 7 dias |
+| Passe 7 dias (avulso) | R$ 12,99 (`PRECO_SEMANA`) | Salas de até 200 pessoas, jogos ilimitados por 7 dias; Pix ou cartão |
+| Assinatura Mensal | R$ 15,99/mês (`PRECO_MENSAL`, Stripe `STRIPE_LIVE_PRICE_MENSAL`) | Salas de até 200, renova a cada mês; só cartão |
+| Assinatura Anual | R$ 156/ano, mostrado como R$ 13/mês (`PRECO_ANUAL`, Stripe `STRIPE_LIVE_PRICE_ANUAL`) | Salas de até 200, renova a cada ano; só cartão. Só aparece com o preço anual configurado |
+
+Na assinatura, o período pago vale até o fim: cancelar só impede a próxima renovação. O preço no Stripe tem que ser igual ao do site (o servidor confere e recusa se não bater).
 
 **Janela de pagamento:** só os planos, o e-mail, os botões de pagar, "Continuar grátis, até 10 pessoas" (fecha a janela) e o link "Dúvidas? Veja as perguntas frequentes" (abre `/precos#perguntas` em outra aba). Regras de renovação e devolução ficam nas perguntas frequentes, não na janela.
 
-**Oferta da sala cheia:** quando alguém tenta entrar na sala grátis cheia, o celular dessa pessoa fica esperando (e entra sozinho quando liberar) e a tela do anfitrião mostra no topo quantos estão esperando, com o Passe 7 dias de R$ 15,99 por R$ 11,99 (`PRECO_OFERTA`), só no Pix. O servidor confere na própria sala: chave do anfitrião, sala grátis e gente esperando.
+**Oferta da sala cheia:** quando alguém tenta entrar na sala grátis cheia, o celular dessa pessoa fica esperando (e entra sozinho quando liberar) e a tela do anfitrião mostra no topo quantos estão esperando, com o Passe 7 dias de R$ 12,99 por R$ 9,99 (`PRECO_OFERTA`), só no Pix. O servidor confere na própria sala: chave do anfitrião, sala grátis e gente esperando.
 
 O quiz é criado e a sala abre de graça; o pagamento só aparece quando a pessoa quer mais de 10 (no editor, na sala de espera ou na página de preços). O Mensal ainda é cobrado como 30 dias avulsos; a renovação automática no cartão entra quando o Stripe for configurado.
 
@@ -137,7 +140,7 @@ A variável `COBRANCA` em `wrangler.jsonc` decide o modo:
 
 1. **Mercado Pago (Pix)**: em mercadopago.com.br/developers, crie uma aplicação e copie o *Access Token* de produção.
 2. **Stripe (cartão, Apple Pay, Google Pay)**: em dashboard.stripe.com, **Developers → API keys**, copie a *Secret key*. Ative Apple Pay e Google Pay em **Settings → Payment methods**.
-3. No Cloudflare, em **Workers & Pages → quiddo → Settings → Variables and Secrets**, adicione como **Secret**: `MP_TOKEN` e `STRIPE_KEY`. Opcional, como texto: `PRECO_MENSAL` (padrão 25.99), `PRECO_SEMANA` (padrão 15.99) e `CODIGOS_AMIGOS` (códigos de cortesia separados por vírgula).
+3. No Cloudflare, em **Workers & Pages → quiddo → Settings → Variables and Secrets**, adicione como **Secret**: `MP_TOKEN` e `STRIPE_KEY`. Opcional, como texto: `PRECO_SEMANA` (padrão 12.99), `PRECO_MENSAL` (15.99), `PRECO_ANUAL` (156.00), `PRECO_OFERTA` (9.99) e `CODIGOS_AMIGOS` (códigos de cortesia separados por vírgula).
 4. Webhooks (deixam a confirmação mais rápida; sem eles o site confere sozinho a cada 3 segundos):
    - Mercado Pago, em **Webhooks**: `https://SEU-SITE/api/mp-webhook`, evento *Order* (ou *Pagamentos*).
    - Stripe, em **Developers → Webhooks**: `https://SEU-SITE/api/stripe-webhook`, evento `checkout.session.completed`.

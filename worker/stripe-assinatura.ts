@@ -14,7 +14,9 @@ interface AssinaturaDB {
 export interface AssinaturaPublica {
   status: string; renova: boolean; ate: string; teste: boolean; podeGerenciar: boolean;
 }
-export type AcessoStripe = { codigo: string; plano: 'mensal'; expira: string };
+export type PlanoAssinatura = 'mensal' | 'anual';
+export type AcessoStripe = { codigo: string; plano: PlanoAssinatura; expira: string };
+const planoCompra = (c: Pick<CompraStripe, 'plano'>): PlanoAssinatura => (c.plano === 'anual' ? 'anual' : 'mensal');
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
 const idOf = (value: unknown): string => typeof value === 'string' ? value : value && typeof value === 'object' && 'id' in value ? String(value.id) : '';
 const codigoNovo = () => 'QD-' + [4, 4].map(n => [...crypto.getRandomValues(new Uint8Array(n))].map(v => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[v % 32]).join('')).join('-');
@@ -23,6 +25,7 @@ export const stripeAmbiente = (env: CobrancaEnv): 'teste' | 'ligada' | null => {
   return env.COBRANCA === 'ligada' ? (/^[sr]k_live_/.test(key) ? 'ligada' : null) : (/^[sr]k_test_/.test(key) ? 'teste' : null);
 };
 export const mensalConfigurado = (env: CobrancaEnv) => !!(stripeAmbiente(env) && env.STRIPE_PRICE_MENSAL && env.STRIPE_WEBHOOK_SECRET && env.STRIPE_PORTAL_CONFIG);
+export const anualConfigurado = (env: CobrancaEnv) => mensalConfigurado(env) && !!env.STRIPE_PRICE_ANUAL;
 const client = (env: CobrancaEnv) => new StripeClient(String(env.STRIPE_KEY).trim(), { apiVersion: '2026-09-30.endive', httpClient: StripeClient.createFetchHttpClient(), maxNetworkRetries: 1, timeout: 12000 });
 export async function tabelasStripe(db: D1Database) {
   await db.batch([
@@ -32,8 +35,8 @@ export async function tabelasStripe(db: D1Database) {
     db.prepare('CREATE TABLE IF NOT EXISTS qd_clientes_stripe (email TEXT NOT NULL, modo TEXT NOT NULL, customer TEXT NOT NULL UNIQUE, PRIMARY KEY(email, modo))'),
   ]);
 }
-function validatePrice(price: StripeClient.Price, value: number, mode: string) {
-  return price.active && price.livemode === (mode === 'ligada') && price.currency === 'brl' && price.unit_amount === value && price.recurring?.interval === 'month' && price.recurring.interval_count === 1 && price.recurring.usage_type === 'licensed';
+function validatePrice(price: StripeClient.Price, value: number, mode: string, plano: PlanoAssinatura = 'mensal') {
+  return price.active && price.livemode === (mode === 'ligada') && price.currency === 'brl' && price.unit_amount === value && price.recurring?.interval === (plano === 'anual' ? 'year' : 'month') && price.recurring.interval_count === 1 && price.recurring.usage_type === 'licensed';
 }
 async function customerFor(env: CobrancaEnv, email: string, mode: string, stripe: StripeClient) {
   const db = env.DB!;
@@ -47,18 +50,18 @@ async function customerFor(env: CobrancaEnv, email: string, mode: string, stripe
 }
 
 /** O Mensal exige conta; o Passe continua avulso. A simulacao publica nunca envia dinheiro ao Stripe. */
-export async function checkoutMensal(req: Request, env: CobrancaEnv, email: string, volta: string, pedido: Record<string, unknown>): Promise<Response> {
-  if (!env.DB || !mensalConfigurado(env) || env.COBRANCA === 'desligada') return json({ erro: 'indisponivel' }, 503);
+export async function checkoutMensal(req: Request, env: CobrancaEnv, email: string, volta: string, pedido: Record<string, unknown>, plano: PlanoAssinatura = 'mensal'): Promise<Response> {
+  if (!env.DB || !(plano === 'anual' ? anualConfigurado(env) : mensalConfigurado(env)) || env.COBRANCA === 'desligada') return json({ erro: 'indisponivel' }, 503);
   if (env.COBRANCA !== 'ligada' && pedido.testeCobranca !== true) return json({ erro: 'teste' }, 403);
   if (!email) return json({ erro: 'login', login: true }, 401);
   if (req.headers.get('Origin') !== new URL(req.url).origin) return json({ erro: 'origem' }, 403);
   const db = env.DB, mode = stripeAmbiente(env)!;
   await tabelasStripe(db);
-  const stripe = client(env), amount = Math.round(Number(env.PRECO_MENSAL || '25.99') * 100);
+  const stripe = client(env), amount = Math.round(Number(plano === 'anual' ? env.PRECO_ANUAL || '156.00' : env.PRECO_MENSAL || '15.99') * 100);
   if (!Number.isSafeInteger(amount) || amount < 100) return json({ erro: 'preco' }, 503);
   try {
-    const price = await stripe.prices.retrieve(env.STRIPE_PRICE_MENSAL!);
-    if (!validatePrice(price, amount, mode)) return json({ erro: 'preco' }, 503);
+    const price = await stripe.prices.retrieve((plano === 'anual' ? env.STRIPE_PRICE_ANUAL : env.STRIPE_PRICE_MENSAL)!);
+    if (!validatePrice(price, amount, mode, plano)) return json({ erro: 'preco' }, 503);
     const customer = await customerFor(env, email, mode, stripe);
     const existing = await db.prepare("SELECT id FROM qd_assinaturas WHERE customer=? AND modo=? AND status NOT IN ('canceled','incomplete_expired') LIMIT 1").bind(customer, mode).first<{ id: string }>();
     if (existing) return json({ erro: 'assinatura_existente', gerenciar: true }, 409);
@@ -68,12 +71,12 @@ export async function checkoutMensal(req: Request, env: CobrancaEnv, email: stri
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription', customer, client_reference_id: ref, locale: 'pt-BR',
       allowed_payment_method_types: ['card'],
-      line_items: [{ price: price.id, quantity: 1 }], integration_identifier: 'quiddo_monthly_rqnvpska',
+      line_items: [{ price: price.id, quantity: 1 }], integration_identifier: plano === 'anual' ? 'quiddo_yearly_rqnvpska' : 'quiddo_monthly_rqnvpska',
       success_url: `${origin}${volta}?pagamento=ok&ref=${ref}`, cancel_url: `${origin}${volta}?pagamento=volta`,
     }, { idempotencyKey: ref });
     if (session.livemode !== (mode === 'ligada') || !session.url?.startsWith('https://checkout.stripe.com/')) return json({ erro: 'stripe' }, 502);
-    await db.prepare("INSERT INTO compras(ref,ordem,email,status,criado,valor,modo,plano,tipo,stripe_price) VALUES (?,?,?,'pendente',?,?,?,'mensal','assinatura',?)")
-      .bind(ref, 'stripe:' + session.id, email, new Date().toISOString(), (amount / 100).toFixed(2), mode, price.id).run();
+    await db.prepare("INSERT INTO compras(ref,ordem,email,status,criado,valor,modo,plano,tipo,stripe_price) VALUES (?,?,?,'pendente',?,?,?,?,'assinatura',?)")
+      .bind(ref, 'stripe:' + session.id, email, new Date().toISOString(), (amount / 100).toFixed(2), mode, plano, price.id).run();
     return json({ ref, url: session.url, recorrente: true });
   } catch { return json({ erro: 'stripe' }, 502); }
 }
@@ -104,7 +107,7 @@ export async function reconciliarAssinatura(env: CobrancaEnv, subscriptionId: st
   if (!purchase || purchase.modo !== stripeAmbiente(env) || !purchase.stripe_price) return null;
   const sub = await stripe.subscriptions.retrieve(subscriptionId, { expand: ['latest_invoice'] });
   const item = sub.items?.data?.[0], price = item?.price;
-  if (sub.livemode !== (purchase.modo === 'ligada') || sub.items.data.length !== 1 || item.quantity !== 1 || price.id !== purchase.stripe_price || !validatePrice({ ...price, active: true }, Math.round(Number(purchase.valor) * 100), purchase.modo)) {
+  if (sub.livemode !== (purchase.modo === 'ligada') || sub.items.data.length !== 1 || item.quantity !== 1 || price.id !== purchase.stripe_price || !validatePrice({ ...price, active: true }, Math.round(Number(purchase.valor) * 100), purchase.modo, planoCompra(purchase))) {
     if (prior) await db.prepare("UPDATE qd_assinaturas SET risk='incompativel',checked_at=? WHERE id=?").bind(Date.now(), subscriptionId).run();
     return null;
   }
@@ -132,7 +135,7 @@ export async function confirmarAssinatura(env: CobrancaEnv, purchase: CompraStri
     const state = await reconciliarAssinatura(env, mapped.id);
     if (!state || !acessoAssinatura(state)) return null;
     const row = await env.DB.prepare('SELECT codigo,expira FROM compras WHERE ref=?').bind(purchase.ref).first<{ codigo: string; expira: string }>();
-    return row?.codigo ? { codigo: row.codigo, plano: 'mensal', expira: row.expira } : null;
+    return row?.codigo ? { codigo: row.codigo, plano: planoCompra(purchase), expira: row.expira } : null;
   }
   const stripe = client(env);
   const s = await stripe.checkout.sessions.retrieve(purchase.ordem.slice(7));
@@ -141,7 +144,7 @@ export async function confirmarAssinatura(env: CobrancaEnv, purchase: CompraStri
   const state = await reconciliarAssinatura(env, subscription);
   if (!state || !acessoAssinatura(state)) return null;
   const row = await env.DB.prepare('SELECT codigo,expira FROM compras WHERE ref=?').bind(purchase.ref).first<{ codigo: string; expira: string }>();
-  return row?.codigo ? { codigo: row.codigo, plano: 'mensal', expira: row.expira } : null;
+  return row?.codigo ? { codigo: row.codigo, plano: planoCompra(purchase), expira: row.expira } : null;
 }
 export async function situacaoAssinatura(env: CobrancaEnv, email: string): Promise<AssinaturaPublica | null> {
   if (!env.DB || !mensalConfigurado(env)) return null;

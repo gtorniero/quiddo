@@ -5,7 +5,7 @@ import { navigate } from '../lib/nav';
 import { sair, sincronizaConta } from '../lib/conta';
 
 export function page(): Page { return { title: 'Minha conta', mount }; }
-const NOMES: Record<string, string> = { mensal: 'Mensal', semana: 'Passe 7 dias', oferta: 'Passe 7 dias' };
+const NOMES: Record<string, string> = { mensal: 'Mensal', anual: 'Anual', semana: 'Passe 7 dias', oferta: 'Passe 7 dias' };
 const data = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 function mount(main: HTMLElement) {
@@ -22,7 +22,7 @@ function mount(main: HTMLElement) {
     const status = assinatura
       ? `<section class="panel conta"><h2>Assinatura no cartão</h2>
         ${assinatura.teste ? '<p class="pg-teste">Ambiente de teste: nenhuma cobrança real.</p>' : ''}
-        <p>${assinatura.status === 'revisao' ? 'O acesso está em revisão.' : assinatura.status === 'past_due' || assinatura.status === 'unpaid' ? 'Há um pagamento pendente. Atualize a forma de pagamento.' : assinatura.renova ? 'O Mensal renova automaticamente a cada mês.' : assinatura.ate ? `Renovação cancelada. O acesso pago vale até ${esc(data(assinatura.ate))}.` : 'A assinatura foi encerrada.'}</p>
+        <p>${assinatura.status === 'revisao' ? 'O acesso está em revisão.' : assinatura.status === 'past_due' || assinatura.status === 'unpaid' ? 'Há um pagamento pendente. Atualize a forma de pagamento.' : assinatura.renova ? `O ${esc(NOMES[acesso?.plano || 'mensal'] || 'plano')} renova automaticamente a cada ${acesso?.plano === 'anual' ? 'ano' : 'mês'}.` : assinatura.ate ? `Renovação cancelada. O acesso pago vale até ${esc(data(assinatura.ate))}.` : 'A assinatura foi encerrada.'}</p>
         ${assinatura.podeGerenciar ? '<button type="button" class="btn sec auto" data-act="assinatura">Gerenciar assinatura e pagamento</button>' : ''}
         <p class="err" role="alert" id="conta-erro"></p></section>` : '';
     main.innerHTML = `<section class="hero"><h1>Minha conta</h1><p>${esc(email)}</p></section>

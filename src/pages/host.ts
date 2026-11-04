@@ -368,7 +368,7 @@ function mount(main: HTMLElement, code: string) {
         send({ type: 'liberar', codigo });
       };
       if (meuAcesso()) pedir(meuAcesso());
-      else abrirPagamento('/host/' + code, pedir, 'mensal', a === 'oferta' ? { codigo: code, hostKey } : undefined);
+      else abrirPagamento('/host/' + code, pedir, 'anual', a === 'oferta' ? { codigo: code, hostKey } : undefined);
     } else if (a === 'close') {
       if (confirm('Encerrar o jogo? Todo mundo sai da sala e o placar se perde.')) send({ type: 'close' });
     }

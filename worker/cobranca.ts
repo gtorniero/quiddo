@@ -25,6 +25,8 @@ export interface CobrancaEnv {
   STRIPE_LIVE_KEY?: string;
   STRIPE_LIVE_WEBHOOK_SECRET?: string;
   STRIPE_LIVE_PRICE_MENSAL?: string;
+  STRIPE_PRECO_MENSAL_ID?: string; // wrangler.jsonc: id do preço Mensal de produção (vale mais que o do painel)
+  STRIPE_PRECO_ANUAL_ID?: string; // wrangler.jsonc: id do preço Anual de produção
   STRIPE_LIVE_PRICE_ANUAL?: string;
   STRIPE_LIVE_PORTAL_CONFIG?: string;
   STRIPE_WEBHOOK_SECRET?: string;
@@ -216,8 +218,8 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
   if (env.COBRANCA === 'ligada') env = {
     ...env, STRIPE_KEY: env.STRIPE_LIVE_KEY,
     STRIPE_WEBHOOK_SECRET: env.STRIPE_LIVE_WEBHOOK_SECRET,
-    STRIPE_PRICE_MENSAL: env.STRIPE_LIVE_PRICE_MENSAL,
-    STRIPE_PRICE_ANUAL: env.STRIPE_LIVE_PRICE_ANUAL,
+    STRIPE_PRICE_MENSAL: env.STRIPE_PRECO_MENSAL_ID || env.STRIPE_LIVE_PRICE_MENSAL,
+    STRIPE_PRICE_ANUAL: env.STRIPE_PRECO_ANUAL_ID || env.STRIPE_LIVE_PRICE_ANUAL,
     STRIPE_PORTAL_CONFIG: env.STRIPE_LIVE_PORTAL_CONFIG,
   };
   const db = env.DB;

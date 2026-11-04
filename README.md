@@ -111,8 +111,8 @@ Mesmo modelo do Retrozap. Os planos estão em `/precos`:
 | --- | --- | --- |
 | Grátis | R$ 0 | Salas de até 10 pessoas |
 | Passe 7 dias (avulso) | R$ 12,99 (`PRECO_SEMANA`) | Salas de até 200 pessoas, jogos ilimitados por 7 dias; Pix ou cartão |
-| Assinatura Mensal | R$ 15,99/mês (`PRECO_MENSAL`, Stripe `STRIPE_LIVE_PRICE_MENSAL`) | Salas de até 200, renova a cada mês; só cartão |
-| Assinatura Anual | R$ 156/ano, mostrado como R$ 13/mês (`PRECO_ANUAL`, Stripe `STRIPE_LIVE_PRICE_ANUAL`) | Salas de até 200, renova a cada ano; só cartão. Só aparece com o preço anual configurado |
+| Assinatura Mensal | R$ 15,99/mês (`PRECO_MENSAL`, id do Stripe em `STRIPE_PRECO_MENSAL_ID` no wrangler.jsonc) | Salas de até 200, renova a cada mês; só cartão |
+| Assinatura Anual | R$ 156/ano, mostrado como R$ 13/mês (`PRECO_ANUAL`, id do Stripe em `STRIPE_PRECO_ANUAL_ID` no wrangler.jsonc) | Salas de até 200, renova a cada ano; só cartão. Só aparece com o preço anual configurado |
 
 Na assinatura, o período pago vale até o fim: cancelar só impede a próxima renovação. O preço no Stripe tem que ser igual ao do site (o servidor confere e recusa se não bater).
 

@@ -1,5 +1,4 @@
 // /precos: os planos do Quiddo. Grátis até 10 pessoas; Passe 7 dias (avulso) e Assinatura mensal ou anual liberam salas de até 200.
-// O PRO (empresas e escolas: IA, login da equipe) aparece como "em breve".
 // Os preços vêm do servidor (/api/cobranca); enquanto não chegam, mostra os padrões.
 import type { Page } from '../main';
 import { esc } from '../lib/dom';
@@ -19,7 +18,7 @@ function mount(main: HTMLElement) {
   let periodo: 'mensal' | 'anual' = 'anual'; // assinatura: mensal ou anual, no mesmo cartão
   // o Anual só aparece quando o servidor oferece (preço anual configurado no Stripe)
   const temAnual = () => !cob || cob.planos.some((x) => x.id === 'anual');
-  // preço redondo sem centavos (R$ 120, R$ 15), para caber no cartão
+  // Oculta apenas centavos zerados; preserva o preço retornado pelo servidor.
   const preco = (p: Plano) => (cob?.planos.find((x) => x.id === p)?.preco || PADRAO[p]).replace(/,00$/, '');
   const ok = '<span class="pc-ok" aria-hidden="true">✓</span>';
   // o número de pessoas por sala é o que diferencia os planos: vem grande, logo abaixo do nome

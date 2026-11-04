@@ -5891,3 +5891,19 @@ body.modo-foto .btn-som {
   text-align: center;
   margin: 4px 0 6px;
 }
+
+/* resposta comprida ou palavra sem espaço ("hahahahaha…") quebra a linha em vez de vazar do botão */
+.ans {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  overflow-wrap: anywhere;
+}
+.ans.longa {
+  font-size: 19px;
+  line-height: 1.2;
+}
+.meta .pill {
+  white-space: nowrap;
+}
+.tv .ans.longa {
+  font-size: clamp(19px, 2vw, 26px);
+}

@@ -16,7 +16,7 @@ const LAPIS =
   '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 20h4L19 9l-4-4L4 16v4Z" fill="#fff" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m13.5 6.5 4 4" stroke="currentColor" stroke-width="2"/></svg>';
 import { avatarSvg, comMoldura } from '../lib/avatar-art';
 import { simbolo } from '../lib/simbolos';
-import { FOGO, MOEDA, SUSPENSE_MS, agendaPodio, novosNoPodio, answersStatic, aplaude, prepare, preparando, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick, top10 } from './jogo-comum';
+import { FOGO, MOEDA, SUSPENSE_MS, tamanhoResposta, agendaPodio, novosNoPodio, answersStatic, aplaude, prepare, preparando, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick, top10 } from './jogo-comum';
 
 interface Seat {
   pid: string;
@@ -251,7 +251,7 @@ function mount(main: HTMLElement, code: string) {
     const buttons = q.o
       .map(
         (o, k) =>
-          `<button class="ans c${k}${chosen != null && chosen !== k ? ' dim' : ''}${chosen === k ? ' mine' : ''}" data-act="ans" data-v="${k}" data-focus="a${k}"${chosen != null ? ' disabled' : ''}${
+          `<button class="ans c${k}${tamanhoResposta(o)}${chosen != null && chosen !== k ? ' dim' : ''}${chosen === k ? ' mine' : ''}" data-act="ans" data-v="${k}" data-focus="a${k}"${chosen != null ? ' disabled' : ''}${
             chosen === k ? ' aria-pressed="true"' : ''
           }>${simbolo(k)}<span class="lt">${LETRAS[k]}</span><span>${esc(o)}</span><span></span></button>`,
       )

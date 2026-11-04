@@ -83,13 +83,16 @@ export function tick(s: BaseState | null, now: number) {
   if (b) b.style.transform = `scaleX(${left / (s.question.tl * 1000)})`;
 }
 
+/** Resposta comprida ganha letra um pouco menor no celular (sem cair abaixo do tamanho de texto grande). */
+export const tamanhoResposta = (o: string) => (o.length > 40 ? ' longa' : '');
+
 export function answersStatic(s: BaseState, mine: number | null = null) {
   const q = s.question!;
   if (q.tipo !== 'quiz') return opiniaoResultado(s, mine);
   const rev = s.correct != null;
   return `<div class="answers">${q.o
     .map((o, k) => {
-      const cls = `ans c${k}` + (rev ? (k === s.correct ? ' ok' : ' dim') : '') + (mine === k && !rev ? ' mine' : '');
+      const cls = `ans c${k}${tamanhoResposta(o)}` + (rev ? (k === s.correct ? ' ok' : ' dim') : '') + (mine === k && !rev ? ' mine' : '');
       const n = rev && s.counts ? `<span class="n" aria-label="${s.counts[k]} ${s.counts[k] === 1 ? 'pessoa' : 'pessoas'}">${s.counts[k]}</span>` : '<span></span>';
       return `<div class="${cls}">${simbolo(k)}<span class="lt">${LETRAS[k]}</span><span>${esc(o)}${rev && k === s.correct ? '<span class="sr"> (resposta certa)</span>' : ''}</span>${n}</div>`;
     })
@@ -113,7 +116,7 @@ function opiniaoResultado(s: BaseState, mine: number | null) {
       const avs = q.oa || [];
       return `<div class="quem-sala" aria-hidden="true">${avs.slice(0, 40).map((a) => avatarSvg(a, 48)).join('')}${avs.length > 40 ? `<span>+${avs.length - 40}</span>` : ''}</div>`;
     }
-    return `<div class="answers">${q.o.map((o, k) => `<div class="ans c${k}">${simbolo(k)}<span class="lt">${LETRAS[k]}</span><span>${esc(o)}</span><span></span></div>`).join('')}</div>`;
+    return `<div class="answers">${q.o.map((o, k) => `<div class="ans c${k}${tamanhoResposta(o)}">${simbolo(k)}<span class="lt">${LETRAS[k]}</span><span>${esc(o)}</span><span></span></div>`).join('')}</div>`;
   }
   const total = counts.reduce((a, b) => a + b, 0) || 1;
   let idx = q.o.map((_, k) => k);

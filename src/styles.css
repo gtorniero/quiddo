@@ -6016,3 +6016,46 @@ body.modo-foto .btn-som {
   height: 64px;
   font-size: 30px;
 }
+
+/* guias: busca, filtros por assunto e cartões em grade no computador */
+.busca-guias {
+  display: grid;
+  gap: 10px;
+}
+.busca-guias label {
+  font-weight: 800;
+}
+.busca-guias input[type='search'] {
+  font: inherit;
+  min-height: 52px;
+  padding: 10px 16px;
+  border: var(--bw) solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: #0e2a22;
+}
+.filtros-guias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.guias a[hidden],
+.grupo-guias[hidden] {
+  display: none;
+}
+@media (min-width: 720px) {
+  .guias {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+@media (max-width: 719px) {
+  .filtros-guias {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 calc(-1 * var(--pad, 18px));
+    padding: 2px var(--pad, 18px) 6px;
+    scrollbar-width: none;
+  }
+  .filtros-guias::-webkit-scrollbar { display: none; }
+  .filtros-guias > * { flex: 0 0 auto; }
+}

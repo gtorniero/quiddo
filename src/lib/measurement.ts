@@ -8,7 +8,7 @@ let lastPage = '';
 const pending: ((ok: boolean) => void)[] = [];
 const EVENTS = ['create_room', 'begin_checkout', 'purchase'] as const;
 let campaign = campaignQuery(location.search);
-export type Sale = { transaction_id: string; value: number; currency: 'BRL'; plano: 'mensal' | 'semana' | 'oferta' };
+export type Sale = { transaction_id: string; value: number; currency: 'BRL'; plano: 'mensal' | 'anual' | 'semana' | 'oferta' };
 export type MeasureParams = Partial<Sale> & { payment_type?: 'pix' | 'card' };
 let sequence = 0;
 const callbacks = new Map<number, () => void>();

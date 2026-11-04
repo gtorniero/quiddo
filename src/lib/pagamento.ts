@@ -8,7 +8,7 @@ import { qrSvg } from './qr';
 import { store } from './storage';
 import { logado } from './conta';
 
-export type Plano = 'mensal' | 'semana' | 'oferta';
+export type Plano = 'mensal' | 'anual' | 'semana' | 'oferta';
 
 export interface Cobranca {
   modo: 'ligada' | 'simulacao' | 'teste' | 'desligada';
@@ -117,7 +117,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
   // oferta da sala cheia: o anfitrião, com gente esperando, libera com desconto no Pix (o servidor confere na sala)
   const oferta = !!sala && !!c?.oferta && (c.pix || c.cartao);
   let escolhido: Plano = oferta ? 'oferta' : (c?.planos.some(p => p.id === plano) ? plano : 'mensal');
-  const precoDe = (p: Plano) => (p === 'oferta' ? c?.oferta?.preco : c?.planos.find((x) => x.id === p)?.preco) || '';
+  const precoDe = (p: Plano) => ((p === 'oferta' ? c?.oferta?.preco : c?.planos.find((x) => x.id === p)?.preco) || '').replace(/,00$/, '');
   document.getElementById('pagamento')?.remove();
   const d = document.createElement('dialog');
   d.id = 'pagamento';
@@ -171,8 +171,14 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
       .map(
         (p) => `<label class="pg-plano${p.id === 'mensal' ? ' melhor' : ''}"><input type="radio" name="pg-plano" value="${p.id}"${p.id === escolhido ? ' checked' : ''}>
           <span class="pg-plano-nome">${esc(p.nome)}</span>
-          <span class="pg-plano-preco">R$ ${esc(p.preco)}${p.id === 'mensal' ? '<small>/mês</small>' : ''}</span>
-          <span class="pg-plano-txt">${p.id === 'mensal' ? '<small class="pg-vantagem">mais vantagem</small> Jogos ilimitados o mês todo.' : 'Para um evento: jogos ilimitados por 7 dias.'}</span></label>`,
+          <span class="pg-plano-preco">R$ ${esc(p.preco.replace(/,00$/, ''))}${p.id === 'mensal' ? '<small>/mês</small>' : p.id === 'anual' ? '<small>/ano</small>' : ''}</span>
+          <span class="pg-plano-txt">${
+            p.id === 'anual'
+              ? '<small class="pg-vantagem">mais vantagem</small> Sai por R$ 10 por mês.'
+              : p.id === 'mensal'
+                ? 'Jogos ilimitados o mês todo.'
+                : '<small class="pg-avulso">avulso</small> Para um evento: 7 dias.'
+          }</span></label>`,
       )
       .join('');
     d.innerHTML = `${fechar}<span class="selo">Quiddo liberado</span><h2 id="pg-t">Salas com até ${c.pago} pessoas</h2>
@@ -185,8 +191,8 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
             : `<label for="pg-email">Seu e-mail<input type="email" id="pg-email" autocomplete="email" placeholder="voce@email.com" required></label>`
         }
         <p class="err" role="alert">${esc(erro)}</p>
-        ${c.pix ? `<button type="submit" class="btn pg-pix" data-meio="pix"${escolhido === 'mensal' ? ' hidden' : ''}>${ICONE_PIX}<span>Pagar com Pix · R$ <span data-preco>${esc(precoDe(escolhido))}</span></span></button>` : ''}
-        ${c.cartao ? `<button type="submit" class="btn ${c.pix && escolhido !== 'mensal' ? 'sec ' : ''}pg-cartao" data-meio="cartao">${ICONE_CARTAO}<span>Pagar com cartão · R$ <span data-preco>${esc(precoDe(escolhido))}</span></span></button><p class="pg-carteiras">Aceita Apple Pay e Google Pay</p>` : ''}
+        ${c.pix ? `<button type="submit" class="btn pg-pix" data-meio="pix"${escolhido === 'mensal' || escolhido === 'anual' ? ' hidden' : ''}>${ICONE_PIX}<span>Pagar com Pix · R$ <span data-preco>${esc(precoDe(escolhido))}</span></span></button>` : ''}
+        ${c.cartao ? `<button type="submit" class="btn ${c.pix && escolhido === 'semana' ? 'sec ' : ''}pg-cartao" data-meio="cartao">${ICONE_CARTAO}<span>Pagar com cartão · R$ <span data-preco>${esc(precoDe(escolhido))}</span></span></button><p class="pg-carteiras">Aceita Apple Pay e Google Pay</p>` : ''}
       </form>
       ${gratis}
       <div class="pg-links">${promo}<button type="button" class="linkbtn" data-pg="codigo">Já paguei, tenho um código</button></div>
@@ -276,11 +282,11 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
   d.addEventListener('change', (e) => {
     const t = e.target as HTMLInputElement;
     if (t.name !== 'pg-plano') return;
-    escolhido = t.value === 'semana' ? 'semana' : 'mensal';
+    escolhido = t.value === 'semana' ? 'semana' : t.value === 'anual' ? 'anual' : 'mensal';
     const botaoPix = d.querySelector<HTMLElement>('[data-meio="pix"]');
-    if (botaoPix) botaoPix.hidden = escolhido === 'mensal';
+    if (botaoPix) botaoPix.hidden = escolhido === 'mensal' || escolhido === 'anual';
     // o cartão é o botão principal quando é o único meio (Mensal); com Pix, fica em segundo
-    d.querySelector('[data-meio="cartao"]')?.classList.toggle('sec', !!botaoPix && escolhido !== 'mensal');
+    d.querySelector('[data-meio="cartao"]')?.classList.toggle('sec', !!botaoPix && escolhido === 'semana');
     d.querySelectorAll('[data-preco]').forEach((el) => (el.textContent = precoDe(escolhido)));
   });
   d.addEventListener('submit', async (e) => {
@@ -310,7 +316,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
     const email = (f.querySelector<HTMLInputElement>('#pg-email')?.value || '').trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return inicio('Escreva um e-mail válido.');
     const meio = ((e as SubmitEvent).submitter as HTMLElement | null)?.dataset.meio;
-    if (meio === 'cartao' || escolhido === 'mensal' || !c?.pix) cartao(email);
+    if (meio === 'cartao' || escolhido === 'mensal' || escolhido === 'anual' || !c?.pix) cartao(email);
     else pix(email);
   });
 

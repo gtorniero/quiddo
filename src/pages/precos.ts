@@ -6,7 +6,7 @@ import { esc } from '../lib/dom';
 import { sincronizaConta } from '../lib/conta';
 import { type Cobranca, type Plano, abrirPagamento, acessoAte, cobranca, confereVolta, meuAcesso } from '../lib/pagamento';
 
-const PADRAO: Record<Plano, string> = { mensal: '25,99', semana: '15,99', oferta: '11,99' };
+const PADRAO: Record<Plano, string> = { mensal: '15,00', anual: '120,00', semana: '15,99', oferta: '11,99' };
 
 export function page(): Page {
   return { title: 'Planos', wide: true, mount };
@@ -14,7 +14,9 @@ export function page(): Page {
 
 function mount(main: HTMLElement) {
   let cob: Cobranca | null = null;
-  const preco = (p: Plano) => cob?.planos.find((x) => x.id === p)?.preco || PADRAO[p];
+  let periodo: 'mensal' | 'anual' = 'anual'; // assinatura: mensal ou anual, no mesmo cartão
+  // preço redondo sem centavos (R$ 120, R$ 15), para caber no cartão
+  const preco = (p: Plano) => (cob?.planos.find((x) => x.id === p)?.preco || PADRAO[p]).replace(/,00$/, '');
   const ok = '<span class="pc-ok" aria-hidden="true">✓</span>';
   // o número de pessoas por sala é o que diferencia os planos: vem grande, logo abaixo do nome
   const pessoas = (n: number) =>
@@ -39,20 +41,29 @@ function mount(main: HTMLElement) {
           <ul><li>${ok}Quizzes e jogos ilimitados</li><li>${ok}Todos os modos, visuais e o pódio</li></ul>
           <a class="btn sec" href="/criar" data-link>Criar meu quiz</a>
         </article>
-        <article class="pc pc-destaque">
-          <span class="selo">Mais vantagem</span>
-          <h2>Mensal</h2>
-          ${pessoas(200)}
-          <p class="pc-preco">R$ ${esc(preco('mensal'))}<small>/mês</small></p>
-          <ul><li>${ok}Jogos ilimitados o mês todo</li><li>${ok}Use em qualquer aparelho com o seu código</li><li>${ok}Cancele quando quiser</li></ul>
-          <button type="button" class="btn" data-plano="mensal">Assinar o Mensal</button>
-        </article>
         <article class="pc">
+          <span class="selo selo-avulso">Avulso</span>
           <h2>Passe 7 dias</h2>
           ${pessoas(200)}
           <p class="pc-preco">R$ ${esc(preco('semana'))}</p>
           <ul><li>${ok}Jogos ilimitados por 7 dias</li><li>${ok}Para um evento, sem assinatura</li></ul>
           <button type="button" class="btn sec" data-plano="semana">Comprar o Passe</button>
+        </article>
+        <article class="pc pc-destaque">
+          <span class="selo">Mais vantagem</span>
+          <h2>Assinatura</h2>
+          <div class="periodo" role="radiogroup" aria-label="Período da assinatura">
+            <button type="button" role="radio" data-periodo="mensal" aria-checked="${periodo === 'mensal'}">Mensal</button>
+            <button type="button" role="radio" data-periodo="anual" aria-checked="${periodo === 'anual'}">Anual <small>-33%</small></button>
+          </div>
+          ${pessoas(200)}
+          ${
+            periodo === 'anual'
+              ? `<p class="pc-preco">R$ ${esc(preco('anual'))}<small>/ano</small></p><p class="pc-sub">Sai por R$ 10 por mês. Economize R$ 60.</p>`
+              : `<p class="pc-preco">R$ ${esc(preco('mensal'))}<small>/mês</small></p><p class="pc-sub">Ou R$ ${esc(preco('anual'))} por ano no anual.</p>`
+          }
+          <ul><li>${ok}Jogos ilimitados ${periodo === 'anual' ? 'o ano todo' : 'o mês todo'}</li><li>${ok}Use em qualquer aparelho</li><li>${ok}Cancele quando quiser</li></ul>
+          <button type="button" class="btn" data-plano="${periodo}">Assinar o ${periodo === 'anual' ? 'Anual' : 'Mensal'}</button>
         </article>
         <article class="pc pc-breve">
           <span class="selo">Em breve</span>
@@ -76,9 +87,16 @@ function mount(main: HTMLElement) {
   }
 
   const onClick = (e: Event) => {
+    const per = (e.target as HTMLElement).closest<HTMLElement>('[data-periodo]');
+    if (per) {
+      periodo = per.dataset.periodo === 'mensal' ? 'mensal' : 'anual';
+      render();
+      main.querySelector<HTMLElement>(`[data-periodo="${periodo}"]`)?.focus();
+      return;
+    }
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-plano]');
     if (!b) return;
-    abrirPagamento('/precos', () => render(), b.dataset.plano === 'semana' ? 'semana' : 'mensal');
+    abrirPagamento('/precos', () => render(), (['semana', 'mensal', 'anual'].includes(b.dataset.plano || '') ? b.dataset.plano : 'mensal') as Plano);
   };
   main.addEventListener('click', onClick);
   render();

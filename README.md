@@ -120,18 +120,18 @@ Na assinatura, o período pago vale até o fim: cancelar só impede a próxima r
 
 **Oferta da sala cheia:** quando alguém tenta entrar na sala grátis cheia, o celular dessa pessoa fica esperando (e entra sozinho quando liberar) e a tela do anfitrião mostra no topo quantos estão esperando, com o Passe 7 dias de R$ 12,99 por R$ 9,99 (`PRECO_OFERTA`), só no Pix. O servidor confere na própria sala: chave do anfitrião, sala grátis e gente esperando.
 
-O quiz é criado e a sala abre de graça; o pagamento só aparece quando a pessoa quer mais de 10 (no editor, na sala de espera ou na página de preços). O Mensal ainda é cobrado como 30 dias avulsos; a renovação automática no cartão entra quando o Stripe for configurado.
+O quiz é criado e a sala abre de graça; o pagamento só aparece quando a pessoa quer mais de 10 (no editor, na sala de espera ou na página de preços). Mensal e Anual são assinaturas no cartão, com renovação automática e cancelamento em Minha conta; o Passe de 7 dias é avulso.
 
 - **Pix** pelo Mercado Pago. **Cartão, Apple Pay e Google Pay** pelo Stripe Checkout.
 - Quem paga recebe um código `QD-XXXX-XXXX`, guardado no navegador. Em outro aparelho, a pessoa usa "Já paguei, tenho um código" com o código ou o e-mail do pagamento.
 - O código vale até o fim do plano (coluna `expira`) e pode ser usado no editor (antes de abrir a sala) ou na sala de espera ("Liberar até 200 pessoas"), mesmo com a sala já cheia.
 - As compras ficam no banco D1 `quiddo` (tabela `compras`), criado sozinho no primeiro deploy. O código é sempre conferido no servidor.
 
-A variável `COBRANCA` em `wrangler.jsonc` decide o modo:
+A variável `COBRANCA`, mantida no painel da Cloudflare, decide o modo. Consulte `/api/cobranca` para verificar o ambiente publicado:
 
 | Modo | O que acontece |
 | --- | --- |
-| `simulacao` (atual) | Vale para todos: salas grátis até 10 pessoas e a página de pagamento no ar, mas o Pix é de mentira (aprova sozinho em 4 segundos) e o cartão não aparece. |
+| `simulacao` | Vale para todos: salas grátis até 10 pessoas e a página de pagamento no ar, mas o Pix é de mentira (aprova sozinho em 4 segundos) e o cartão não aparece. |
 | `teste` | O site fica liberado para todo mundo. Para testar a cobrança, abra `/criar?teste_cobranca=1`. Sem `MP_TOKEN`, o Pix é simulado. |
 | `ligada` | Cobrança de verdade: salas grátis até 10 pessoas; só códigos pagos com a cobrança ligada liberam 200. |
 | `desligada` | Sem cobrança, salas de até 200 para todos. |
@@ -144,7 +144,7 @@ A variável `COBRANCA` em `wrangler.jsonc` decide o modo:
 4. Webhooks (deixam a confirmação mais rápida; sem eles o site confere sozinho a cada 3 segundos):
    - Mercado Pago, em **Webhooks**: `https://SEU-SITE/api/mp-webhook`, evento *Order* (ou *Pagamentos*).
    - Stripe, em **Developers → Webhooks**: `https://SEU-SITE/api/stripe-webhook`, evento `checkout.session.completed`.
-5. Teste com `/criar?teste_cobranca=1` ainda no modo `teste`. Quando estiver certo, troque `COBRANCA` para `ligada` em `wrangler.jsonc` e publique.
+5. Teste com `/criar?teste_cobranca=1` ainda no modo `teste`. Quando estiver certo, configure `COBRANCA=ligada` no painel da Cloudflare. O arquivo versionado mantém `keep_vars` e não deve sobrescrever essa escolha.
 
 Nunca coloque as chaves no código: elas ficam só no painel do Cloudflare.
 

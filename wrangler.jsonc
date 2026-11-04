@@ -16,7 +16,8 @@
   // cobrança: "simulacao" (para todos, com Pix de mentira e sem cartão), "teste" (só com ?teste_cobranca=1),
   // "ligada" (de verdade, para todos) ou "desligada". Preços (PRECO_MENSAL, PRECO_SEMANA; padrão 25.99 e 15.99)
   // e segredos (MP_TOKEN, STRIPE_KEY) ficam só no painel da Cloudflare.
-  "vars": {"PROMO_ADMIN_EMAIL":"guitorniero@outlook.com"},
+  // ids dos preços de produção no Stripe (não são segredo): Mensal R$ 15,99 e Anual R$ 156
+  "vars": {"PROMO_ADMIN_EMAIL":"guitorniero@outlook.com","STRIPE_PRECO_MENSAL_ID":"price_1UXtp0134hMOoEZV4zpJZiw6","STRIPE_PRECO_ANUAL_ID":"price_1UXtqY134hMOoEZVGgIdzQ7a"},
   // COBRANCA fica no painel; um deploy nao deve sobrescrever a escolha de modo.
   // mantém variáveis criadas no painel
   "keep_vars": true,

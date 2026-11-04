@@ -233,7 +233,9 @@ function mount(main: HTMLElement, code: string) {
     const live = s.players.filter((p) => p.connected).length;
     const opiniao = s.question!.tipo !== 'quiz';
     const last = s.qIndex >= s.total - 1;
-    if (!rev && preparando(s, sock.now())) return prepare(s, ultimoRk.slice(0, 3)) + `<section class="panel"><p class="encerrar"><button class="linkbtn" data-act="close" data-focus="close">Encerrar jogo</button></p></section>`;
+    // leitura da pergunta: o anfitrião toca em "Mostrar as respostas" (contagem de 3 s); sem tocar, elas aparecem sozinhas em 10 s
+    if (!rev && preparando(s, sock.now()))
+      return prepare(s, ultimoRk.slice(0, 3)) + `<section class="panel"><div class="btnrow"><button class="btn" id="mostrar" data-act="mostrar" data-focus="go">Mostrar as respostas</button></div><p class="encerrar"><button class="linkbtn" data-act="close" data-focus="close">Encerrar jogo</button></p></section>`;
     const destaque = Date.now() >= destaqueEm;
     const status = rev
       ? opiniao
@@ -320,7 +322,8 @@ function mount(main: HTMLElement, code: string) {
 
   function primary() {
     if (!s) return;
-    if (s.phase === 'question') send({ type: 'reveal' });
+    if (s.phase === 'question' && preparando(s, sock.now())) send({ type: 'mostrar' });
+    else if (s.phase === 'question') send({ type: 'reveal' });
     // opinião não mexe no placar e a última vai direto para o pódio: as duas pulam o ranking
     else if (s.phase === 'reveal') send({ type: (s.question && s.question.tipo !== 'quiz') || s.qIndex >= s.total - 1 ? 'next' : 'showRanking' });
     else if (s.phase === 'ranking') send({ type: 'next' });
@@ -341,6 +344,7 @@ function mount(main: HTMLElement, code: string) {
       // o clique em "Começar" é o gesto que o navegador exige para a tela cheia
       telaCheia(true);
     }
+    else if (a === 'mostrar') send({ type: 'mostrar' });
     else if (a === 'reveal') send({ type: 'reveal' });
     else if (a === 'showRanking') send({ type: 'showRanking' });
     else if (a === 'next') send({ type: 'next' });
@@ -459,6 +463,8 @@ function mount(main: HTMLElement, code: string) {
     // um bipe a cada segundo do "Prepare-se" e um mais agudo quando libera as respostas
     if (s && s.phase === 'question') {
       const falta = s.startsAt - sock.now();
+      // durante a leitura não bipa; só na contagem final (3, 2, 1) e quando as respostas aparecem
+      if (falta > 3000) return;
       const chave = `${s.qIndex}:${falta > 0 ? Math.ceil(falta / 1000) : 'ja'}`;
       if (chave !== ultimoBipe && falta > -400) {
         ultimoBipe = chave;

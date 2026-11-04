@@ -48,6 +48,7 @@ export type ClientMsg =
   | { type: 'answer'; qIndex: number; choice: number }
   | { type: 'avatar'; avatar: string } // jogador troca o personagem depois de entrar
   | { type: 'start' }
+  | { type: 'mostrar' } // anfitrião encerra a leitura: contagem de 3 s e as respostas aparecem
   | { type: 'reveal' }
   | { type: 'showRanking' }
   | { type: 'next' }

@@ -24,7 +24,10 @@ export interface Pessoa {
 }
 
 /** Duração do "Prepare-se" antes de cada pergunta. */
-export const PREP_MS = 5000;
+/** Tempo máximo de leitura da pergunta antes das respostas aparecerem (se o anfitrião não tocar em "Mostrar as respostas"). */
+export const PREP_MS = 10_000;
+/** Contagem final antes das respostas: 3, 2, 1. */
+export const CONTAGEM_MS = 3000;
 
 export interface Answer {
   choice: number;
@@ -133,6 +136,15 @@ export function kick(room: Room, playerId: string): boolean {
   delete room.players[playerId];
   delete room.answers[playerId];
   room.kicked.push(playerId);
+  return true;
+}
+
+/** O anfitrião toca em "Mostrar as respostas": encurta a leitura para a contagem final de 3 segundos. */
+export function mostrarRespostas(room: Room, now: number): boolean {
+  if (room.phase !== 'question' || now >= room.startedAt - CONTAGEM_MS) return false;
+  const q = room.questions[room.qIndex];
+  room.startedAt = now + CONTAGEM_MS;
+  room.endsAt = room.startedAt + q.tl * 1000;
   return true;
 }
 

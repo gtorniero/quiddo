@@ -374,3 +374,25 @@ describe('personagem e vizinho no ranking', () => {
     expect(G.playerView(room, 'p1', T0)!.me.vizinho).toBeNull();
   });
 });
+
+describe('leitura da pergunta', () => {
+  it('respostas aparecem sozinhas depois da leitura máxima', () => {
+    G.start(room, S);
+    expect(room.startedAt).toBe(S + G.PREP_MS);
+  });
+
+  it('"Mostrar as respostas" encurta a leitura para a contagem de 3 s', () => {
+    G.start(room, S);
+    expect(G.mostrarRespostas(room, S + 2000)).toBe(true);
+    expect(room.startedAt).toBe(S + 2000 + G.CONTAGEM_MS);
+    expect(room.endsAt).toBe(room.startedAt + qs[0].tl * 1000);
+    // já na contagem final (ou depois), não mexe mais
+    expect(G.mostrarRespostas(room, S + 3000)).toBe(false);
+  });
+
+  it('não encurta quando faltam 3 s ou menos', () => {
+    G.start(room, S);
+    expect(G.mostrarRespostas(room, S + G.PREP_MS - 2000)).toBe(false);
+    expect(room.startedAt).toBe(S + G.PREP_MS);
+  });
+});

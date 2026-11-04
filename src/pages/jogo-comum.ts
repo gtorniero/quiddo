@@ -1,6 +1,6 @@
 // Pedaços de tela usados pelo anfitrião e pelo jogador.
 import type { Acerto, BaseState, RankRow, Visual } from '../../shared/protocol';
-import { PREP_MS } from '../../shared/game';
+import { CONTAGEM_MS } from '../../shared/game';
 import { LETRAS, esc, fmt } from '../lib/dom';
 import { avatarSvg, comMoldura } from '../lib/avatar-art';
 import type { Moldura } from '../lib/avatar-art';
@@ -18,7 +18,7 @@ export function brandBar(s: BaseState) {
 export const preparando = (s: BaseState, now: number) => s.phase === 'question' && now < s.startsAt;
 
 /** Olho do tucano grande da contagem do "Prepare-se": o anel amarelo esvazia em 3 s e o número fica na pupila. */
-const OLHO_CONTA = `<div class="olho-conta" aria-hidden="true"><svg viewBox="0 0 300 300" focusable="false"><circle cx="150" cy="150" r="136" fill="#13A07A" stroke="#0E2A22" stroke-width="8"/><circle cx="150" cy="150" r="105" fill="none" stroke="#0E6B50" stroke-width="14"/><circle class="anel" id="anel" cx="150" cy="150" r="105" fill="none" stroke="#FFC83D" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="100 200" transform="rotate(-90 150 150)"/><circle cx="150" cy="150" r="88" fill="#5BC0EB" stroke="#0E2A22" stroke-width="7"/><circle cx="150" cy="150" r="62" fill="#fff" stroke="#0E2A22" stroke-width="4"/></svg><b class="prep-n" id="prep">5</b></div>`;
+const OLHO_CONTA = `<div class="olho-conta" aria-hidden="true"><svg viewBox="0 0 300 300" focusable="false"><circle cx="150" cy="150" r="136" fill="#13A07A" stroke="#0E2A22" stroke-width="8"/><circle cx="150" cy="150" r="105" fill="none" stroke="#0E6B50" stroke-width="14"/><circle class="anel" id="anel" cx="150" cy="150" r="105" fill="none" stroke="#FFC83D" stroke-width="14" stroke-linecap="round" pathLength="100" stroke-dasharray="100 200" transform="rotate(-90 150 150)"/><circle cx="150" cy="150" r="88" fill="#5BC0EB" stroke="#0E2A22" stroke-width="7"/><circle cx="150" cy="150" r="62" fill="#fff" stroke="#0E2A22" stroke-width="4"/></svg><b class="prep-n" id="prep"></b></div>`;
 
 /** Selo "×2" que cai na tela antes da pergunta que vale o dobro. */
 const CARIMBO_X2 = '<div class="x2" aria-hidden="true"><span>×2</span></div>';
@@ -41,7 +41,7 @@ export function prepare(s: BaseState, top3: RankRow[] = []) {
   const v = s.visual || 'floresta';
   const conta = v === 'floresta' ? OLHO_CONTA : contaVisual(v);
   const nervosos = ultima && top3.length ? `<div class="nervosos" aria-hidden="true">${top3.map((r) => `<span class="nervoso">${avatarSvg(r.avatar, 72)}<small>${r.rank}º ${esc(r.nick)}</small></span>`).join('')}</div>` : '';
-  return `<section class="stage center prep${q.dobro && !ultima ? ' treme-tela' : ''}${ultima ? ' final-clima' : ''}"><span class="pill">Pergunta ${s.qIndex + 1} de ${s.total}</span>${titulo}<div class="qt">${esc(q.t)}</div>${conta}<p class="prep-txt" role="status">${esc(VISUAIS[v].prep)}</p>${nervosos}</section>`;
+  return `<section class="stage center prep${q.dobro && !ultima ? ' treme-tela' : ''}${ultima ? ' final-clima' : ''}"><span class="pill">Pergunta ${s.qIndex + 1} de ${s.total}</span>${titulo}<div class="qt">${esc(q.t)}</div>${conta}<p class="prep-txt" id="prep-txt" role="status">Leia a pergunta</p>${nervosos}</section>`;
 }
 
 /** Cabeçalho da pergunta com cronômetro e barra. Os ids são atualizados pelo relógio da página. */
@@ -61,17 +61,24 @@ export function tick(s: BaseState | null, now: number) {
     const falta = s.startsAt - now;
     const n = document.getElementById('prep');
     const vai = VISUAIS[s.visual || 'floresta'].vai;
-    const v = falta < 350 ? vai : String(Math.max(1, Math.ceil(falta / 1000)));
-    if (n && n.textContent !== v) {
+    // leitura: sem número, só a pergunta; nos 3 últimos segundos, a contagem 3, 2, 1
+    const lendo = falta > CONTAGEM_MS;
+    const v = lendo ? '' : falta < 350 ? vai : String(Math.max(1, Math.ceil(falta / 1000)));
+    const txt = document.getElementById('prep-txt');
+    const frase = lendo ? 'Leia a pergunta' : VISUAIS[s.visual || 'floresta'].prep;
+    if (txt && txt.textContent !== frase) txt.textContent = frase;
+    const mostrar = document.getElementById('mostrar');
+    if (mostrar) mostrar.hidden = !lendo;
+    if (n && n.textContent !== v && v) {
       n.textContent = v;
       n.classList.toggle('bora', v === vai);
       n.animate?.([{ transform: 'scale(1.5)', opacity: 0.3 }, { transform: 'scale(1)', opacity: 1 }], { duration: 300, easing: 'cubic-bezier(.3,1.4,.5,1)' });
     }
     // o anel do olho esvazia no tempo do servidor, mesmo se a tela abriu no meio da contagem
     const anel = document.getElementById('anel');
-    if (anel && !anel.dataset.ok) {
+    if (anel && !anel.dataset.ok && !lendo) {
       anel.dataset.ok = '1';
-      anel.style.animationDelay = `${-Math.max(0, PREP_MS - falta)}ms`;
+      anel.style.animationDelay = `${-Math.max(0, CONTAGEM_MS - falta)}ms`;
       anel.classList.add('corre');
     }
     return;

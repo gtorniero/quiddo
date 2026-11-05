@@ -21,12 +21,15 @@ function testAdmin(){it('owner-only administration uses real verified session an
  await db.prepare('CREATE TABLE sessoes(token TEXT PRIMARY KEY,email TEXT,criado INTEGER,expira INTEGER,simulado INTEGER)').run();
  const token='a'.repeat(64);await db.prepare('INSERT INTO sessoes VALUES (?,?,?,?,0)').bind(await promoHash(token),'owner@example.com',Date.now(),Date.now()+60000).run();
  const env={DB:db,PROMOS:db,PROMO_ADMIN_EMAIL:'owner@example.com',COBRANCA:'ligada',RESEND_KEY:'fixture'};
- const call=(origin:string,emailCookie=true)=>new Request('https://www.quiddo.com.br/api/promos/admin',{method:'POST',headers:{Origin:origin,Cookie:emailCookie?'qd_sessao='+token:''},body:JSON.stringify({action:'create',label:'Partner',sites:['quiddo']})});
+ const call=(origin:string,emailCookie=true,sites=['quiddo'])=>new Request('https://www.quiddo.com.br/api/promos/admin',{method:'POST',headers:{Origin:origin,Cookie:emailCookie?'qd_sessao='+token:''},body:JSON.stringify({action:'create',label:'Partner',sites})});
  expect((await adminPromos(call('https://evil.example'),env)).status).toBe(403);
  expect((await adminPromos(call('https://www.quiddo.com.br',false),env)).status).toBe(403);
- const r=await adminPromos(call('https://www.quiddo.com.br'),env);expect(r.status).toBe(200);const b=await r.json() as any;expect(b.codigo).toMatch(/^BTW-[A-F0-9]{32}$/);
+ expect((await adminPromos(call('https://www.quiddo.com.br',true,['sportdna:unknown']),env)).status).toBe(400);
+ const r=await adminPromos(call('https://www.quiddo.com.br',true,['sportdna:surf-report']),env);expect(r.status).toBe(200);const b=await r.json() as any;expect(b.codigo).toMatch(/^BTW-[A-F0-9]{32}$/);
  const list=await (await adminPromos(new Request('https://www.quiddo.com.br/api/promos/admin',{headers:{Cookie:'qd_sessao='+token}}),env)).json() as any;
- expect(JSON.stringify(list)).not.toContain(b.codigo);expect(list.codigos).toHaveLength(2);
+ expect(JSON.stringify(list)).not.toContain(b.codigo);expect(list.codigos).toHaveLength(2);expect(list.codigos.find((c:any)=>c.label==='Partner').sites).toBe('["sportdna:surf-report"]');
 });}
 
 it('accepts a six-character invitation with ampersand',async()=>{const {db}=await fixture();await db.prepare('UPDATE promo_codes SET hash=?').bind(await promoHash('AB&XYZ')).run();const g=await redeemPromo(db,req(),'quiddo','semana','ab&xyz','guest@example.com');expect(g.id).toBeTruthy();});
+
+it('restricts a Surf campaign to exactly that product without granting other access',async()=>{const {db,sqlite}=await fixture();await db.prepare('UPDATE promo_codes SET sites=?').bind('["sportdna:surf-report"]').run();for(const [site,product] of [['sportdna','racket-report'],['sportdna','run-report'],['sportdna','racket-comparator'],['quiddo','semana'],['retrozap','premium']])await expect(redeemPromo(db,req(),site,product,'BTW-FIXTURE-12345678','guest@example.com')).rejects.toThrow();expect(sqlite.prepare('SELECT COUNT(*) n FROM promo_grants').get()?.n).toBe(0);expect((await redeemPromo(db,req(),'sportdna','surf-report','BTW-FIXTURE-12345678','guest@example.com')).id).toBeTruthy();});

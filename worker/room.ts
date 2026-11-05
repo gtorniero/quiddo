@@ -9,6 +9,9 @@ import * as G from '../shared/game';
 import type { ClientMsg, CreateRoomBody, ServerMsg } from '../shared/protocol';
 
 export interface Env extends LoginEnv {
+  BTW_PROMOS_TOKEN?: string;
+  PROMO_RETROZAP?: D1Database;
+  PROMO_SPORTDNA?: D1Database;
   ROOMS: DurableObjectNamespace<Room>;
   ASSETS: Fetcher;
 }

@@ -12,7 +12,7 @@
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
   // banco das compras. Na primeira publicação a Cloudflare cria o banco "quiddo" sozinha.
-  "d1_databases": [{ "binding": "DB", "database_name": "quiddo" }, {"binding":"PROMOS","database_name":"btw-promocoes","database_id":"84c12b97-d46d-4ba6-abe5-f6e8e7bcf84c"}],
+  "d1_databases": [{ "binding": "DB", "database_name": "quiddo" }, {"binding":"PROMOS","database_name":"btw-promocoes","database_id":"84c12b97-d46d-4ba6-abe5-f6e8e7bcf84c"}, {"binding":"PROMO_RETROZAP","database_name":"retrozap","database_id":"b598acfa-5fa4-4e88-9042-9460c021ad3c"}, {"binding":"PROMO_SPORTDNA","database_name":"sportdna-payments-test","database_id":"936d7152-4ddd-4764-9cd5-a6cd8e966582"}],
   // cobrança: "simulacao" (para todos, com Pix de mentira e sem cartão), "teste" (só com ?teste_cobranca=1),
   // "ligada" (de verdade, para todos) ou "desligada". Preços (PRECO_MENSAL, PRECO_SEMANA; padrão 15.99 e 12.99; anual 156.00 e oferta 9.99)
   // e segredos (MP_TOKEN, STRIPE_KEY) ficam só no painel da Cloudflare.

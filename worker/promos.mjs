@@ -21,7 +21,7 @@ export async function redeemPromo(db,request,site,product,raw,email){
  const code=String(raw||'').trim().toUpperCase();
  if(code.length<6||code.length>80)promoError(400,'Código inválido, vencido ou desativado.');
  const c=await db.prepare('SELECT * FROM promo_codes WHERE hash=? AND active=1 AND (expires IS NULL OR expires>?)').bind(await promoHash(code),Date.now()).first();
- if(!c||!JSON.parse(c.sites).includes(site))promoError(400,'Código inválido, vencido ou desativado.');
+ if(!c||!JSON.parse(c.sites).some(scope=>scope===site||scope===site+':'+product))promoError(400,'Código inválido, vencido ou desativado.');
  const recipient=await promoHash(c.id+':'+email);
  // Atomic uniqueness means a retry never renews the same 7-day invitation.
  await db.prepare('INSERT OR IGNORE INTO promo_grants(id,code_id,site,product,recipient,created) SELECT ?,?,?,?,?,? FROM promo_codes WHERE id=? AND active=1 AND (expires IS NULL OR expires>?)').bind(crypto.randomUUID(),c.id,site,product,recipient,Date.now(),c.id,Date.now()).run();

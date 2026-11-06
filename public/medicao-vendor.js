@@ -40,7 +40,7 @@
     if (!path) return;
     const p = {};
     const raw = d.params || {};
-    if (['mensal','semana','oferta'].includes(raw.plano)) p.plano = raw.plano;
+    if (['mensal','anual','semana','oferta'].includes(raw.plano)) p.plano = raw.plano;
     if (['pix','card'].includes(raw.payment_type)) p.payment_type = raw.payment_type;
     if (Number.isFinite(raw.value) && raw.value > 0 && raw.value < 10000 && raw.currency === 'BRL') { p.value = raw.value; p.currency = 'BRL'; }
     if (d.event === 'purchase') {

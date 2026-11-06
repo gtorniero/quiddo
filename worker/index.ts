@@ -1,3 +1,4 @@
+import {probeMeta} from './meta-probe.mjs';
 import {runMeta,metaRoute} from './meta-adapter.mjs';
 // Worker: serve os arquivos do site e a API das salas.
 //   POST /api/salas              abre uma sala (corpo: CreateRoomBody) → { code, hostKey }
@@ -74,4 +75,4 @@ const app = {
   },
 } satisfies ExportedHandler<Env>;
 
-export default {...app,async fetch(...args:Parameters<typeof app.fetch>){const route=await metaRoute(args[0],args[1]);if(route)return route;const response=await app.fetch(...args);args[2].waitUntil(runMeta(args[1]));return response},async scheduled(_event:unknown,env:Env,ctx:ExecutionContext){ctx.waitUntil(runMeta(env))}};
+export default {...app,async fetch(...args:Parameters<typeof app.fetch>){const route=await metaRoute(args[0],args[1]);if(route)return route;const response=await app.fetch(...args);args[2].waitUntil(runMeta(args[1]));return response},async scheduled(_event:unknown,env:Env,ctx:ExecutionContext){ctx.waitUntil(Promise.all([runMeta(env),probeMeta(env,'quiddo')]))}};

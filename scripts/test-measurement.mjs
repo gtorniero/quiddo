@@ -14,6 +14,16 @@ function bridge(file, brand, path) {
  send({type:prefix+'_measure',event:'page_view',path,params:{email:'secret@example.com',nome:'Private Name'},campaign:'?utm_source=instagram&token=secret&utm_term=secret%40example.com'});
  const event=Array.from(window.dataLayer.at(-1));assert.equal(event[0],'event');assert.equal(event[1],'page_view');const text=JSON.stringify(event);assert(!text.includes('secret'));assert(!text.includes('Private Name'));assert(text.includes('utm_source=instagram'));
  send({type:prefix+'_measure',event:'purchase',path,params:{transaction_id:'QD-SECRET',value:25,currency:'BRL',plano:'mensal'}});assert.equal(window.dataLayer.length,4,'access code cannot become transaction id');
+ for(const plano of ['mensal','anual','semana','oferta']) {
+  const before=window.dataLayer.length;
+  send({type:prefix+'_measure',event:'purchase',path,params:{transaction_id:'a'.repeat(64),value:156,currency:'BRL',plano,email:'secret@example.com'}});
+  assert.equal(window.dataLayer.length,before+1,'confirmed '+plano+' sale reaches GA');
+  const sale=Array.from(window.dataLayer.at(-1))[2];assert.equal(sale.plano,plano);assert.equal(sale.value,156);assert(!JSON.stringify(sale).includes('secret'));
+  assert.equal(window.fbq.queue.at(-1)[2],'Purchase');
+ }
+ const beforeInvalid=window.dataLayer.length;
+ send({type:prefix+'_measure',event:'purchase',path,params:{transaction_id:'a'.repeat(64),value:156,currency:'BRL',plano:'unrecognized'}});
+ assert.equal(window.dataLayer.length,beforeInvalid,'unknown plan remains rejected');
  const noScripts=[],noHandlers={};const noWindow={addEventListener(n,f){noHandlers[n]=f}};const noParent={postMessage(){}};
  vm.runInNewContext(readFileSync(file,'utf8'),{...context,window:noWindow,parent:noParent,document:{head:{appendChild(x){noScripts.push(x)}},createElement(){return {}}}});
  noHandlers.message({origin:context.location.origin,source:noParent,data:{type:prefix+'_init',analytics:false,marketing:false}});assert.equal(noScripts.length,0,'refusal loads no SDK');

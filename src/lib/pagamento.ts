@@ -1,3 +1,4 @@
+import {metaContext} from './meta-consent';
 // Pagamento no site, no mesmo modelo do Retrozap: Pix (Mercado Pago) ou cartão, Apple Pay e Google Pay
 // (Stripe Checkout). Planos: Mensal (30 dias) e Passe 7 dias, os dois com salas de até 200 pessoas e jogos
 // ilimitados. Quem paga recebe um código QD-XXXX-XXXX, guardado neste navegador, que também vale em outro
@@ -74,8 +75,8 @@ export function guardaAcesso(a: Acesso) {
 
 async function post<T>(url: string, corpo: unknown): Promise<T | null> {
   try {
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) });
-    return (await r.json().catch(() => null)) as T | null;
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(['/api/pix','/api/cartao'].includes(url)?{...(corpo as object),meta:metaContext()}:corpo) });
+    const data=await r.json().catch(()=>null);return data as T|null;
   } catch {
     return null;
   }

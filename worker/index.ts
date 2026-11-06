@@ -1,3 +1,4 @@
+import {runMeta,metaRoute} from './meta-adapter.mjs';
 // Worker: serve os arquivos do site e a API das salas.
 //   POST /api/salas              abre uma sala (corpo: CreateRoomBody) → { code, hostKey }
 //   GET  /api/salas/{CODIGO}/ws  WebSocket da sala (anfitrião e jogadores)
@@ -19,7 +20,7 @@ export { Room } from './room';
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
 
-export default {
+const app = {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
     const parts = url.pathname.split('/').filter(Boolean); // ['api', 'salas', 'ABCD', 'ws']
@@ -72,3 +73,5 @@ export default {
     return json({ erro: 'Não encontrado.' }, 404);
   },
 } satisfies ExportedHandler<Env>;
+
+export default {...app,async fetch(...args:Parameters<typeof app.fetch>){const route=await metaRoute(args[0],args[1]);if(route)return route;const response=await app.fetch(...args);args[2].waitUntil(runMeta(args[1]));return response},async scheduled(_event:unknown,env:Env,ctx:ExecutionContext){ctx.waitUntil(runMeta(env))}};

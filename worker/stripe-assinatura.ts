@@ -1,3 +1,4 @@
+import {captureCheckout} from './meta-adapter.mjs';
 // Stripe Billing da Quiddo. Nenhum dado das salas ou dos jogadores passa por este modulo.
 import StripeClient from 'stripe';
 import type { CobrancaEnv } from './cobranca';
@@ -67,7 +68,7 @@ export async function checkoutMensal(req: Request, env: CobrancaEnv, email: stri
     if (existing) return json({ erro: 'assinatura_existente', gerenciar: true }, 409);
     const recent = await db.prepare("SELECT COUNT(*) AS n FROM compras WHERE email=? AND tipo='assinatura' AND criado>?").bind(email, new Date(Date.now() - 3600e3).toISOString()).first<{ n: number }>();
     if ((recent?.n || 0) >= 5) return json({ erro: 'muitos' }, 429);
-    const ref = crypto.randomUUID(), origin = new URL(req.url).origin;
+    const ref = crypto.randomUUID(), origin = new URL(req.url).origin; await captureCheckout(env,ref,pedido.meta);
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription', customer, client_reference_id: ref, locale: 'pt-BR',
       allowed_payment_method_types: ['card'],

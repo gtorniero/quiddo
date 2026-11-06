@@ -25,3 +25,7 @@ No token is configured by these files. Unit/integration tests use fake providers
 ## Rollback
 
 Set META_CAPI_ENABLED=false to stop capture/delivery immediately. Keep the browser pixel and payment system. Preserve the queue to investigate; never replay rejected/expired events or change event IDs merely to force acceptance. No campaign is activated by this change.
+
+## Private server connection check
+
+An owner may temporarily set META_CAPI_TEST_CODE to the code shown in Meta Test Events. Only the scheduled job uses it, with synthetic fixture data and a mandatory test_event_code field. It never reads orders, creates access or emits a production conversion. A bounded D1 status record in btw_meta_probe confirms HTTP/events_received, without tokens or payloads. One accepted probe per brand/code is sent. Remove the test code after verification. Normal purchase delivery never uses this test code.

@@ -1,4 +1,5 @@
 {
+ "triggers": {"crons":["*/5 * * * *"]},
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "quiddo",
   "main": "worker/index.ts",

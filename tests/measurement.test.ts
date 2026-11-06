@@ -23,7 +23,7 @@ describe('eventos aguardam o componente e respeitam revogação', () => {
   const handlers: Record<string, (e: any) => void> = {}, sent: any[] = [];
   const origin='https://www.quiddo.com.br';
   const source={postMessage(data: any) { sent.push(data); if(data.type==='qd_measure') queueMicrotask(()=>handlers.message({origin,source,data:{type:'qd_done',id:data.id}})); }};
-  const values=new Map([['qd_consent_v1',JSON.stringify({version:1,analytics:true,marketing:false,at:Date.now()})]]);
+  const values=new Map([['btw_capi_choice_v1','no'],['qd_consent_v1',JSON.stringify({version:1,analytics:true,marketing:false,at:Date.now()})]]);
   vi.stubGlobal('location',{origin,hostname:'www.quiddo.com.br',search:''});
   vi.stubGlobal('localStorage',{getItem:(k: string)=>values.get(k)||null,setItem:(k: string,v: string)=>values.set(k,v)});
   vi.stubGlobal('window',{setTimeout,addEventListener:(n: string,f: any)=>handlers[n]=f});

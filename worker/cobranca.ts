@@ -1,3 +1,4 @@
+import {captureCheckout} from './meta-adapter.mjs';
 // Cobrança do Quiddo, no mesmo modelo do Retrozap. Grátis: salas de até 10 pessoas. Pago: salas de até 200,
 // quantos jogos quiser, no plano Mensal (30 dias) ou no Passe 7 dias. Quem paga recebe um código QD-XXXX-XXXX,
 // guardado no navegador, que também serve em outro aparelho até o fim do plano.
@@ -286,7 +287,7 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     // a oferta só sai pelo Pix e só para o anfitrião da sala cheia, conferido na própria sala
     if (plano === 'oferta' && !(ofertaValida && (await ofertaValida(String(pedido?.sala || ''), String(pedido?.hostKey || ''))))) return json({ erro: 'oferta' }, 403);
     await tabela(db);
-    const ref = crypto.randomUUID();
+    const ref = crypto.randomUUID(); await captureCheckout(env,ref,pedido?.meta);
     const valor = preco(env, plano);
     const agora = new Date().toISOString();
     const inserir = 'INSERT INTO compras (ref, ordem, email, status, criado, valor, modo, plano) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
@@ -372,6 +373,7 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     const volta = /^\/[A-Za-z0-9/_-]{0,40}$/.test(String(c?.volta || '')) ? String(c?.volta) : '/criar';
     // Mensal no cartão usa Stripe Billing; o Passe continua sendo pagamento avulso.
     // O desconto vale nos dois meios, somente após validar o anfitrião e a sala cheia.
+    await captureCheckout(env,ref,c?.meta);
     const plano = planoDe(c?.plano);
     if (plano === 'oferta' && !(ofertaValida && (await ofertaValida(String(c?.sala || ''), String(c?.hostKey || ''))))) return json({ erro: 'oferta' }, 403);
     if (assinatura(plano)) return checkoutMensal(req, env, contaEmail, volta, c || {}, plano === 'anual' ? 'anual' : 'mensal');

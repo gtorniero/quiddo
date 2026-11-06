@@ -1,3 +1,4 @@
+import {revokeMeta,metaContext} from './meta-consent';
 import { CONSENT_KEY, publicPath, readConsent, campaignQuery, type Consent } from './measurement-policy';
 
 let consent: Consent | null = null;
@@ -65,9 +66,12 @@ function clearOptionalCookies() {
   }
 }
 function save(analytics: boolean, marketing: boolean) {
+  try{localStorage.setItem('btw_capi_choice_v1',marketing?'yes':'no')}catch{}
+  if(!marketing)revokeMeta();
   consent = { version: 1, analytics, marketing, at: Date.now() };
   try { localStorage.setItem(CONSENT_KEY, JSON.stringify(consent)); } catch { /* escolha vale nesta página */ }
   removeFrame(); clearOptionalCookies();
+  if(marketing)metaContext();
   document.getElementById('qd-consent')?.remove();
   sync();
 }
@@ -77,7 +81,7 @@ export function showConsent() {
   box.id = 'qd-consent'; box.className = 'consent-box';
   box.setAttribute('aria-label', 'Preferências de privacidade');
   // barra simples no pé da tela, como na maioria dos sites: uma frase e dois botões do mesmo peso
-  box.innerHTML = `<p>Usamos cookies opcionais do Google e da Meta para medir visitas e anúncios. <a href="/privacidade" data-link>Saiba mais</a></p>
+  box.innerHTML = `<p>Usamos cookies opcionais do Google e da Meta para medir visitas e anúncios. Com seu aceite, enviamos à Meta a compra confirmada e uma versão protegida do e-mail para associá-la aos anúncios. <a href="/privacidade" data-link>Saiba mais</a></p>
     <div class="consent-actions"><button type="button" class="btn sec" data-consent="reject">Recusar</button><button type="button" class="btn" data-consent="accept">Aceitar</button></div>`;
   box.addEventListener('click', e => {
     const action = (e.target as HTMLElement).closest<HTMLElement>('[data-consent]')?.dataset.consent;
@@ -102,7 +106,7 @@ export function initMeasurement() {
     removeFrame(); clearOptionalCookies(); sync();
   });
   document.getElementById('privacy-preferences')?.addEventListener('click', showConsent);
-  if (!consent) showConsent();
+  if (!consent || !localStorage.getItem('btw_capi_choice_v1')) showConsent();
 }
 
 /** Somente metadados retornados pelo status pago do servidor, nunca código de acesso. */

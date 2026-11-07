@@ -6059,3 +6059,109 @@ body.modo-foto .btn-som {
   .filtros-guias::-webkit-scrollbar { display: none; }
   .filtros-guias > * { flex: 0 0 auto; }
 }
+
+/* cantos da tela principal: som e tela cheia lado a lado, sem se cobrir */
+.cantos-tv {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  z-index: 60;
+  display: flex;
+  gap: 8px;
+}
+.cantos-tv .btn-cheia,
+.cantos-tv .btn-som {
+  position: static;
+}
+.cantos-tv button:focus-visible {
+  outline: 3px solid #ffd23f;
+  outline-offset: 2px;
+}
+body.modo-foto .cantos-tv {
+  display: none;
+}
+@media (max-width: 600px) {
+  .cantos-tv {
+    top: max(8px, env(safe-area-inset-top));
+    right: max(8px, env(safe-area-inset-right));
+  }
+  .cantos-tv .btn-cheia,
+  .cantos-tv .btn-som {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}
+
+/* celular em pé: dica para deitar antes de espelhar na TV */
+.dica-deitar {
+  display: none;
+}
+html.telao-em-pe .dica-deitar {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 61;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 12px 16px;
+  border-radius: 16px;
+  background: #0e2a22;
+  color: #fff6e6;
+  box-shadow: 0 6px 24px rgba(14, 42, 34, 0.35);
+}
+.dica-deitar p {
+  margin: 0;
+  flex: 1;
+  font: 600 15px/1.35 var(--text);
+}
+.dica-deitar b {
+  font-weight: 800;
+}
+.dica-deitar button {
+  min-width: 48px;
+  min-height: 48px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  background: transparent;
+  color: #fff6e6;
+  font: 800 15px var(--text);
+  cursor: pointer;
+}
+.dica-deitar button:focus-visible {
+  outline: 3px solid #ffd23f;
+  outline-offset: 2px;
+}
+body.modo-foto .dica-deitar {
+  display: none;
+}
+
+/* como ter tela cheia no iPhone */
+.dlg-cheia {
+  max-width: min(440px, calc(100vw - 32px));
+  border: 0;
+  border-radius: 20px;
+  padding: 24px;
+  background: #fff6e6;
+  color: #0e2a22;
+  font: 500 16px/1.45 var(--text);
+}
+.dlg-cheia::backdrop {
+  background: rgba(14, 42, 34, 0.6);
+}
+.dlg-cheia h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+.dlg-cheia ol {
+  margin: 12px 0;
+  padding-left: 22px;
+}
+.dlg-cheia li + li {
+  margin-top: 6px;
+}
+.dlg-cheia .btn {
+  width: 100%;
+  margin-top: 8px;
+}

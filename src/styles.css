@@ -6165,3 +6165,59 @@ body.modo-foto .dica-deitar {
   width: 100%;
   margin-top: 8px;
 }
+
+/* ranking em pista no celular em pé: nome e pontos em cima, a pista inteira embaixo */
+@media (max-width: 600px) {
+  .rank.pista > div {
+    grid-template-columns: 30px minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'pos who em pts'
+      'pos raia raia raia';
+    row-gap: 6px;
+  }
+  .rank.pista > div > i {
+    grid-area: pos;
+    align-self: center;
+  }
+  .rank.pista .who {
+    grid-area: who;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .rank.pista .raia {
+    grid-area: raia;
+    height: 48px;
+    margin-right: 0;
+  }
+  .rank.pista em {
+    grid-area: em;
+  }
+  .rank.pista .pts {
+    grid-area: pts;
+  }
+  .rank.pista .corredor {
+    left: min(var(--ate), calc(100% - 92px));
+  }
+  .rank.pista .corredor svg.av {
+    width: 40px;
+    height: 40px;
+  }
+  .rank.pista .raia .bandeira {
+    width: 24px;
+    height: 30px;
+  }
+  /* no celular os botões sobem junto com a página, sem cobrir o placar */
+  .cantos-tv {
+    position: absolute;
+  }
+}
+@media (max-width: 600px) and (prefers-reduced-motion: no-preference) {
+  .rank.pista .corredor {
+    animation-name: corre-cel;
+  }
+  @keyframes corre-cel {
+    from {
+      left: min(var(--de), calc(100% - 92px));
+    }
+  }
+}

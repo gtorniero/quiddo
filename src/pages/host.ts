@@ -24,6 +24,7 @@ export function page(code: string): Page {
 }
 
 function mount(main: HTMLElement, code: string) {
+  const measureState = gameMeasurement('host');
   const hostKey = store.get<string>('host:' + code, '');
   const link = `${location.origin}/${code}`;
   let s: HostState | null = null;
@@ -80,6 +81,7 @@ function mount(main: HTMLElement, code: string) {
     if (m.type !== 'state' || m.role !== 'host') return;
     const prev = s;
     s = m;
+    measureState({phase:s.phase,qIndex:s.qIndex});
     // sala grátis e este navegador já tem acesso pago (ou acabou de pagar): libera sozinha, uma vez
     if (s.maxPlayers < LIMITS.maxPlayers && meuAcesso() && !liberando) {
       liberando = true;
@@ -501,3 +503,4 @@ function mount(main: HTMLElement, code: string) {
   };
 }
 
+import { gameMeasurement } from '../lib/game-measurement';

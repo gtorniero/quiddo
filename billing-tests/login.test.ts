@@ -33,7 +33,7 @@ it('recusa código da simulação depois de ativar o e-mail', async () => {
 it('recusa sessão da simulação depois de ativar o e-mail', async () => {
   const { codigo } = await (await post('/api/login', { email })).json() as any;
   const response = await post('/api/login/codigo', { email, codigo });
-  const req = new Request('https://quiddo.com.br', { headers: { cookie: response.headers.get('set-cookie')! } });
+  const req = new Request('https://quiddo.com.br', { headers: { cookie: response.headers.getSetCookie().find(x => x.includes('Max-Age=2592000'))!.split(';')[0] } });
   expect(await sessao(req, env)).toBe(email);
   expect(await sessao(req, { ...env, RESEND_KEY: 're_fixture' })).toBe('');
 });
@@ -50,7 +50,7 @@ it('envia o código sem expô-lo, aceita uma vez e isola a sessão real', async 
   expect(await response.json()).toEqual({ ok: true });
   const login = await post('/api/login/codigo', { email, codigo }, real);
   expect(login.status).toBe(200);
-  const req = new Request('https://quiddo.com.br', { headers: { cookie: login.headers.get('set-cookie')! } });
+  const req = new Request('https://quiddo.com.br', { headers: { cookie: login.headers.getSetCookie().find(x => x.includes('Max-Age=2592000'))!.split(';')[0] } });
   expect(await sessao(req, real)).toBe(email);
   expect(await sessao(req, env)).toBe('');
   expect((await post('/api/login/codigo', { email, codigo }, real)).status).toBe(400);

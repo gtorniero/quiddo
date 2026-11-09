@@ -217,10 +217,12 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
   const pix = async (email: string) => {
     d.innerHTML = `${fechar}<h2 id="pg-t">Gerando o Pix…</h2>`;
     const r = await post<{ ref?: string; qr?: string; qr64?: string; erro?: string; simulado?: boolean }>('/api/pix', { email, plano: escolhido, sala: sala?.codigo, hostKey: sala?.hostKey });
-    if (!r?.ref)
+    if (!r?.ref) {
+      if(c?.modo==='ligada'&&!testeCobranca()) void track('checkout_error',{plano:escolhido,payment_type:'pix',error_category:r?'rejected':'network'});
       return inicio(
         r?.erro === 'email' ? 'Confira o e-mail.' : r?.erro === 'oferta' ? 'A oferta vale só enquanto tem gente esperando para entrar na sala.' : 'Não deu para gerar o Pix agora. Tente de novo.',
       );
+    }
     if (c?.modo === 'ligada' && !r.simulado) await track('begin_checkout', {plano:escolhido, payment_type:'pix', currency:'BRL', value:Number(precoDe(escolhido).replace(',', '.'))});
     const qr = r.qr64 ? `<img src="data:image/png;base64,${r.qr64}" alt="QR code do Pix" width="220" height="220">` : r.qr ? qrSvg(r.qr) : '';
     d.innerHTML = `${fechar}<h2 id="pg-t">Pague com Pix · R$ ${esc(precoDe(escolhido))}</h2><p class="muted">Abra o app do seu banco, escolha Pix e leia o QR code, ou copie o código.</p>
@@ -240,14 +242,19 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
     d.innerHTML = `${fechar}<h2 id="pg-t">Abrindo o pagamento…</h2>`;
     const r = await post<{ url?: string; erro?: string; login?: boolean; gerenciar?: boolean }>('/api/cartao', { email, volta, plano: escolhido, sala: sala?.codigo, hostKey: sala?.hostKey, testeCobranca: testeCobranca() });
     if (r?.login) {
+      if(c?.modo==='ligada'&&!testeCobranca()) void track('checkout_error',{plano:escolhido,payment_type:'card',error_category:'login_required'});
       d.innerHTML = `${fechar}<h2 id="pg-t">Entre para assinar</h2><p>A assinatura fica ligada à sua conta, onde você acompanha a renovação.</p><a class="btn" href="/entrar?volta=${encodeURIComponent(volta)}">Entrar com meu e-mail</a>`;
       return;
     }
     if (r?.gerenciar) {
+      if(c?.modo==='ligada'&&!testeCobranca()) void track('checkout_error',{plano:escolhido,payment_type:'card',error_category:'already_subscribed'});
       d.innerHTML = `${fechar}<h2 id="pg-t">Você já tem uma assinatura</h2><p>Consulte sua assinatura ou atualize o pagamento em Minha conta.</p><a class="btn" href="/conta">Gerenciar assinatura</a>`;
       return;
     }
-    if (!r?.url) return inicio(r?.erro === 'oferta' ? 'A oferta vale só enquanto tem gente esperando para entrar na sala.' : r?.erro === 'email' ? 'Confira o e-mail.' : 'Não deu para abrir o pagamento agora. Tente de novo.');
+    if (!r?.url) {
+      if(c?.modo==='ligada'&&!testeCobranca()) void track('checkout_error',{plano:escolhido,payment_type:'card',error_category:r?'rejected':'network'});
+      return inicio(r?.erro === 'oferta' ? 'A oferta vale só enquanto tem gente esperando para entrar na sala.' : r?.erro === 'email' ? 'Confira o e-mail.' : 'Não deu para abrir o pagamento agora. Tente de novo.');
+    }
     if (c?.modo === 'ligada' && !c.cartaoTeste && !testeCobranca()) await track('begin_checkout', {plano:escolhido, payment_type:'card', currency:'BRL', value:Number(precoDe(escolhido).replace(',', '.'))});
     location.href = r.url;
   };
@@ -302,7 +309,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
       button.disabled=true;
       try {
         const r=await post<{ok?:boolean;erro?:string}&Partial<Acesso>>('/api/promo',{email,codigo:new FormData(f).get('promo')});
-        if(r?.ok&&r.codigo)return pago(r as Acesso);
+        if(r?.ok&&r.codigo){void track('access_granted',{method:'promo'});return pago(r as Acesso);}
         error.textContent=r?.erro||'Não foi possível aplicar o código.';
       } finally {button.disabled=false;}
       return;
@@ -312,7 +319,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
       if (!v) return codigo('Digite o código.');
       if (v.includes('@')) return codigo('Para recuperar pelo e-mail, use "Entre com o e-mail do pagamento" logo abaixo.');
       const r = await post<{ ok: boolean } & Partial<Acesso>>('/api/acesso', { codigo: v });
-      if (r?.ok && r.codigo) return pago(r as Acesso);
+      if (r?.ok && r.codigo) {void track('access_granted',{method:'existing_code'});return pago(r as Acesso);}
       return codigo('Esse código não vale ou o plano já venceu. Confira e tente de novo.');
     }
     const email = (f.querySelector<HTMLInputElement>('#pg-email')?.value || '').trim();
@@ -324,4 +331,5 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
 
   inicio();
   d.showModal();
+  if(c?.modo==='ligada'&&!testeCobranca()) void track('view_offer',{plano:escolhido});
 }

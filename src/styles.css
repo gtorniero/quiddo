@@ -6059,3 +6059,9 @@ body.modo-foto .btn-som {
   .filtros-guias::-webkit-scrollbar { display: none; }
   .filtros-guias > * { flex: 0 0 auto; }
 }
+
+/* Account library and explicit preservation of browser drafts. */
+.quiz-migration{border-top:1px solid #cad8cf;margin-top:16px;padding-top:16px}
+.quiz-import-list{display:grid;gap:10px;margin:14px 0}
+.quiz-import-list label{display:flex;gap:10px;align-items:center}
+[hidden]{display:none!important}

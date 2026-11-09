@@ -1,4 +1,5 @@
-import { track } from '../lib/measurement';
+import { prepararBiblioteca, contaDosQuizzes, syncStatus, carregarQuiz, quizCurrentKey, localQuizzes, importarLocais, idsLocaisImportados, copyConflict } from '../lib/quiz-cloud';
+import { track, trackOnce } from '../lib/measurement';
 // /criar: editor do quiz e configuração do anfitrião (modo, visual, tempo, marca, perguntas) e abertura da sala.
 // O visual só aparece depois do modo e lista apenas os visuais daquele modo. Floresta é o padrão.
 import type { Page } from '../main';
@@ -21,6 +22,15 @@ export function page(): Page {
 }
 
 function mount(main: HTMLElement) {
+  let alive = true;
+  let cleanup: (() => void) | undefined;
+  main.innerHTML = '<section class="panel"><p role="status">Abrindo seus quizzes…</p></section>';
+  prepararBiblioteca().then(() => { if (!alive) return; if (atual().somenteNuvem) { main.innerHTML = '<section class="panel"><h1>Seu quiz está na conta</h1><p>Conecte-se para abrir o conteúdo. Sua versão salva continua na conta.</p><a class="btn" href="/criar">Tentar novamente</a></section>'; return; } cleanup = mountEditor(main); });
+  return () => { alive = false; cleanup?.(); };
+}
+
+function mountEditor(main: HTMLElement) {
+  let vivo = true;
   let q: Quiz = atual();
   // veio da vitrine de modos da home: aplica o modo escolhido (o visual volta para Floresta se não existir nele)
   const temaNovo = store.get<string>('temaNovo', '');
@@ -51,28 +61,40 @@ function mount(main: HTMLElement) {
     usarModelo(modeloUrl);
     history.replaceState(null, '', location.pathname);
   }
+  let mostrarLocais = false;
   let msg = ''; // aviso geral (importação, espaço cheio)
   let erro = ''; // erro ao abrir a sala
   let abrindo = false;
   let saveTimer = 0;
+  let editPending = false;
+  let localSaveFailed = false;
   let cob: Cobranca | null = null; // configuração da cobrança (chega depois)
 
   const persist = (now = false) => {
     clearTimeout(saveTimer);
+    editPending = true;
+    refreshSaveStatus();
+    const snapshot = structuredClone(q);
     const go = () => {
-      if (!salvar(q)) {
-        msg = 'O navegador ficou sem espaço para guardar o quiz. Tire o logo ou exclua quizzes antigos.';
+      saveTimer = 0;
+      editPending = false;
+      if (!salvar(snapshot)) {
+        void trackOnce('quiz_save_error', q.id + ':local', {storage:'local',error_category:'storage'});
+        localSaveFailed = true;
+        msg = 'Não foi possível guardar esta edição neste navegador. Exporte uma cópia antes de sair.';
         render();
-      }
+      } else { localSaveFailed = false; void trackOnce('quiz_save', q.id + ':local', {storage:'local'}); }
+      refreshSaveStatus();
     };
     if (now) go();
     else saveTimer = window.setTimeout(go, 300);
   };
-  persist(true);
+  if (!listar().some(x => x.id === q.id)) persist(true);
 
   const prontas = () => q.perguntas.filter(isReady).length;
 
   function render(focusSel?: string) {
+    if (!vivo) return;
     const temMarca = q.tema !== 'festa';
     applyTheme(q.tema, temMarca ? q.marca.color : '');
     store.set('tema', q.tema);
@@ -85,17 +107,31 @@ function mount(main: HTMLElement) {
     if (focusSel) main.querySelector<HTMLElement>(focusSel)?.focus({ preventScroll: true });
   }
 
+  function refreshSaveStatus() {
+    const status = localSaveFailed ? { text: "Esta edição ainda não foi salva. Exporte uma cópia antes de sair.", conflict: false, retry: true } : editPending ? { text: "Salvando…", conflict: false, retry: false } : syncStatus(q.id);
+    const el = main.querySelector('#quiz-save-status');
+    if (el) el.textContent = status.text;
+    const copy = main.querySelector<HTMLElement>('[data-act="copia-conflito"]');
+    const retry = main.querySelector<HTMLElement>('[data-act="retry-save"]');
+    if (copy) copy.hidden = !status.conflict;
+    if (retry) retry.hidden = !status.retry;
+  }
+
   // ---------- seções ----------
 
   function secMeus() {
     const todos = listar();
+    const account = contaDosQuizzes();
+    const migrated = idsLocaisImportados();
+    const locals = localQuizzes().filter(x => !migrated[x.id]);
+    const status = localSaveFailed ? { text: "Esta edição ainda não foi salva. Exporte uma cópia antes de sair.", conflict: false, retry: true } : editPending ? { text: "Salvando…", conflict: false, retry: false } : syncStatus(q.id);
     return `<section class="panel" aria-labelledby="h-meus">
       <h1 id="h-meus" class="sr">Criar meu quiz</h1>
-      <div class="tag">Meus quizzes</div>
+      <div class="tag">Meus quizzes</div><p class="small">${account ? `Na conta <b>${esc(account)}</b>` : `Neste navegador · <a href="/entrar?volta=/criar">Entre para salvar na sua conta</a>`}</p>
       <div class="quizzes">${todos
         .map(
           (x) =>
-            `<div class="q${x.id === q.id ? ' on' : ''}"><b>${esc(x.titulo || 'Sem título')}</b><span class="small">${x.perguntas.length} ${x.perguntas.length === 1 ? 'pergunta' : 'perguntas'} · ${new Date(x.atualizado).toLocaleDateString('pt-BR')}</span>${
+            `<div class="q${x.id === q.id ? ' on' : ''}"><b>${esc(x.titulo || 'Sem título')}</b><span class="small">${x.quantidade ?? x.perguntas.length} ${(x.quantidade ?? x.perguntas.length) === 1 ? 'pergunta' : 'perguntas'} · ${new Date(x.atualizado).toLocaleDateString('pt-BR')}</span>${
               x.id === q.id ? '<span class="small"><b>Editando</b></span>' : `<button class="btn sec small auto" data-act="abrirquiz" data-v="${x.id}">Abrir</button>`
             }<button class="linkbtn" data-act="excluirquiz" data-v="${x.id}" aria-label="Excluir ${esc(x.titulo)}">Excluir</button></div>`,
         )
@@ -105,7 +141,10 @@ function mount(main: HTMLElement) {
         <span class="btn sec small filebtn">Importar arquivo<input type="file" id="imp" accept="application/json,.json" aria-label="Importar quiz em JSON"></span>
         <button class="btn sec small" data-act="exportar">Exportar este quiz</button>
       </div>
-      <p class="small">Os quizzes ficam guardados neste navegador. Exporte o arquivo para levar para outro computador.</p>
+      <p class="small" id="quiz-save-status" role="status" aria-live="polite">${esc(status.text)}</p>
+      <button class="btn sec small" data-act="copia-conflito"${status.conflict ? '' : ' hidden'}>Salvar minha edição como cópia</button>
+      <button class="btn sec small" data-act="retry-save"${status.retry ? '' : ' hidden'}>Tentar salvar novamente</button>
+      ${account && locals.length ? `<div class="quiz-migration"><button class="btn sec small" data-act="escolher-locais">Escolher quizzes deste navegador (${locals.length})</button>${mostrarLocais ? `<p class="small">Selecione os quizzes que são seus. Os originais continuam neste navegador.</p><div class="quiz-import-list">${locals.map(x => `<label><input type="checkbox" data-import-id="${esc(x.id)}"> ${esc(x.titulo || 'Sem título')} · ${x.perguntas.length} perguntas</label>`).join('')}</div><button class="btn sec small" data-act="importar-locais">Salvar selecionados na conta</button>` : ''}</div>` : ''}
       <p class="err" role="status">${esc(msg)}</p>
       <a class="btn sec small ir-abrir" href="#abrir-sala">Tudo pronto? Ir para “Abrir a sala” ↓</a>
     </section>`;
@@ -272,20 +311,22 @@ function mount(main: HTMLElement) {
     erro = '';
     render();
     try {
+      void track('create_room_start', {question_count: questions.length});
       const r = await fetch('/api/salas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const d = (await r.json().catch(() => ({}))) as Partial<CreateRoomResult> & { erro?: string };
       if (!r.ok || !d.code || !d.hostKey) throw new Error(d.erro || 'Não deu para abrir a sala agora. Tente de novo.');
       store.set('host:' + d.code, d.hostKey);
-      await track('create_room');
+      await track('create_room', {question_count: questions.length});
       navigate('/host/' + d.code);
     } catch (e) {
+      void track('create_room_error', {error_category:e instanceof TypeError ? 'network' : 'rejected'});
       abrindo = false;
       erro = e instanceof Error && e.message !== 'Failed to fetch' ? e.message : 'Sem conexão com a internet. Confira e tente de novo.';
       render();
     }
   }
 
-  const onClick = (e: Event) => {
+  const onClick = async (e: Event) => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
     if (!b || (b as HTMLButtonElement).disabled) return;
     const a = b.dataset.act!;
@@ -293,6 +334,7 @@ function mount(main: HTMLElement) {
     const i = Number(b.dataset.i);
     const p = q.perguntas[i];
     msg = '';
+    if (saveTimer) persist(true);
     switch (a) {
       case 'modelo': {
         const m = MODELOS.find((x) => x.id === v);
@@ -301,26 +343,44 @@ function mount(main: HTMLElement) {
         const mexeu = q.perguntas.some((x) => x.t.trim() && !padrao.has(x.t));
         if (mexeu && !confirm(`Trocar as perguntas atuais pelas 10 do quiz "${m.nome}"?`)) return;
         usarModelo(m);
+        void track('quiz_template_apply', {source:'template'});
         persist(true);
         return render('textarea[data-i="0"]');
       }
       case 'novo':
         q = novoQuiz(q.tema);
+        void track('quiz_create', {source:'manual'});
         persist(true);
         return render('#titulo');
       case 'abrirquiz': {
-        const x = listar().find((y) => y.id === v);
-        if (x) q = x;
-        store.set('atual', q.id);
+        try { q = await carregarQuiz(v); store.set(quizCurrentKey(), q.id); }
+        catch (error) { msg = error instanceof Error ? error.message : 'Não foi possível abrir.'; }
+        return render();
+      }
+      case 'retry-save':
+        persist(true); refreshSaveStatus(); return;
+      case 'copia-conflito':
+        try { q = await copyConflict(q); store.set(quizCurrentKey(), q.id); }
+        catch (error) { msg = error instanceof Error ? error.message : 'Não foi possível guardar a cópia.'; }
+        return render();
+      case 'escolher-locais':
+        mostrarLocais = !mostrarLocais; return render();
+      case 'importar-locais': {
+        const ids = Array.from(main.querySelectorAll<HTMLInputElement>('[data-import-id]:checked')).map(x => x.dataset.importId!);
+        if (!ids.length) { msg = 'Selecione ao menos um quiz.'; return render(); }
+        try { const imported = importarLocais(ids); if (imported) { q = imported; store.set(quizCurrentKey(), q.id); } mostrarLocais = false; }
+        catch (error) { msg = error instanceof Error ? error.message : 'Não foi possível levar os quizzes.'; }
         return render();
       }
       case 'excluirquiz': {
         const x = listar().find((y) => y.id === v);
         if (!x || !confirm(`Excluir “${x.titulo}”? Não dá para desfazer.`)) return;
-        excluir(v);
+        try { await excluir(v); }
+        catch (error) { msg = error instanceof Error ? error.message : 'Não foi possível excluir.'; return render(); }
         if (v === q.id) {
-          q = listar()[0] || novoQuiz(q.tema);
-          persist(true);
+          const next = listar()[0];
+          if (next) { q = await carregarQuiz(next.id); store.set(quizCurrentKey(), q.id); }
+          else { q = novoQuiz(q.tema); persist(true); }
         }
         return render();
       }
@@ -458,6 +518,7 @@ function mount(main: HTMLElement) {
     const t = e.target as HTMLInputElement;
     const ds = t.dataset;
     if (ds.f === 't' || ds.f === 'o') {
+      void trackOnce('quiz_edit_start', q.id, {source:'manual'});
       const i = Number(ds.i);
       if (ds.f === 't') q.perguntas[i].t = t.value;
       else q.perguntas[i].o[Number(ds.k)] = t.value;
@@ -465,6 +526,7 @@ function mount(main: HTMLElement) {
       return refreshCounts(i);
     }
     if (t.id === 'titulo') {
+      void trackOnce('quiz_edit_start', q.id, {source:'manual'});
       q.titulo = t.value;
       // o nome também muda na lista de "Meus quizzes"
       const item = main.querySelector('.quizzes .q.on b');
@@ -522,6 +584,7 @@ function mount(main: HTMLElement) {
     if (t.id === 'imp' && t.files && t.files[0]) {
       try {
         q = importar(await t.files[0].text());
+        void track('quiz_create', {source:'import'});
         persist(true);
         msg = '';
       } catch (err) {
@@ -531,6 +594,11 @@ function mount(main: HTMLElement) {
     }
   };
 
+  // A full navigation can happen before the debounced local save. Flush the draft first.
+  const flushOnLeave = () => { if (saveTimer) persist(true); };
+  window.addEventListener('pagehide', flushOnLeave);
+  window.addEventListener('beforeunload', flushOnLeave);
+  window.addEventListener('qd:quiz-sync', refreshSaveStatus);
   main.addEventListener('click', onClick);
   main.addEventListener('input', onInput);
   main.addEventListener('change', onChange);
@@ -547,6 +615,10 @@ function mount(main: HTMLElement) {
   });
   confereVolta(refreshPlano);
   return () => {
+    vivo = false;
+    window.removeEventListener('pagehide', flushOnLeave);
+    window.removeEventListener('beforeunload', flushOnLeave);
+    window.removeEventListener('qd:quiz-sync', refreshSaveStatus);
     main.removeEventListener('click', onClick);
     main.removeEventListener('input', onInput);
     main.removeEventListener('change', onChange);

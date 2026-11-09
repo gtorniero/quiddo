@@ -27,6 +27,7 @@ function mount(main: HTMLElement) {
         <p class="err" role="alert" id="conta-erro"></p></section>` : '';
     main.innerHTML = `<section class="hero"><h1>Minha conta</h1><p>${esc(email)}</p></section>
       <section class="panel conta"><h2>Seu plano</h2>${plano}</section>${status}
+      <section class="panel conta"><h2>Seus quizzes</h2><p>Abra, edite e apresente os quizzes salvos na sua conta em qualquer aparelho.</p><a class="btn sec auto" href="/criar" data-link>Ver meus quizzes</a></section>
       <section class="panel conta"><div class="btnrow"><a class="btn sec auto" href="/criar" data-link>Criar meu quiz</a><button type="button" class="linkbtn" data-act="sair">Sair da conta</button></div></section>`;
   });
   const onClick = async (e: Event) => {

@@ -9,3 +9,8 @@ Esta branch recupera trabalho publicado enquanto o GitHub estava indisponível; 
 ## Consulta ao Claude
 
 Históricos originais consultados em 09/11/2026: Quiddo (links institucionais já entregues), Retrozap Admin (remoção da etapa conferir já entregue), RACKET (rodada 13 e correção preservadas) e SURF (maroleira e quiver já incorporados). Ausência de um commit no GitHub não significa ausência da mudança em produção.
+
+
+## Atualização concorrente do Claude
+
+O PR #55 (02faeee540286b5a1b6fb0b644df8e7ce44260d9) foi encontrado durante a revisão e incorporado nesta branch, preservando sua autoria e a biblioteca/medição recuperadas. Conflitos de host.ts e CSS foram conciliados. A combinação passou em 150 testes, tipagem do frontend e build; a recuperação anterior passou também na tipagem do Worker e cobrança. A versão combinada ainda não foi publicada. O Claude registrou bloqueio do merge do #55 aguardando aprovação explícita.

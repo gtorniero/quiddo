@@ -32,10 +32,25 @@ test('persistent cost cap allows more than eight low-cost calls but reserves unk
   const race=await Promise.all([call({op:'reserve',id:'parallel-a'}),call({op:'reserve',id:'parallel-b'})]);assert.deepEqual(race.map(x=>x.status).sort(),[200,503]);
  } finally {await mf.dispose();}
 });
-test('invalid allowance fails closed and an oversized configuration is clamped to USD 1',async()=>{
+test('invalid allowance fails closed and an oversized configuration is clamped to USD 4',async()=>{
  for(const value of ['0','-1','NaN','Infinity','100']){
   const {mf,call}=await runtime(value);
-  try {const r=await call({op:'reserve',id:'probe'});assert.equal(r.status,value==='100'?200:503);if(value==='100')assert.equal(r.data.limitUSD,1);}
+  try {const r=await call({op:'reserve',id:'probe'});assert.equal(r.status,value==='100'?200:503);if(value==='100')assert.equal(r.data.limitUSD,4);}
   finally {await mf.dispose();}
  }
+});
+
+test('USD 4 counts prior spending and refuses excess reservations',async()=>{
+ const {mf,call}=await runtime('4');
+ try {
+  await call({op:'reserve',id:'existing'});
+  const paid=await call({op:'settle',id:'existing',cost:{usd:3.4}});
+  assert.equal(paid.data.limitUSD,4);
+  assert.equal(paid.data.measuredUSD,3.4);
+  assert.equal((await call({op:'reserve',id:'last'})).status,200);
+  assert.equal((await call({op:'reserve',id:'excess'})).status,503);
+  const replay=await call({op:'reserve',id:'existing'});
+  assert.equal(replay.data.entries.length,2);
+  assert.equal(replay.data.measuredUSD,3.4);
+ } finally {await mf.dispose();}
 });

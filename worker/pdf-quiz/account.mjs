@@ -5,7 +5,7 @@ import {readPdf,selectPdf} from './pdf.mjs';
 import {MODEL,PROMPT_VERSION,TEXT_PROMPT_VERSION,TEXT_REASONING,MAX_BYTES,PdfError,json,sha,profile,paidEntitlement,requestBody,textRequestBody,readBriefing,resultText,validateQuiz,costFromUsage} from './core.mjs';
 
 export class PdfAccount extends DurableObject {
-  constructor(ctx,env) { super(ctx,env);this.ctx=ctx;this.env=env;this.ledger=new Ledger(ctx.storage); }
+  constructor(ctx,env) { super(ctx,env);this.ctx=ctx;this.env=env;this.ledger=new Ledger(ctx.storage,{split:env.PDF_SPLIT_CREDITS==='true'}); }
   async settings() { return this.env.PDF_STAGE==='isolated' ? await this.ctx.storage.get('fixture') : null; }
   async entitlement(email,settings) {
     if (this.env.PDF_STAGE==='isolated') {
@@ -71,7 +71,7 @@ export class PdfAccount extends DurableObject {
     const fingerprint=await sha(JSON.stringify(isText
       ? {source,text:sourceSHA256,prompt:promptVersion,model:MODEL,config}
       : {file:sourceSHA256,pages:selected.pages,prompt:promptVersion,model:MODEL,config}));
-    const reservation=this.ledger.reserve(id,fingerprint,ent,now);
+    const reservation=this.ledger.reserve(id,fingerprint,ent,now,source);
     if(reservation.replay)return json({id,status:'delivered',result:reservation.replay.result,replayed:true});
     if(reservation.pending)return json({id,status:'pending'},202);
     let providerStarted=false, response=null, cost=null;

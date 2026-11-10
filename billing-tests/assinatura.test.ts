@@ -8,7 +8,7 @@ import { Ledger } from '../worker/pdf-quiz/ledger.mjs';
 import { fixture } from '../tests-pdf/fixtures.mjs';
 
 const ORIGIN = 'https://www.quiddo.com.br';
-it.each(['mensal','anual'])('signed %s webhook bridges paid identity to shared AI credits and renewal without external calls', async (plan) => {
+it.each(['mensal','anual'])('signed %s webhook bridges paid identity to current AI credits and renewal without external calls', async (plan) => {
  const f = fixture().billing;
  if(plan==='anual'){const item=f.subscription.items.data[0];item.price.id='price_1UXtqY134hMOoEZVGgIdzQ7a';item.price.unit_amount=15600;item.price.recurring.interval='year';item.current_period_end=item.current_period_start+365*86400;f.invoice.amount_paid=15600;f.invoice.lines.data[0].amount=15600;f.invoice.lines.data[0].period.end=item.current_period_end;f.invoice.lines.data[0].pricing.price_details.price=item.price.id;}
  const data = JSON.parse(JSON.stringify(f).replaceAll(f.subscription.id,'sub_quiddo').replaceAll(f.customer,'cus_quiddo'));
@@ -24,21 +24,29 @@ it.each(['mensal','anual'])('signed %s webhook bridges paid identity to shared A
  expect(read('SELECT * FROM qd_assinaturas')).toMatchObject({customer:'cus_quiddo',modo:'ligada',risk:''});
  const storage={sql:{exec:(sql:string,...values:any[])=>{
   const statement=sqlite.prepare(sql);
-  if(/^SELECT/i.test(sql))return statement.all(...values);
+  if(/^(SELECT|PRAGMA)\b/i.test(sql))return statement.all(...values);
   statement.run(...values);return [];
  }},transactionSync:(fn:()=>any)=>{sqlite.exec('BEGIN');try{const result=fn();sqlite.exec('COMMIT');return result;}catch(e){sqlite.exec('ROLLBACK');throw e;}}};
- const ledger=new Ledger(storage);
+ const ledger=new Ledger(storage,{split:true});
+ const balance=(ent:any)=>{
+  const status=ledger.status(ent,Date.now());
+  if(plan==='mensal')return [status.balances.text.remaining,status.balances.pdf.remaining];
+  expect(status.balances).toBeUndefined();return [status.remaining];
+ };
+ const full=plan==='mensal'?[5,2]:[3],empty=plan==='mensal'?[0,0]:[0];
+ const sources=plan==='mensal'?['text','text','text','text','text','pdf','pdf']:['text','pdf','text'];
  const ent=await entitlementFromStripe(env,EMAIL);
- expect(ledger.status(ent,Date.now()).remaining).toBe(3);
- for(const source of ['pdf','text','pdf-third']){
-  const reservation=ledger.reserve(source,source,ent,Date.now());
+ expect(balance(ent)).toEqual(full);
+ for(const [index,source] of sources.entries()){
+  const id=source+'-'+index;
+  const reservation=ledger.reserve(id,id,ent,Date.now(),source);
   ledger.complete(reservation,{source},await entitlementFromStripe(env,EMAIL),Date.now());
  }
- expect(ledger.status(ent,Date.now()).remaining).toBe(0);
+ expect(balance(ent)).toEqual(empty);
  await webhook('invoice.paid',invoice,true);
- expect(ledger.status(await entitlementFromStripe(env,EMAIL),Date.now()).remaining).toBe(0);
- expect(()=>ledger.reserve('fourth','fourth',ent,Date.now())).toThrow();
- expect(ledger.reserve('text','text',ent,Date.now()).replay.result).toEqual({source:'text'});
+ expect(balance(await entitlementFromStripe(env,EMAIL))).toEqual(empty);
+ for(const source of ['text','pdf'])expect(()=>ledger.reserve('excess-'+source,'excess-'+source,ent,Date.now(),source)).toThrow();
+ expect(ledger.reserve('text-0','text-0',ent,Date.now(),'text').replay.result).toEqual({source:'text'});
  await expect(entitlementFromStripe(env,'other@example.com')).rejects.toMatchObject({status:403});
  if(plan==='anual'){vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(ent.end+1000);const mid=await entitlementFromStripe(env,EMAIL);expect(mid.invoice).toBe(ent.invoice);expect(ledger.status(mid,Date.now()).remaining).toBe(3);}
  const start=sub.items.data[0].current_period_end,end=start+(plan==='anual'?365:30)*86400;
@@ -51,11 +59,11 @@ it.each(['mensal','anual'])('signed %s webhook bridges paid identity to shared A
  Object.assign(invoice,{status:'paid',amount_paid:plan==='anual'?15600:1599});sub.status='active';
  expect((await webhook('invoice.paid',invoice,true))!.status).toBe(200);
  const next=await entitlementFromStripe(env,EMAIL);
- expect(ledger.status(next,Date.now()).remaining).toBe(3);
- expect(ledger.history()).toHaveLength(3);
+ expect(balance(next)).toEqual(full);
+ expect(ledger.history()).toHaveLength(sources.length);
  sub.cancel_at_period_end=true;
  await webhook('customer.subscription.updated',sub,true);
- expect(ledger.status(await entitlementFromStripe(env,EMAIL),Date.now()).remaining).toBe(3);
+ expect(balance(await entitlementFromStripe(env,EMAIL))).toEqual(full);
  sub.status='canceled';await webhook('customer.subscription.deleted',sub,true);
  await expect(entitlementFromStripe(env,EMAIL)).rejects.toMatchObject({status:403});
  expect(apiCalls.every(c=>c.method==='GET')).toBe(true);

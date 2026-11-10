@@ -1,0 +1,23 @@
+.btn.qd-pdf-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--amarelo); color: var(--fg); min-height: 44px; }
+.qd-pdf-button svg { flex: none; }
+.qd-pdf-dialog { width: min(570px, calc(100% - 28px)); max-height: calc(100% - 28px); padding: clamp(14px, 4vw, 24px); color: var(--fg); background: var(--card); border: var(--bw) solid var(--line); border-radius: var(--r-big); box-shadow: var(--sh); }
+.qd-pdf-dialog::backdrop { background: rgb(14 42 34 / 65%); }
+.qd-pdf-dialog h2 { margin: 10px 0; }
+.qd-pdf-top, .qd-pdf-balance { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.qd-pdf-top { justify-content: space-between; }
+.qd-pdf-top button { min-height: 44px; }
+.qd-pdf-balance strong { padding: 3px 10px; border-radius: 999px; background: var(--amarelo); }
+.qd-pdf-dialog fieldset { min-width: 0; margin: 12px 0; padding: 10px; border: 1px solid var(--soft-line); border-radius: 12px; }
+.qd-pdf-dialog legend { font-weight: 900; }
+.qd-pdf-dialog .btnrow { margin-top: 12px; }
+.qd-pdf-dialog .btn, .qd-pdf-dialog input[type=file] { min-height: 44px; max-width: 100%; }
+.qd-pdf-dialog form label, .qd-pdf-dialog details label { display: block; }
+.qd-pdf-dialog details { margin-top: 16px; }
+.qd-pdf-dialog [data-pendentes] .btn { margin: 4px 4px 4px 0; }
+.qd-pdf-review { padding: 12px; margin-bottom: 14px; border: 1px solid var(--soft-line); border-radius: 12px; background: var(--acc-soft); }
+@media (min-width: 700px) { .qd-pdf-actions { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.qd-ai-icon { display: inline-grid; flex: none; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--fg); color: var(--amarelo); }
+.qd-pdf-pickrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.qd-pdf-filebox { background: var(--bg); }
+.qd-pdf-dialog .qd-pdf-pick { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.qd-pdf-dialog [data-document] { overflow-wrap: anywhere; margin: 10px 0 0; }

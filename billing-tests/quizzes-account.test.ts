@@ -63,6 +63,21 @@ it('makes the same complete document available to an independent login', async (
   expect(loaded.quiz.perguntas[0].c).toBe(-1);
   expect(JSON.stringify(await (await call(b.cookie)).json())).not.toContain('base64');
 });
+it('preserves PDF evidence across saving, editing and another login without disclosing it in the library index', async () => {
+  const a = await session(), q = doc('pdf-one');
+  const pdf = { page: 14, evidence: 'A cobertura é de 24 meses.', answer: '24 meses', topic: 'Garantia', hash: 'a'.repeat(64) };
+  (q.perguntas[0] as any).pdf = pdf;
+  expect((await call(a.cookie, q.id, q, 0, 'PUT')).status).toBe(200);
+  const b = await session();
+  const recovered = (await (await call(b.cookie, q.id)).json()).quiz;
+  expect(recovered.perguntas[0].pdf).toEqual(pdf);
+  recovered.perguntas[0].t = 'Pergunta revisada pelo titular';
+  expect((await call(b.cookie, q.id, recovered, 1, 'PUT')).status).toBe(200);
+  expect((await (await call(a.cookie, q.id)).json()).quiz.perguntas[0].pdf).toEqual(pdf);
+  expect(JSON.stringify(await (await call(a.cookie)).json())).not.toContain(pdf.evidence);
+  const other = await session('other@example.invalid');
+  expect((await call(other.cookie, q.id)).status).toBe(404);
+});
 it('rejects stale saves without changing the winning content or images', async () => {
   const a = await session();
   await call(a.cookie, 'quiz-one', doc(), 0, 'PUT');

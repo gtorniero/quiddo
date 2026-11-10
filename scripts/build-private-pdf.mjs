@@ -1,0 +1,17 @@
+import fs from 'node:fs/promises';
+import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
+const require=createRequire(import.meta.url);
+const esbuild=await import(require.resolve('esbuild',{paths:[require.resolve('wrangler')]}));
+await fs.mkdir('web',{recursive:true});await fs.mkdir('build',{recursive:true});
+let main=await fs.readFile('src/main.ts','utf8');
+main=main.replace("import { initMeasurement, measurePage } from './lib/measurement';",'');
+main=main.replace(/^if \(location.hostname.endsWith\('\.workers.dev'\)\).*$/m,'// Private review stays on its isolated host.');
+main=main.replace('  measurePage(location.pathname);','').replace('initMeasurement();','');
+if(main.includes('initMeasurement(')||main.includes('measurePage(')||main.includes("location.hostname.endsWith('.workers.dev')"))throw new Error('Private entrypoint was not isolated');
+await esbuild.build({stdin:{contents:main,resolveDir:fileURLToPath(new URL('../src',import.meta.url)),sourcefile:'main-private.ts',loader:'ts'},outfile:'web/editor.js',bundle:true,format:'esm',target:'es2022',define:{'import.meta.env.DEV':'false'},minify:false});
+const html=(await fs.readFile('index.html','utf8')).replace('<script type="module" src="/src/main.ts"></script>','<link rel="stylesheet" href="/editor.css"><script type="module" src="/editor.js"></script>').replace('<meta name="description"','<meta name="robots" content="noindex,nofollow"><meta name="description"');
+await fs.writeFile('web/index.html',html);
+await fs.cp('public','web',{recursive:true});
+await esbuild.build({entryPoints:['worker/pdf-stage.ts'],outfile:'build/pdf-stage.mjs',bundle:true,format:'esm',platform:'browser',target:'es2022',external:['cloudflare:workers'],minify:false});
+console.log('Private PDF review built with account library. Production configuration unchanged.');

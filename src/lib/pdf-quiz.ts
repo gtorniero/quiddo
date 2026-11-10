@@ -34,8 +34,7 @@ export function openPdfQuiz(onReview:(result:PdfResult)=>void|Promise<void>) {
       pdfPromptVersion=d.pdfPromptVersion||'';
       const admin=d.paidPeriod.kind==='administrator';
       remaining=admin?1:d.remaining;providerReady=d.providerReady===true;
-      if(admin)$<HTMLButtonElement>('[data-mode="pdf"]').click();
-      $('.qd-ia-modos').hidden=admin;
+      $('.qd-ia-modos').hidden=false;
       $('[data-shared-balance]').hidden=admin;
       $('.tag').textContent=admin?'Administrador':'Premium';
       $('[data-balance]').textContent=admin?'Acesso de administrador':d.remaining+' de '+d.limit+' disponíveis';

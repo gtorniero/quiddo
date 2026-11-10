@@ -25,7 +25,7 @@ export class Ledger {
   status(ent,now) {
     return this.storage.transactionSync(()=>{
       this.expire(now);const cycle=this.cycle(ent),c=this.count(cycle.id);
-      return {...c,remaining:ent.kind==='administrator'?null:Math.max(0,2-c.used-c.reserved),limit:ent.kind==='administrator'?null:2,cycle:{id:cycle.id,start:cycle.start,end:cycle.end},paidPeriod:ent};
+      return {...c,remaining:ent.kind==='administrator'?null:Math.max(0,3-c.used-c.reserved),limit:ent.kind==='administrator'?null:3,cycle:{id:cycle.id,start:cycle.start,end:cycle.end},paidPeriod:ent};
     });
   }
   reserve(id,fingerprint,ent,now) {
@@ -37,7 +37,7 @@ export class Ledger {
       const cycle=this.cycle(ent);
       if (existing && existing.cycle!==cycle.id) throw new PdfError('cycle_changed','O ciclo mudou. Inicie uma nova tentativa.',409);
       const c=this.count(cycle.id);
-      if (ent.kind!=='administrator' && c.used+c.reserved>=2) throw new PdfError('quota','Os dois créditos deste ciclo já foram usados ou estão em processamento.',429);
+      if (ent.kind!=='administrator' && c.used+c.reserved>=3) throw new PdfError('quota','Os três créditos deste ciclo já foram usados ou estão em processamento.',429);
       const attempt=crypto.randomUUID();
       this.sql.exec("INSERT INTO pdf_jobs(id,fingerprint,cycle,state,attempt,lease,created) VALUES (?,?,?,'pending',?,?,?) ON CONFLICT(id) DO UPDATE SET state='pending',attempt=excluded.attempt,lease=excluded.lease,error=NULL",id,fingerprint,cycle.id,attempt,now+LEASE_MS,now);
       return {id,attempt,cycle:cycle.id,ent};

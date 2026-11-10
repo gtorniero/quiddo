@@ -99,6 +99,24 @@ async function compraDaAssinatura(env: CobrancaEnv, subscription: string, stripe
   }
   return null;
 }
+function fimDoPeriodoPago(sub: StripeClient.Subscription, purchase: CompraStripe, customer: string): number {
+  const invoice = sub.latest_invoice && typeof sub.latest_invoice === 'object' ? sub.latest_invoice : null;
+  const amount = Math.round(Number(purchase.valor) * 100);
+  if (!invoice || invoice.livemode !== (purchase.modo === 'ligada') || idOf(invoice.customer) !== customer ||
+    invoice.status !== 'paid' || invoice.currency !== 'brl' || invoice.amount_paid < amount ||
+    idOf(invoice.parent?.subscription_details?.subscription) !== sub.id || invoice.lines?.has_more) return 0;
+  // A assinatura pode mudar de periodo antes da nova fatura ser paga.
+  // Somente a linha integral paga do mesmo produto e titular estende o acesso.
+  const lines = (invoice.lines?.data || []).filter(line =>
+    idOf(line.pricing?.price_details?.price) === purchase.stripe_price &&
+    idOf(line.parent?.subscription_item_details?.subscription) === sub.id &&
+    line.parent?.subscription_item_details?.proration === false && line.quantity === 1 && line.amount >= amount);
+  if (lines.length !== 1) return 0;
+  const period = lines[0].period, item = sub.items.data[0];
+  if (!period || !Number.isSafeInteger(period.start) || !Number.isSafeInteger(period.end) || period.end <= period.start ||
+    period.start !== item.current_period_start || period.end !== item.current_period_end) return 0;
+  return period.end;
+}
 export async function reconciliarAssinatura(env: CobrancaEnv, subscriptionId: string, force = false): Promise<AssinaturaDB | null> {
   if (!env.DB || !mensalConfigurado(env)) return null;
   const db = env.DB; await tabelasStripe(db);
@@ -115,10 +133,7 @@ export async function reconciliarAssinatura(env: CobrancaEnv, subscriptionId: st
   const customer = idOf(sub.customer);
   const expectedCustomer = await db.prepare('SELECT customer FROM qd_clientes_stripe WHERE email=? AND modo=?').bind(purchase.email, purchase.modo).first<{ customer: string }>();
   if (!expectedCustomer || expectedCustomer.customer !== customer) return null;
-  const latest = sub.latest_invoice && typeof sub.latest_invoice === 'object' ? sub.latest_invoice : null;
-  const invoiceSub = idOf(latest?.parent?.subscription_details?.subscription);
-  const paid = latest?.status === 'paid' && latest.currency === 'brl' && latest.amount_paid >= Math.round(Number(purchase.valor) * 100) && invoiceSub === sub.id;
-  const paidUntil = Math.max(prior?.paid_until || 0, paid ? item.current_period_end : 0);
+  const paidUntil = Math.max(prior?.paid_until || 0, fimDoPeriodoPago(sub, purchase, customer));
   const risk = prior?.risk || '';
   await db.prepare("INSERT INTO qd_assinaturas(id,ref,customer,status,price,paid_until,cancel_at_period_end,modo,risk,checked_at) VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET status=excluded.status,paid_until=MAX(qd_assinaturas.paid_until,excluded.paid_until),cancel_at_period_end=excluded.cancel_at_period_end,checked_at=excluded.checked_at")
     .bind(sub.id, purchase.ref, customer, sub.status, price.id, paidUntil, (sub.cancel_at_period_end || sub.cancel_at) ? 1 : 0, purchase.modo, risk, Date.now()).run();

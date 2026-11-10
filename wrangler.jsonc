@@ -21,6 +21,27 @@
   // e segredos (MP_TOKEN, STRIPE_KEY) ficam só no painel da Cloudflare.
   // ids dos preços de produção no Stripe (não são segredo): Mensal R$ 15,99 e Anual R$ 156
   "vars": {"PDF_ENABLED":"true","PDF_SPLIT_CREDITS":"true","PDF_ADMIN_ENABLED":"true","PDF_BUDGET_USD":"4","PROMO_ADMIN_EMAIL":"guitorniero@outlook.com","STRIPE_PRECO_MENSAL_ID":"price_1UXtp0134hMOoEZV4zpJZiw6","STRIPE_PRECO_ANUAL_ID":"price_1UXtqY134hMOoEZVGgIdzQ7a"},
+  // Previews have their own database and automatically isolated Durable Objects.
+  // Do not copy production secrets, payment prices, promotion databases or service bindings here.
+  "previews": {
+    "vars": {
+      "COBRANCA": "simulacao",
+      "PDF_ENABLED": "false",
+      "PDF_ADMIN_ENABLED": "false",
+      "PDF_BUDGET_USD": "0",
+      "META_CAPI_ENABLED": "false"
+    },
+    "d1_databases": [
+      { "binding": "DB", "database_name": "quiddo-previews", "database_id": "03a3c0bb-a75a-4d3d-8e5e-b288dfec8e48" }
+    ],
+    "durable_objects": {
+      "bindings": [
+        { "name": "ROOMS", "class_name": "Room" },
+        { "name": "PDF_ACCOUNTS", "class_name": "PdfAccount" },
+        { "name": "PDF_BUDGET", "class_name": "PdfBudget" }
+      ]
+    }
+  },
   // COBRANCA fica no painel; um deploy nao deve sobrescrever a escolha de modo.
   // mantém variáveis criadas no painel
   "keep_vars": true,

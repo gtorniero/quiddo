@@ -8,7 +8,7 @@ import { Ledger } from '../worker/pdf-quiz/ledger.mjs';
 import { fixture } from '../tests-pdf/fixtures.mjs';
 
 const ORIGIN = 'https://www.quiddo.com.br';
-it.each(['mensal','anual'])('signed %s webhook bridges paid identity to shared AI credits and renewal without external calls', async (plan) => {
+it.each(['mensal','anual'])('signed %s webhook bridges paid identity to current AI credits and renewal without external calls', async (plan) => {
  const f = fixture().billing;
  if(plan==='anual'){const item=f.subscription.items.data[0];item.price.id='price_1UXtqY134hMOoEZVGgIdzQ7a';item.price.unit_amount=15600;item.price.recurring.interval='year';item.current_period_end=item.current_period_start+365*86400;f.invoice.amount_paid=15600;f.invoice.lines.data[0].amount=15600;f.invoice.lines.data[0].period.end=item.current_period_end;f.invoice.lines.data[0].pricing.price_details.price=item.price.id;}
  const data = JSON.parse(JSON.stringify(f).replaceAll(f.subscription.id,'sub_quiddo').replaceAll(f.customer,'cus_quiddo'));
@@ -24,21 +24,29 @@ it.each(['mensal','anual'])('signed %s webhook bridges paid identity to shared A
  expect(read('SELECT * FROM qd_assinaturas')).toMatchObject({customer:'cus_quiddo',modo:'ligada',risk:''});
  const storage={sql:{exec:(sql:string,...values:any[])=>{
   const statement=sqlite.prepare(sql);
-  if(/^SELECT/i.test(sql))return statement.all(...values);
+  if(/^(SELECT|PRAGMA)\b/i.test(sql))return statement.all(...values);
   statement.run(...values);return [];
  }},transactionSync:(fn:()=>any)=>{sqlite.exec('BEGIN');try{const result=fn();sqlite.exec('COMMIT');return result;}catch(e){sqlite.exec('ROLLBACK');throw e;}}};
- const ledger=new Ledger(storage);
+ const ledger=new Ledger(storage,{split:true});
+ const balance=(ent:any)=>{
+  const status=ledger.status(ent,Date.now());
+  if(plan==='mensal')return [status.balances.text.remaining,status.balances.pdf.remaining];
+  expect(status.balances).toBeUndefined();return [status.remaining];
+ };
+ const full=plan==='mensal'?[5,2]:[3],empty=plan==='mensal'?[0,0]:[0];
+ const sources=plan==='mensal'?['text','text','text','text','text','pdf','pdf']:['text','pdf','text'];
  const ent=await entitlementFromStripe(env,EMAIL);
- expect(ledger.status(ent,Date.now()).remaining).toBe(3);
- for(const source of ['pdf','text','pdf-third']){
-  const reservation=ledger.reserve(source,source,ent,Date.now());
+ expect(balance(ent)).toEqual(full);
+ for(const [index,source] of sources.entries()){
+  const id=source+'-'+index;
+  const reservation=ledger.reserve(id,id,ent,Date.now(),source);
   ledger.complete(reservation,{source},await entitlementFromStripe(env,EMAIL),Date.now());
  }
- expect(ledger.status(ent,Date.now()).remaining).toBe(0);
+ expect(balance(ent)).toEqual(empty);
  await webhook('invoice.paid',invoice,true);
- expect(ledger.status(await entitlementFromStripe(env,EMAIL),Date.now()).remaining).toBe(0);
- expect(()=>ledger.reserve('fourth','fourth',ent,Date.now())).toThrow();
- expect(ledger.reserve('text','text',ent,Date.now()).replay.result).toEqual({source:'text'});
+ expect(balance(await entitlementFromStripe(env,EMAIL))).toEqual(empty);
+ for(const source of ['text','pdf'])expect(()=>ledger.reserve('excess-'+source,'excess-'+source,ent,Date.now(),source)).toThrow();
+ expect(ledger.reserve('text-0','text-0',ent,Date.now(),'text').replay.result).toEqual({source:'text'});
  await expect(entitlementFromStripe(env,'other@example.com')).rejects.toMatchObject({status:403});
  if(plan==='anual'){vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(ent.end+1000);const mid=await entitlementFromStripe(env,EMAIL);expect(mid.invoice).toBe(ent.invoice);expect(ledger.status(mid,Date.now()).remaining).toBe(3);}
  const start=sub.items.data[0].current_period_end,end=start+(plan==='anual'?365:30)*86400;
@@ -51,11 +59,11 @@ it.each(['mensal','anual'])('signed %s webhook bridges paid identity to shared A
  Object.assign(invoice,{status:'paid',amount_paid:plan==='anual'?15600:1599});sub.status='active';
  expect((await webhook('invoice.paid',invoice,true))!.status).toBe(200);
  const next=await entitlementFromStripe(env,EMAIL);
- expect(ledger.status(next,Date.now()).remaining).toBe(3);
- expect(ledger.history()).toHaveLength(3);
+ expect(balance(next)).toEqual(full);
+ expect(ledger.history()).toHaveLength(sources.length);
  sub.cancel_at_period_end=true;
  await webhook('customer.subscription.updated',sub,true);
- expect(ledger.status(await entitlementFromStripe(env,EMAIL),Date.now()).remaining).toBe(3);
+ expect(balance(await entitlementFromStripe(env,EMAIL))).toEqual(full);
  sub.status='canceled';await webhook('customer.subscription.deleted',sub,true);
  await expect(entitlementFromStripe(env,EMAIL)).rejects.toMatchObject({status:403});
  expect(apiCalls.every(c=>c.method==='GET')).toBe(true);
@@ -113,9 +121,9 @@ beforeEach(async () => {
  sqlite.prepare('INSERT INTO sessoes (token, email, criado, expira) VALUES (?,?,?,?)').run(createHash('sha256').update(TOKEN).digest('hex'), EMAIL, Date.now(), Date.now() + 86400e3);
  env = { DB: d1(sqlite), COBRANCA: 'simulacao', STRIPE_KEY: TEST_KEY, STRIPE_PRICE_MENSAL: 'price_qd_month_test', STRIPE_WEBHOOK_SECRET: SECRET, STRIPE_PORTAL_CONFIG: 'bpc_quiddo_test' };
  await tabelasStripe(env.DB!);
- const end = Math.floor(Date.now() / 1000) + 30 * 86400;
- invoice = { id: 'in_quiddo', object: 'invoice', status: 'paid', currency: 'brl', amount_paid: 1599, parent: { type: 'subscription_details', subscription_details: { subscription: 'sub_quiddo' } } };
- sub = { id: 'sub_quiddo', object: 'subscription', customer: 'cus_quiddo', status: 'active', livemode: false, cancel_at_period_end: false, latest_invoice: invoice, items: { data: [{ id: 'si_quiddo', quantity: 1, price: price(), current_period_end: end }] } };
+ const start = Math.floor(Date.now() / 1000), end = start + 30 * 86400;
+ invoice = { id: 'in_quiddo', object: 'invoice', customer: 'cus_quiddo', livemode: false, status: 'paid', currency: 'brl', amount_paid: 1599, parent: { type: 'subscription_details', subscription_details: { subscription: 'sub_quiddo' } }, lines: { has_more: false, data: [{ quantity: 1, amount: 1599, period: { start, end }, pricing: { price_details: { price: price().id } }, parent: { subscription_item_details: { subscription: 'sub_quiddo', proration: false } } }] } };
+ sub = { id: 'sub_quiddo', object: 'subscription', customer: 'cus_quiddo', status: 'active', livemode: false, cancel_at_period_end: false, latest_invoice: invoice, items: { data: [{ id: 'si_quiddo', quantity: 1, price: price(), current_period_start: start, current_period_end: end }] } };
  session = { id: 'cs_quiddo', object: 'checkout.session', client_reference_id: REF, mode: 'subscription', livemode: false, currency: 'brl', amount_total: 1599, subscription: 'sub_quiddo', customer: 'cus_quiddo', status: 'complete', payment_status: 'paid' };
  apiCalls = []; checkoutMode = 'subscription'; vi.stubGlobal('fetch', vi.fn(api));
 });
@@ -170,9 +178,69 @@ describe('Quiddo Stripe mensal', () => {
  });
  it('paid renewal extends expiry once without replacing the code', async () => {
   await seedPurchase(); await webhook('checkout.session.completed', session); const before = read('SELECT codigo,expira FROM compras')!;
-  sub.items.data[0].current_period_end += 30 * 86400; invoice = { ...invoice, id: 'in_renewal' }; sub.latest_invoice = invoice;
+  const start = sub.items.data[0].current_period_end, end = start + 30 * 86400;
+  Object.assign(sub.items.data[0], { current_period_start: start, current_period_end: end });
+  invoice = { ...invoice, id: 'in_renewal' }; invoice.lines.data[0].period = { start, end }; sub.latest_invoice = invoice;
   await webhook('invoice.paid', invoice); await webhook('invoice.paid', invoice);
   const after = read('SELECT codigo,expira FROM compras')!; expect(after.codigo).toBe(before.codigo); expect(Date.parse(after.expira)).toBeGreaterThan(Date.parse(before.expira));
+ });
+ it('an old paid invoice cannot extend access when the subscription period changes', async () => {
+  await seedPurchase(); await webhook('checkout.session.completed', session);
+  const before = read('SELECT codigo,expira FROM compras')!;
+  const start = sub.items.data[0].current_period_end;
+  Object.assign(sub.items.data[0], { current_period_start: start, current_period_end: start + 30 * 86400 });
+  await webhook('customer.subscription.updated', sub);
+  await webhook('invoice.paid', invoice);
+  expect(read('SELECT codigo,expira FROM compras')).toEqual(before);
+  vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(start * 1000 + 1000);
+  expect(await codigoValido(env, before.codigo)).toBe(false);
+ });
+ it.each([
+  ['customer', () => { invoice.customer = 'cus_other'; }],
+  ['mode', () => { invoice.livemode = true; }],
+  ['price', () => { invoice.lines.data[0].pricing.price_details.price = 'price_other'; }],
+  ['subscription', () => { invoice.lines.data[0].parent.subscription_item_details.subscription = 'sub_other'; }],
+  ['proration', () => { invoice.lines.data[0].parent.subscription_item_details.proration = true; }],
+  ['quantity', () => { invoice.lines.data[0].quantity = 2; }],
+  ['amount', () => { invoice.lines.data[0].amount = 1; }],
+  ['partial lines', () => { invoice.lines.has_more = true; }],
+  ['duplicate lines', () => { invoice.lines.data.push(structuredClone(invoice.lines.data[0])); }],
+  ['period', () => { invoice.lines.data[0].period.end += 86400; }],
+  ['missing period', () => { delete invoice.lines.data[0].period; }],
+ ] as const)('a paid invoice with incompatible %s does not unlock access', async (_name, change) => {
+  await seedPurchase(); change();
+  expect((await webhook('invoice.paid', invoice))!.status).toBe(200);
+  expect(read('SELECT status,codigo FROM compras')).toMatchObject({ status: 'suspenso', codigo: null });
+  expect(read('SELECT paid_until FROM qd_assinaturas')!.paid_until).toBe(0);
+ });
+ it('a delayed older event consults the current invoice without regressing paid access', async () => {
+  await seedPurchase(); await webhook('checkout.session.completed', session);
+  const old = structuredClone(invoice), start = sub.items.data[0].current_period_end, end = start + 30 * 86400;
+  Object.assign(sub.items.data[0], { current_period_start: start, current_period_end: end });
+  invoice.id = 'in_new'; invoice.lines.data[0].period = { start, end };
+  await webhook('invoice.paid', invoice);
+  const current = read('SELECT codigo,expira FROM compras');
+  await webhook('invoice.payment_failed', { ...old, status: 'open', amount_paid: 0 });
+  expect(read('SELECT codigo,expira FROM compras')).toEqual(current);
+ });
+ it('a temporary Stripe failure asks for webhook retry and preserves paid access', async () => {
+  await seedPurchase(); await webhook('checkout.session.completed', session);
+  const current = read('SELECT codigo,expira,status FROM compras');
+  vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('temporary outage'); }));
+  expect((await webhook('invoice.paid', invoice))!.status).toBe(503);
+  expect(read('SELECT codigo,expira,status FROM compras')).toEqual(current);
+ });
+ it('expired signatures and altered bodies cannot activate a purchase', async () => {
+  await seedPurchase();
+  const body = JSON.stringify({ id: 'evt_signed', object: 'event', livemode: false, type: 'invoice.paid', data: { object: invoice } });
+  for (const [age, suffix] of [[301, ''], [0, ' ']] as const) {
+   const timestamp = Math.floor(Date.now() / 1000) - age;
+   const sig = createHmac('sha256', SECRET).update(timestamp + '.' + body).digest('hex');
+   const result = await rotaCobranca(new Request(ORIGIN + '/api/stripe-webhook', { method: 'POST', headers: { 'stripe-signature': `t=${timestamp},v1=${sig}` }, body: body + suffix }), env, '/api/stripe-webhook');
+   expect(result!.status).toBe(401);
+  }
+  expect(read('SELECT status,codigo FROM compras')).toMatchObject({ status: 'pendente', codigo: null });
+  expect(apiCalls).toHaveLength(0);
  });
  it('failed renewal cannot extend the last paid-through date', async () => {
   await seedPurchase(); await webhook('checkout.session.completed', session); const before = read('SELECT codigo,expira FROM compras')!;

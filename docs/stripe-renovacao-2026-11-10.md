@@ -1,5 +1,7 @@
 # Assinaturas e créditos de IA — validação de 10/11/2026
 
+> Registro histórico da rodada anterior. A regra atual do Premium foi corrigida por decisão de Gui: benefícios idênticos no Mensal e no Anual, incluindo 5 textos + 2 PDFs por mês. Consulte [benefícios da assinatura](beneficios-assinatura.md). Os resultados abaixo descrevem as cotas que existiam durante aquele ensaio.
+
 O acesso agora só é prorrogado pela linha integral da fatura paga correspondente ao mesmo titular, produto, assinatura, ambiente e período. Uma fatura antiga não pode liberar dias extras quando o período da assinatura muda. O tempo já pago continua preservado quando a renovação falha ou a Stripe fica indisponível.
 
 Preços preservados: Passe R$12,99/7 dias, oferta elegível R$9,99, Mensal R$15,99 e Anual R$156,00. As atualizações mais recentes de main (PR69 e PR70) foram conciliadas: o Mensal tem cinco créditos de texto e dois de PDF, em saldos separados; o Anual tem três créditos mensais compartilhados entre PDF e texto. Os créditos não acumulam e o administrador pode gerar também por texto. O Anual renova essa cota mensalmente dentro do ano pago, sem cobrança mensal adicional. O grátis e o teto acumulado de IA de US$4, incluindo seu histórico, permanecem iguais.

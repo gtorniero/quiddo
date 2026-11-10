@@ -11,6 +11,7 @@ Quiz ao vivo para grupos. Vite + TypeScript no site (`src/`), Cloudflare Worker 
 - Acessibilidade: contraste 4.5:1 (texto grande 3:1), botões de no mínimo 44–48 px, foco visível, `prefers-reduced-motion`, funcionar em 360 px.
 - Rodapé: "© 2026 Quiddo" e "um projeto Beyond the Work".
 - Trabalhe numa branch e abra pull request.
+- Premium é uma única assinatura: Mensal e Anual têm exatamente os mesmos benefícios. Só mudam o preço e a frequência de pagamento. Ambos incluem 5 créditos de texto e 2 de PDF por mês, em saldos separados e sem acúmulo; no Anual os créditos renovam mensalmente dentro do ano já pago. Não criar cotas ou recursos diferentes conforme a frequência de cobrança. A regra comum está em `shared/ai-credits.mjs`.
 
 ## Antes de abrir pull request
 

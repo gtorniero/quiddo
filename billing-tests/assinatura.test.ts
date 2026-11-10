@@ -30,11 +30,10 @@ it.each(['mensal','anual'])('signed %s webhook bridges paid identity to current 
  const ledger=new Ledger(storage,{split:true});
  const balance=(ent:any)=>{
   const status=ledger.status(ent,Date.now());
-  if(plan==='mensal')return [status.balances.text.remaining,status.balances.pdf.remaining];
-  expect(status.balances).toBeUndefined();return [status.remaining];
+  return [status.balances.text.remaining,status.balances.pdf.remaining];
  };
- const full=plan==='mensal'?[5,2]:[3],empty=plan==='mensal'?[0,0]:[0];
- const sources=plan==='mensal'?['text','text','text','text','text','pdf','pdf']:['text','pdf','text'];
+ const full=[5,2],empty=[0,0];
+ const sources=['text','text','text','text','text','pdf','pdf'];
  const ent=await entitlementFromStripe(env,EMAIL);
  expect(balance(ent)).toEqual(full);
  for(const [index,source] of sources.entries()){
@@ -48,7 +47,7 @@ it.each(['mensal','anual'])('signed %s webhook bridges paid identity to current 
  for(const source of ['text','pdf'])expect(()=>ledger.reserve('excess-'+source,'excess-'+source,ent,Date.now(),source)).toThrow();
  expect(ledger.reserve('text-0','text-0',ent,Date.now(),'text').replay.result).toEqual({source:'text'});
  await expect(entitlementFromStripe(env,'other@example.com')).rejects.toMatchObject({status:403});
- if(plan==='anual'){vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(ent.end+1000);const mid=await entitlementFromStripe(env,EMAIL);expect(mid.invoice).toBe(ent.invoice);expect(ledger.status(mid,Date.now()).remaining).toBe(3);}
+ if(plan==='anual'){vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(ent.end+1000);const mid=await entitlementFromStripe(env,EMAIL);expect(mid.invoice).toBe(ent.invoice);expect(balance(mid)).toEqual(full);}
  const start=sub.items.data[0].current_period_end,end=start+(plan==='anual'?365:30)*86400;
  Object.assign(sub.items.data[0],{current_period_start:start,current_period_end:end});
  Object.assign(invoice,{id:'in_next',status:'open',amount_paid:0});

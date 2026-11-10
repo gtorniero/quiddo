@@ -146,7 +146,7 @@ test('HTTP routes, real durable storage, quota, isolation, concurrency, renewal 
  }
 },{timeout:120000});
 
-test('the production split flag affects the monthly plan only',async()=>{
+test('monthly and annual subscriptions have identical separate credits and monthly replenishment',async()=>{
  const options={modules:true,scriptPath:'build/pdf-stage.mjs',compatibilityDate:'2026-05-01',host:'127.0.0.1',port:0,
   durableObjects:{PDF_ACCOUNTS:{className:'PdfAccount',useSQLite:true},PDF_BUDGET:{className:'PdfBudget',useSQLite:true}},d1Databases:{DB:'pdf-monthly-split-test'},
   bindings:{PDF_STAGE:'isolated',PDF_ENABLED:'true',PDF_SPLIT_CREDITS:'true',COBRANCA:'simulacao',STAGING_ACCESS_TOKEN:gate,PDF_BUDGET_USD:'4'},
@@ -156,36 +156,30 @@ test('the production split flag affects the monthly plan only',async()=>{
  const balances=async cookie=>{const r=await status(cookie);assert.equal(r.status,200);return [r.data.balances.text.remaining,r.data.balances.pdf.remaining];};
  try{
   await mf.ready;
-  const monthly=await user('monthly-split'), start=fixture();
-  assert.equal((await seed(monthly,start)).status,200);
-  assert.deepEqual(await balances(monthly),[5,2]);
-  const firstId=crypto.randomUUID();
-  assert.equal((await text(monthly,firstId)).status,200);
-  for(let i=0;i<4;i++)assert.equal((await text(monthly)).status,200);
-  assert.equal((await text(monthly)).status,429);
-  assert.equal((await text(monthly,firstId)).data.replayed,true);
-  assert.deepEqual(await balances(monthly),[0,2]);
-  for(let i=0;i<2;i++)assert.equal((await generate(monthly,crypto.randomUUID(),'2',pdf)).status,200);
-  assert.equal((await generate(monthly,crypto.randomUUID(),'2',pdf)).status,429);
-  assert.deepEqual(await balances(monthly),[0,0]);
-  assert.equal((await seed(monthly,renew(start))).status,200);
-  assert.deepEqual(await balances(monthly),[5,2]);
-
-  const annual=await user('annual-split-flag');
-  assert.equal((await seed(annual,annualFixture())).status,200);
-  const initialAnnual=await status(annual);
-  assert.equal(initialAnnual.data.balances,undefined);
-  assert.equal(initialAnnual.data.remaining,3);
-  assert.equal((await text(annual)).status,200);
-  assert.equal((await generate(annual,crypto.randomUUID(),'2',pdf)).status,200);
-  assert.equal((await status(annual)).data.remaining,1);
-  assert.equal((await text(annual)).status,200);
-  assert.equal((await status(annual)).data.remaining,0);
-  assert.equal((await text(annual)).status,429);
+  for(const plan of ['mensal','anual']){
+   const owner=await user('equal-benefits-'+plan),start=plan==='anual'?annualFixture():fixture();
+   assert.equal((await seed(owner,start)).status,200);
+   const initial=await status(owner);
+   assert.deepEqual(await balances(owner),[5,2]);
+   const firstId=crypto.randomUUID();
+   assert.equal((await text(owner,firstId)).status,200);
+   for(let i=0;i<4;i++)assert.equal((await text(owner)).status,200);
+   assert.equal((await text(owner)).status,429);
+   assert.equal((await text(owner,firstId)).data.replayed,true);
+   assert.deepEqual(await balances(owner),[0,2]);
+   for(let i=0;i<2;i++)assert.equal((await generate(owner,crypto.randomUUID(),'2',pdf)).status,200);
+   assert.equal((await generate(owner,crypto.randomUUID(),'2',pdf)).status,429);
+   assert.deepEqual(await balances(owner),[0,0]);
+   const next=plan==='anual'?{...start,now:initial.data.paidPeriod.end+1000}:renew(start);
+   assert.equal((await seed(owner,next)).status,200);
+   assert.deepEqual(await balances(owner),[5,2]);
+   if(plan==='anual')assert.equal((await status(owner)).data.paidPeriod.invoice,initial.data.paidPeriod.invoice);
+   assert.equal((await call('/api/pdf/history',{cookie:owner})).data.results.length,7);
+  }
  }finally{await mf.dispose();}
 },{timeout:120000});
 
-test('legacy jobs keep their debits when the monthly split activates',async()=>{
+for(const plan of ['mensal','anual'])test('legacy jobs keep their debits when separate credits activate for '+plan,async()=>{
  const {DatabaseSync}=await import('node:sqlite');
  const {Ledger}=await import('../worker/pdf-quiz/ledger.mjs');
  const db=new DatabaseSync(':memory:');
@@ -207,7 +201,7 @@ test('legacy jobs keep their debits when the monthly split activates',async()=>{
    try{const result=fn();db.exec('COMMIT');return result;}
    catch(error){db.exec('ROLLBACK');throw error;}
   }},{split:true});
-  const ent={start:1,end:100,invoice:'cycle',plan:'mensal'};
+  const ent={start:1,end:100,invoice:'cycle',plan};
   const balance=now=>{const s=ledger.status(ent,now);return [s.balances.text.remaining,s.balances.pdf.remaining];};
   assert.deepEqual(balance(10),[2,0]);
   assert.deepEqual(balance(91),[3,1]);

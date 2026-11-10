@@ -14,7 +14,7 @@ test('admin requires explicit server flag and exact authenticated owner identity
  assert.equal(administratorEntitlement({...env,PDF_ADMIN_ENABLED:'false'},'owner@example.com',now),null);
  assert.equal(administratorEntitlement({PDF_ADMIN_ENABLED:'true'},'owner@example.com',now),null);
 });
-test('admin ledger preserves retries and revocation, ordinary customers still have two credits',async()=>{
+test('admin ledger preserves retries and revocation, ordinary customers still have three credits',async()=>{
  const code=`import {DurableObject} from 'cloudflare:workers';import {Ledger} from './worker/pdf-quiz/ledger.mjs';
  export class LedgerTest extends DurableObject {async fetch(req){const a=await req.json();const l=new Ledger(this.ctx.storage);try {const ent={start:1,end:9999999999999,invoice:'test',...(a.admin?{kind:'administrator'}:{})};if(a.id){const r=l.reserve(a.id,a.id,ent,100);if(!r.replay)l.complete(r,{id:a.id},a.revoke?{...ent,kind:undefined}:ent,101);}return Response.json(l.status(ent,102));}catch(e){return Response.json({code:e.code},{status:e.status});}}}
  export default {fetch(req,env){return env.LEDGER.get(env.LEDGER.idFromName(new URL(req.url).pathname)).fetch(req)}};`;
@@ -26,6 +26,6 @@ test('admin ledger preserves retries and revocation, ordinary customers still ha
  for(let n=0;n<4;n++)assert.equal((await call('admin',{id:String(n),admin:true})).status,200);
  const replay=await call('admin',{id:'0',admin:true});assert.equal(replay.data.used,4);assert.equal(replay.data.limit,null);
  assert.equal((await call('revoke',{id:'0',admin:true,revoke:true})).status,409);
- assert.equal((await call('customer',{id:'0'})).status,200);assert.equal((await call('customer',{id:'1'})).status,200);assert.equal((await call('customer',{id:'2'})).status,429);
+ assert.equal((await call('customer',{id:'0'})).status,200);assert.equal((await call('customer',{id:'1'})).status,200);assert.equal((await call('customer',{id:'2'})).status,200);assert.equal((await call('customer',{id:'3'})).status,429);
  }finally{await mf.dispose();}
 });

@@ -73,12 +73,12 @@ function mount(main: HTMLElement) {
               ? `<p class="pc-preco">R$ ${esc(reais(num(preco('anual')) / 12))}<small>/mês</small></p><p class="pc-sub">R$ ${esc(preco('anual'))} cobrança anual</p>`
               : `<p class="pc-preco">R$ ${esc(preco('mensal'))}<small>/mês</small></p><p class="pc-sub">Cobrança mensal</p>`
           }
-          <ul><li>${ok}Jogos ilimitados ${per === 'anual' ? 'o ano todo' : 'o mês todo'}</li><li>${ok}Use em qualquer aparelho</li><li><span class="pc-ok" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M9 2 11.5 8.5 18 11 11.5 13.5 9 20 6.5 13.5 0 11 6.5 8.5Z M19 1 20.3 4.7 24 6 20.3 7.3 19 11 17.7 7.3 14 6 17.7 4.7Z"/></svg></span><span><strong>Quiz com IA</strong><br><small>PDF ou texto · 2 créditos por mês</small></span></li><li>${ok}Renova a cada ${per === 'anual' ? 'ano' : 'mês'}</li></ul>
+          <ul><li>${ok}Jogos ilimitados ${per === 'anual' ? 'o ano todo' : 'o mês todo'}</li><li>${ok}Use em qualquer aparelho</li><li><span class="pc-ok" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M9 2 11.5 8.5 18 11 11.5 13.5 9 20 6.5 13.5 0 11 6.5 8.5Z M19 1 20.3 4.7 24 6 20.3 7.3 19 11 17.7 7.3 14 6 17.7 4.7Z"/></svg></span><span><strong>Quiz com IA</strong><br><small>PDF ou texto · 3 créditos por mês</small></span></li><li>${ok}Renova a cada ${per === 'anual' ? 'ano' : 'mês'}</li></ul>
           <button type="button" class="btn" data-plano="${per}">Assinar o ${per === 'anual' ? 'Anual' : 'Mensal'}</button>
         </article>
       </section>
       <section class="panel prose faq" id="perguntas">
-        <h2>Perguntas</h2><details><summary>Como funcionam os créditos de Quiz com IA?</summary><p>As assinaturas Mensal e Anual incluem 2 créditos por mês, compartilhados entre PDF e texto. Cada geração concluída usa 1 crédito; editar, salvar e reabrir não gastam crédito. Os créditos não acumulam. No Anual, o saldo renova a cada mês a partir da data de início do período pago, sem nova cobrança.</p></details>
+        <h2>Perguntas</h2><details><summary>Como funcionam os créditos de Quiz com IA?</summary><p>As assinaturas Mensal e Anual incluem 3 créditos por mês, compartilhados entre PDF e texto. Cada geração concluída usa 1 crédito; editar, salvar e reabrir não gastam crédito. Os créditos não acumulam. No Anual, o saldo renova a cada mês a partir da data de início do período pago, sem nova cobrança.</p></details>
         <details><summary>Preciso pagar antes de criar o quiz?</summary><p>Não. Crie o quiz e abra a sala de graça. Se aparecerem mais de 10 pessoas, a sala de espera mostra o botão para liberar até 200, sem fechar a sala.</p></details>
         <details><summary>Como eu pago?</summary><p>${
           cob?.modo === 'ligada'

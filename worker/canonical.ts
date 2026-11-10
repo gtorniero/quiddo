@@ -9,12 +9,52 @@ const html = (body: string, headers: Headers = new Headers()) => {
   headers.set('X-Robots-Tag', 'noindex');
   return new Response(body, { headers });
 };
-const page = (body: string, script: string) =>
-  '<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Seus quizzes · Quiddo</title><style>body{font:18px/1.6 system-ui;background:#f4f3e9;color:#16392e;max-width:680px;margin:8vh auto;padding:24px}button,a{font:inherit}button{background:#16392e;color:white;border:0;border-radius:24px;padding:14px 24px;cursor:pointer}a{color:#16392e}section{background:white;border:2px solid #16392e;border-radius:20px;padding:30px}small{display:block;margin-top:20px}</style><section><h1>Quiddo</h1>' +
-  body +
-  '</section><script>' +
-  script +
-  '</script></html>';
+const page = (body: string, script: string) => `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seus quizzes · Quiddo</title>
+  <link rel="icon" href="${OFFICIAL}/marca/quiddo-icone.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,900&family=Nunito:wght@600;800;900&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; min-height: 100svh; display: grid; place-items: center;
+      padding: 24px 16px 32px; background: #fff6e6; color: #0e2a22;
+      font: 600 1rem/1.55 Nunito, system-ui, sans-serif;
+    }
+    main {
+      width: min(100%, 30rem); padding: clamp(22px, 6vw, 40px);
+      background: #fff; border: 3px solid #0e2a22; border-radius: 22px;
+      box-shadow: 0 6px 0 #0e2a22;
+    }
+    .marca { display: block; width: 144px; max-width: 100%; height: auto; }
+    h1 { margin: 20px 0 10px; font: 900 clamp(1.75rem, 6vw, 2.25rem)/1.08 Fraunces, Georgia, serif; }
+    p { margin: 0 0 18px; }
+    button {
+      width: 100%; min-height: 48px; padding: 10px 16px; background: #ffc83d; color: inherit;
+      border: 2px solid #0e2a22; border-radius: 999px; box-shadow: 0 4px 0 #0e2a22;
+      font: 900 1rem/1.25 Nunito, system-ui, sans-serif; cursor: pointer;
+    }
+    button:hover { background: #ffdb75; }
+    a { color: #0b5d45; font-weight: 800; text-underline-offset: 3px; }
+    .backup { display: inline-flex; align-items: center; min-height: 44px; margin-top: 8px; }
+    small { display: block; margin-top: 8px; color: #4a5e56; font-size: .875rem; }
+    :focus-visible { outline: 3px solid #0b5d45; outline-offset: 4px; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <img class="marca" src="${OFFICIAL}/marca/quiddo-cor.svg" alt="Quiddo">
+    ${body}
+  </main>
+  <script>${script}</script>
+</body>
+</html>`;
 export async function canonicalResponse(req: Request, env: LoginEnv): Promise<Response | null> {
   const url = new URL(req.url),
     old = url.hostname === 'quiddo.com.br' || url.hostname === 'quiddo.guitorniero.workers.dev';
@@ -51,7 +91,7 @@ export async function canonicalResponse(req: Request, env: LoginEnv): Promise<Re
     const payload = JSON.stringify(safe).replace(/</g, '\\u003c');
     return html(
       page(
-        '<h2>Guardando seus quizzes</h2><p id="status">Aguarde um instante.</p><p><a href="/criar">Abrir o editor</a></p>',
+        '<h1>Guardando seus quizzes</h1><p id="status">Aguarde um instante.</p><p><a href="/criar">Abrir o editor</a></p>',
         '(async()=>{const data=' +
           payload +
           ';try{const get=(k,d)=>{try{return JSON.parse(localStorage.getItem("sr:"+k)||"null")||d}catch{return d}};const result=await (' +
@@ -72,12 +112,12 @@ export async function canonicalResponse(req: Request, env: LoginEnv): Promise<Re
   const target = OFFICIAL + url.pathname + url.search;
   return html(
     page(
-      '<h2>Um só endereço para seus quizzes</h2><p id="status">Conferindo o que já está guardado neste navegador…</p><form id="transfer" method="post" action="' +
+      '<h1>Leve seus quizzes com você</h1><p id="status" role="status">Procurando quizzes neste navegador…</p><form id="transfer" method="post" action="' +
         OFFICIAL +
-        '/api/migrar-navegador" hidden><input type="hidden" name="dados" id="dados"><button>Continuar com meus quizzes</button></form><p><a id="download" href="#" hidden>Baixar uma cópia de segurança</a></p><small>Os originais continuam guardados neste navegador. Depois de entrar na conta, você poderá escolher quais levar para ela.</small>',
+        '/api/migrar-navegador" hidden><input type="hidden" name="dados" id="dados"><button>Continuar com meus quizzes</button></form><a class="backup" id="download" href="#" hidden>Baixar uma cópia de segurança</a><small id="transfer-note" hidden>Os originais continuam neste navegador. Depois de entrar, você pode escolher quais quizzes salvar na sua conta.</small>',
       'const get=(k,d)=>{try{return JSON.parse(localStorage.getItem("sr:"+k)||"null")||d}catch{return d}};const quizzes=get("quizzes",[]),atual=get("atual",""),match=location.pathname.match(/^\\/host\\/([A-Z2-9]{4})$/),host=match?match[1]:"",hostKey=host?get("host:"+host,""):"",acesso=get("acesso","");const data={quizzes,atual,host,hostKey,acesso,acessoAte:get("acessoAte",""),volta:location.pathname+location.search+location.hash};if(!quizzes.length&&!hostKey&&!acesso)location.replace(' +
         JSON.stringify(target) +
-        '+location.hash);else{document.getElementById("status").textContent="Encontramos "+quizzes.length+" quiz(es) neste navegador. Leve-os para o endereço oficial antes de continuar.";document.getElementById("transfer").hidden=false;document.getElementById("dados").value=JSON.stringify(data);const link=document.getElementById("download");link.hidden=false;link.href=URL.createObjectURL(new Blob([JSON.stringify({formato:"quiddo-backup/1",quizzes},null,2)],{type:"application/json"}));link.download="quiddo-backup-navegador.json";}',
+        '+location.hash);else{document.getElementById("status").textContent=quizzes.length?"Você tem "+quizzes.length+(quizzes.length===1?" quiz salvo":" quizzes salvos")+" neste navegador. Leve "+(quizzes.length===1?"seu quiz":"seus quizzes")+" para www.quiddo.com.br.":"Leve seu acesso para www.quiddo.com.br.";if(!quizzes.length){document.querySelector("#transfer button").textContent="Continuar para o Quiddo";}document.getElementById("transfer").hidden=false;document.getElementById("dados").value=JSON.stringify(data);const link=document.getElementById("download");link.hidden=!quizzes.length;document.getElementById("transfer-note").hidden=!quizzes.length;link.href=URL.createObjectURL(new Blob([JSON.stringify({formato:"quiddo-backup/1",quizzes},null,2)],{type:"application/json"}));link.download="quiddo-backup-navegador.json";}',
     ),
     headers,
   );

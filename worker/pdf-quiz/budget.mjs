@@ -1,8 +1,8 @@
 import {DurableObject} from 'cloudflare:workers';
 import {RESERVE_USD} from './core.mjs';
 // One persistent allowance, never reset on a deploy or a billing renewal.
-// Raising the configured amount above USD 1 does not silently raise this cap.
-const limit = env => Number.isFinite(Number(env.PDF_BUDGET_USD)) && Number(env.PDF_BUDGET_USD)>0 ? Math.min(1,Number(env.PDF_BUDGET_USD)) : 0;
+// Raising the configured amount above USD 4 does not silently raise this cap.
+const limit = env => Number.isFinite(Number(env.PDF_BUDGET_USD)) && Number(env.PDF_BUDGET_USD)>0 ? Math.min(4,Number(env.PDF_BUDGET_USD)) : 0;
 export class PdfBudget extends DurableObject {
   constructor(ctx,env) { super(ctx,env);this.ctx=ctx;this.env=env;ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS pdf_spend(id TEXT PRIMARY KEY,reserve REAL NOT NULL,actual REAL,detail TEXT NOT NULL)'); }
   async reserve(id) {

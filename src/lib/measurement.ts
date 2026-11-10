@@ -13,7 +13,7 @@ let transientPath: string | null = null;
 let transientTimer = 0;
 let lastPage = '';
 const pending: ((ok: boolean) => void)[] = [];
-const EVENTS = ['create_room','begin_checkout','purchase','navigation','quiz_create','quiz_template_apply','quiz_edit_start','quiz_save','quiz_save_error','create_room_start','create_room_error','join_room_start','join_room','join_room_error','game_start','answer_recorded','game_complete','view_offer','checkout_error','access_granted','pdf_upload_start','pdf_upload_success','pdf_upload_error','ai_generation_start','ai_generation_success','ai_generation_error','ai_generation_pending','ai_review_open'] as const;
+const EVENTS = ['create_room','begin_checkout','purchase','navigation','quiz_create','quiz_template_apply','quiz_edit_start','quiz_save','quiz_save_error','create_room_start','create_room_error','join_room_start','join_room','join_room_error','game_start','answer_recorded','game_complete','view_offer','select_plan','checkout_error','access_granted','pdf_upload_start','pdf_upload_success','pdf_upload_error','ai_generation_start','ai_generation_success','ai_generation_error','ai_generation_pending','ai_review_open'] as const;
 export type MeasureEvent = typeof EVENTS[number];
 let campaign = campaignQuery(typeof location === 'undefined' ? '' : location.search);
 export type Sale = { transaction_id: string; value: number; currency: 'BRL'; plano: 'mensal' | 'anual' | 'semana' | 'oferta' };
@@ -57,7 +57,7 @@ function bridgeReady(): Promise<boolean> {
 }
 function eventPath(event: typeof EVENTS[number]) {
   if (['join_room_start','join_room','join_room_error','game_start','answer_recorded','game_complete'].includes(event)) return currentGamePath || currentPath;
-  return currentPath || (['begin_checkout','purchase','view_offer','checkout_error','access_granted'].includes(event) ? currentPaymentPath : null);
+  return currentPath || (['begin_checkout','purchase','view_offer','select_plan','checkout_error','access_granted'].includes(event) ? currentPaymentPath : null);
 }
 function cleanTransient() {
   clearTimeout(transientTimer);

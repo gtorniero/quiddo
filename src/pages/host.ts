@@ -13,6 +13,7 @@ import { palco } from '../lib/podio';
 import { alternarSom, bipe, fanfarra, ligarMusica, musicaBaixa, pararMusica, reacao, rufar, somLigado } from '../lib/som';
 import { avatarSvg } from '../lib/avatar-art';
 import { abrirPagamento, cobranca, confereVolta, meuAcesso } from '../lib/pagamento';
+import { eventPlan } from '../lib/offer-context';
 import { LIMITS } from '../../shared/rules';
 import { SUSPENSE_MS, agendaPodio, graficoVotos, novosNoPodio, animateRank, answersStatic, prepare, preparando, brandBar, confete, cortina, errorScreen, fogoFaixa, fotoCabeca, podiumTitle, questionHead, rankColunas, rankList, rankPista, revelacaoTv, tick, top10 } from './jogo-comum';
 import type { RankRow } from '../../shared/protocol';
@@ -376,7 +377,7 @@ function mount(main: HTMLElement, code: string) {
         send({ type: 'liberar', codigo });
       };
       if (meuAcesso()) pedir(meuAcesso());
-      else abrirPagamento('/host/' + code, pedir, 'anual', a === 'oferta' ? { codigo: code, hostKey } : undefined);
+      else abrirPagamento('/host/' + code, pedir, eventPlan(s?.theme), a === 'oferta' ? { codigo: code, hostKey } : undefined);
     } else if (a === 'close') {
       if (confirm('Encerrar o jogo? Todo mundo sai da sala e o placar se perde.')) send({ type: 'close' });
     }

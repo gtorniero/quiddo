@@ -13,9 +13,9 @@
   let metaLoaded = false;
   const metaCallbacks = [];
   const allowedPaths = new Set(['/', '/criar', '/jogar', '/entrar', '/precos', '/guias', '/privacidade']);
-  const events = new Set(['page_view','create_room','begin_checkout','purchase','navigation','quiz_create','quiz_template_apply','quiz_edit_start','quiz_save','quiz_save_error','create_room_start','create_room_error','join_room_start','join_room','join_room_error','game_start','answer_recorded','game_complete','view_offer','checkout_error','access_granted','pdf_upload_start','pdf_upload_success','pdf_upload_error','ai_generation_start','ai_generation_success','ai_generation_error','ai_generation_pending','ai_review_open']);
+  const events = new Set(['page_view','create_room','begin_checkout','purchase','navigation','quiz_create','quiz_template_apply','quiz_edit_start','quiz_save','quiz_save_error','create_room_start','create_room_error','join_room_start','join_room','join_room_error','game_start','answer_recorded','game_complete','view_offer','select_plan','checkout_error','access_granted','pdf_upload_start','pdf_upload_success','pdf_upload_error','ai_generation_start','ai_generation_success','ai_generation_error','ai_generation_pending','ai_review_open']);
   const gameEvents = new Set(['join_room_start','join_room','join_room_error','game_start','answer_recorded','game_complete']);
-  const commerceEvents = new Set(['begin_checkout','purchase','view_offer','checkout_error','access_granted']);
+  const commerceEvents = new Set(['begin_checkout','purchase','view_offer','select_plan','checkout_error','access_granted']);
   const titles = {'/':'Quiddo','/criar':'Criar quiz · Quiddo','/jogar':'Jogar · Quiddo','/entrar':'Entrar · Quiddo','/precos':'Preços · Quiddo','/guias':'Guias · Quiddo','/privacidade':'Privacidade · Quiddo','/partida/anfitriao':'Partida · Anfitrião','/partida/jogador':'Partida · Jogador','/pagamento':'Pagamento · Quiddo'};
   // Guias públicos são reduzidos a uma categoria; nenhum trecho arbitrário vira parâmetro.
   function safePath(path) { return allowedPaths.has(path) ? path : /^\/guias\/[a-z0-9-]+$/.test(path) ? '/guias' : null; }

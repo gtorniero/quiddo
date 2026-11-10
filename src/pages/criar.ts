@@ -8,6 +8,7 @@ import type { CreateRoomBody, CreateRoomResult, Theme, Visual } from '../../shar
 import { LIMITS, VISUAIS_DO_MODO, compactQuestion, isReady, visualDoModo } from '../../shared/rules';
 import { CORES_MARCA, TEMAS } from '../data/pacotes';
 import { MODELOS, type Modelo } from '../data/modelos';
+import { entryTemplate, eventPlan } from '../lib/offer-context';
 import { LETRAS, esc } from '../lib/dom';
 import { readFoto, readLogo } from '../lib/logo';
 import { navigate } from '../lib/nav';
@@ -62,8 +63,8 @@ function mountEditor(main: HTMLElement) {
     if (!q.titulo.trim() || padroes.includes(q.titulo)) q.titulo = m.titulo;
   };
   // link direto para um quiz pronto (ex.: /criar?modelo=natal): começa um quiz novo com ele
-  const modeloUrl = MODELOS.find((m) => m.id === new URLSearchParams(location.search).get('modelo'));
-  if (modeloUrl) {
+  const modeloUrl = MODELOS.find((m) => m.id === entryTemplate(location.search));
+  if (modeloUrl && !revisao) {
     q = novoQuiz('festa');
     usarModelo(modeloUrl);
     history.replaceState(null, '', location.pathname);
@@ -547,7 +548,7 @@ function mountEditor(main: HTMLElement) {
         abrirSala();
         return;
       case 'liberar':
-        abrirPagamento('/criar', refreshPlano);
+        abrirPagamento('/criar', refreshPlano, eventPlan(q.tema));
         return;
     }
   };

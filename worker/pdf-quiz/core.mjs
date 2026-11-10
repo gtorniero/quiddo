@@ -4,6 +4,7 @@ export const TEXT_REASONING = 'low';
 export const MAX_BRIEFING = 4000;
 export const PROMPT_VERSION = 'quiddo-pdf-2026-11-10-v4';
 export const MONTHLY_PRICE = 'price_1UXtp0134hMOoEZV4zpJZiw6';
+export const ANNUAL_PRICE = 'price_1UXtqY134hMOoEZVGgIdzQ7a';
 export const MAX_PAGES = 50;
 // Deliberately below the provider's 50 MB ceiling: PDF decoding also uses memory.
 export const MAX_BYTES = 25 * 1024 * 1024;
@@ -36,21 +37,34 @@ export function profile(value = 'none-high', stage = false) {
   return {effort,detail};
 }
 
+// Monthly buckets anchored to the paid anniversary, including Jan 31 and leap years.
+export function annualCreditPeriod(start,end,now) {
+  const anchor=new Date(start);
+  const boundary=n=>{
+    const first=new Date(Date.UTC(anchor.getUTCFullYear(),anchor.getUTCMonth()+n,1));
+    const last=new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth()+1,0)).getUTCDate();
+    return Date.UTC(first.getUTCFullYear(),first.getUTCMonth(),Math.min(anchor.getUTCDate(),last),anchor.getUTCHours(),anchor.getUTCMinutes(),anchor.getUTCSeconds());
+  };
+  for(let n=0;n<12;n++) {const a=boundary(n),b=n===11?end:Math.min(boundary(n+1),end);if(a<=now && now<b)return {start:a,end:b};}
+  throw new PdfError('monthly_required','O período pago terminou.',403);
+}
+
 /** A real paid invoice line defines the cycle. The browser supplies none of these values. */
 export function paidEntitlement({subscription: s, invoice: i, customer, risk = '', expectedPrice = MONTHLY_PRICE, live = true}, now) {
-  const deny = () => { throw new PdfError('monthly_required','Disponível para o plano mensal pago durante o ciclo vigente.',403); };
-  if (risk || !s || !i || !customer || s.livemode !== live || i.livemode !== live || !['active','past_due'].includes(s.status)) return deny();
+  const annual=expectedPrice===ANNUAL_PRICE,amount=annual?15600:1599;
+  const deny = () => { throw new PdfError('monthly_required','Disponível para assinaturas Mensal e Anual pagas durante o período vigente.',403); };
+  if (![MONTHLY_PRICE,ANNUAL_PRICE].includes(expectedPrice) || risk || !s || !i || !customer || s.livemode !== live || i.livemode !== live || !['active','past_due'].includes(s.status)) return deny();
   const items = s.items?.data;
   if (!Array.isArray(items) || items.length !== 1) return deny();
   const item = items[0], price = item.price;
-  if (idOf(s.customer) !== customer || idOf(i.customer) !== customer || item.quantity !== 1 || price?.id !== expectedPrice || price.currency !== 'brl' || price.unit_amount !== 1599 || price.recurring?.interval !== 'month' || price.recurring.interval_count !== 1 || price.recurring.usage_type !== 'licensed' || price.livemode !== live) return deny();
-  if (i.status !== 'paid' || i.amount_paid < 1599 || i.currency !== 'brl' || idOf(i.parent?.subscription_details?.subscription) !== s.id) return deny();
+  if (idOf(s.customer) !== customer || idOf(i.customer) !== customer || item.quantity !== 1 || price?.id !== expectedPrice || price.currency !== 'brl' || price.unit_amount !== amount || price.recurring?.interval !== (annual?'year':'month') || price.recurring.interval_count !== 1 || price.recurring.usage_type !== 'licensed' || price.livemode !== live) return deny();
+  if (i.status !== 'paid' || i.amount_paid < amount || i.currency !== 'brl' || idOf(i.parent?.subscription_details?.subscription) !== s.id) return deny();
   if (i.lines?.has_more) return deny();
-  const lines = (i.lines?.data || []).filter(line => idOf(line.pricing?.price_details?.price) === expectedPrice && idOf(line.parent?.subscription_item_details?.subscription) === s.id && line.parent?.subscription_item_details?.proration === false && line.quantity === 1 && line.amount >= 1599);
+  const lines = (i.lines?.data || []).filter(line => idOf(line.pricing?.price_details?.price) === expectedPrice && idOf(line.parent?.subscription_item_details?.subscription) === s.id && line.parent?.subscription_item_details?.proration === false && line.quantity === 1 && line.amount >= amount);
   if (lines.length !== 1) return deny();
   const {start,end} = lines[0].period || {};
-  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || end <= start || start * 1000 > now || end * 1000 <= now || end-start < 27*86400 || end-start > 32*86400 || item.current_period_start !== start || item.current_period_end !== end) return deny();
-  return {start: start*1000, end: end*1000, invoice:i.id, subscription:s.id, price:expectedPrice};
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || end <= start || start * 1000 > now || end * 1000 <= now || end-start < (annual?365:27)*86400 || end-start > (annual?366:32)*86400 || item.current_period_start !== start || item.current_period_end !== end) return deny();
+  return {...(annual?annualCreditPeriod(start*1000,end*1000,now):{start:start*1000,end:end*1000}), invoice:i.id, subscription:s.id, price:expectedPrice,plan:annual?'anual':'mensal'};
 }
 
 const normalized = s => s.normalize('NFKC').trim().toLocaleLowerCase('pt-BR').replace(/\s+/g,' ');

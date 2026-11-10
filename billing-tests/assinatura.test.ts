@@ -3,8 +3,63 @@ import { DatabaseSync } from 'node:sqlite';
 import { createHash, createHmac } from 'node:crypto';
 import { codigoValido, rotaCobranca, type CobrancaEnv } from '../worker/cobranca';
 import { acessoAssinatura, mensalConfigurado, reconciliarAssinatura, tabelasStripe } from '../worker/stripe-assinatura';
+import { entitlementFromStripe } from '../worker/pdf-quiz/entitlement.mjs';
+import { Ledger } from '../worker/pdf-quiz/ledger.mjs';
+import { fixture } from '../tests-pdf/fixtures.mjs';
 
 const ORIGIN = 'https://www.quiddo.com.br';
+it.each(['mensal','anual'])('signed %s webhook bridges paid identity to shared AI credits and renewal without external calls', async (plan) => {
+ const f = fixture().billing;
+ if(plan==='anual'){const item=f.subscription.items.data[0];item.price.id='price_1UXtqY134hMOoEZVGgIdzQ7a';item.price.unit_amount=15600;item.price.recurring.interval='year';item.current_period_end=item.current_period_start+365*86400;f.invoice.amount_paid=15600;f.invoice.lines.data[0].amount=15600;f.invoice.lines.data[0].period.end=item.current_period_end;f.invoice.lines.data[0].pricing.price_details.price=item.price.id;}
+ const data = JSON.parse(JSON.stringify(f).replaceAll(f.subscription.id,'sub_quiddo').replaceAll(f.customer,'cus_quiddo'));
+ sub = data.subscription; invoice = data.invoice;
+ sub.livemode=true; sub.items.data[0].price.livemode=true; invoice.livemode=true;
+ sub.latest_invoice=invoice; session.livemode=true;
+ const priceId=sub.items.data[0].price.id;
+ Object.assign(env,{COBRANCA:'ligada',STRIPE_LIVE_KEY:['rk','live','fixture'].join('_'),STRIPE_PRECO_MENSAL_ID:'price_1UXtp0134hMOoEZV4zpJZiw6',STRIPE_PRECO_ANUAL_ID:'price_1UXtqY134hMOoEZVGgIdzQ7a',STRIPE_LIVE_WEBHOOK_SECRET:SECRET,STRIPE_LIVE_PORTAL_CONFIG:'bpc_fixture'});
+ await seedPurchase();
+ sqlite.prepare("UPDATE compras SET modo='ligada',stripe_price=?,plano=?,valor=?").run(priceId,plan,plan==='anual'?'156.00':'15.99');
+ sqlite.prepare("UPDATE qd_clientes_stripe SET modo='ligada'").run();
+ expect((await webhook('checkout.session.completed',session,true))!.status).toBe(200);
+ expect(read('SELECT * FROM qd_assinaturas')).toMatchObject({customer:'cus_quiddo',modo:'ligada',risk:''});
+ const storage={sql:{exec:(sql:string,...values:any[])=>{
+  const statement=sqlite.prepare(sql);
+  if(/^SELECT/i.test(sql))return statement.all(...values);
+  statement.run(...values);return [];
+ }},transactionSync:(fn:()=>any)=>{sqlite.exec('BEGIN');try{const result=fn();sqlite.exec('COMMIT');return result;}catch(e){sqlite.exec('ROLLBACK');throw e;}}};
+ const ledger=new Ledger(storage);
+ const ent=await entitlementFromStripe(env,EMAIL);
+ expect(ledger.status(ent,Date.now()).remaining).toBe(2);
+ for(const source of ['pdf','text']){
+  const reservation=ledger.reserve(source,source,ent,Date.now());
+  ledger.complete(reservation,{source},await entitlementFromStripe(env,EMAIL),Date.now());
+ }
+ expect(ledger.status(ent,Date.now()).remaining).toBe(0);
+ await webhook('invoice.paid',invoice,true);
+ expect(ledger.status(await entitlementFromStripe(env,EMAIL),Date.now()).remaining).toBe(0);
+ expect(()=>ledger.reserve('third','third',ent,Date.now())).toThrow();
+ expect(ledger.reserve('text','text',ent,Date.now()).replay.result).toEqual({source:'text'});
+ await expect(entitlementFromStripe(env,'other@example.com')).rejects.toMatchObject({status:403});
+ if(plan==='anual'){vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(ent.end+1000);const mid=await entitlementFromStripe(env,EMAIL);expect(mid.invoice).toBe(ent.invoice);expect(ledger.status(mid,Date.now()).remaining).toBe(2);}
+ const start=sub.items.data[0].current_period_end,end=start+(plan==='anual'?365:30)*86400;
+ Object.assign(sub.items.data[0],{current_period_start:start,current_period_end:end});
+ Object.assign(invoice,{id:'in_next',status:'open',amount_paid:0});
+ invoice.lines.data[0].period={start,end};sub.status='past_due';
+ vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(start*1000+1000);
+ expect((await webhook('invoice.payment_failed',invoice,true))!.status).toBe(200);
+ await expect(entitlementFromStripe(env,EMAIL)).rejects.toMatchObject({status:403});
+ Object.assign(invoice,{status:'paid',amount_paid:plan==='anual'?15600:1599});sub.status='active';
+ expect((await webhook('invoice.paid',invoice,true))!.status).toBe(200);
+ const next=await entitlementFromStripe(env,EMAIL);
+ expect(ledger.status(next,Date.now()).remaining).toBe(2);
+ expect(ledger.history()).toHaveLength(2);
+ sub.cancel_at_period_end=true;
+ await webhook('customer.subscription.updated',sub,true);
+ expect(ledger.status(await entitlementFromStripe(env,EMAIL),Date.now()).remaining).toBe(2);
+ sub.status='canceled';await webhook('customer.subscription.deleted',sub,true);
+ await expect(entitlementFromStripe(env,EMAIL)).rejects.toMatchObject({status:403});
+ expect(apiCalls.every(c=>c.method==='GET')).toBe(true);
+});
 const REF = '11111111-1111-4111-8111-111111111111';
 const EMAIL = 'quiddo-qa@example.com';
 const TOKEN = '1'.repeat(64);

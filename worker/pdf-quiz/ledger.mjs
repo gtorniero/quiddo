@@ -1,11 +1,13 @@
 import {LEASE_MS,PdfError} from './core.mjs';
+const SPLIT_LIMITS={pdf:2,text:5};
 export class Ledger {
-  constructor(storage) {
-    this.storage=storage; this.sql=storage.sql;
+  constructor(storage,{split=false}={}) {
+    this.split=split; this.storage=storage; this.sql=storage.sql;
     this.sql.exec('CREATE TABLE IF NOT EXISTS pdf_cycles (id TEXT PRIMARY KEY,start INTEGER NOT NULL,end INTEGER NOT NULL)');
     this.sql.exec('CREATE TABLE IF NOT EXISTS pdf_jobs (id TEXT PRIMARY KEY,fingerprint TEXT NOT NULL,cycle TEXT NOT NULL,state TEXT NOT NULL,attempt TEXT NOT NULL,lease INTEGER NOT NULL,result TEXT,error TEXT,created INTEGER NOT NULL)');
     this.sql.exec('CREATE INDEX IF NOT EXISTS pdf_jobs_cycle ON pdf_jobs(cycle,state)');
     this.sql.exec('CREATE TABLE IF NOT EXISTS pdf_attempts (id TEXT PRIMARY KEY,job TEXT NOT NULL,detail TEXT NOT NULL)');
+    if(!this.rows('PRAGMA table_info(pdf_jobs)').some(column=>column.name==='source'))this.sql.exec('ALTER TABLE pdf_jobs ADD COLUMN source TEXT');
   }
   rows(sql,...values) { return [...this.sql.exec(sql,...values)]; }
   job(id) { const r=this.rows('SELECT * FROM pdf_jobs WHERE id=?',id)[0]; return r ? {...r,result:r.result?JSON.parse(r.result):null} : null; }
@@ -18,17 +20,23 @@ export class Ledger {
     this.sql.exec('INSERT INTO pdf_cycles(id,start,end) VALUES (?,?,?)',cycle.id,cycle.start,cycle.end);
     return cycle;
   }
-  count(cycle) {
-    const rows=this.rows("SELECT state,COUNT(*) AS n FROM pdf_jobs WHERE cycle=? AND state IN ('delivered','pending') GROUP BY state",cycle);
+  count(cycle,source) {
+    const base="SELECT state,COUNT(*) AS n FROM pdf_jobs WHERE cycle=? AND state IN ('delivered','pending')";
+    // Historical jobs retain their source in the result or audit, including deleted results.
+    const category=" AND COALESCE(source, CASE WHEN json_extract(result,'$.source')='text' OR EXISTS (SELECT 1 FROM pdf_attempts a WHERE a.job=pdf_jobs.id AND json_extract(a.detail,'$.source')='text') THEN 'text' ELSE 'pdf' END)=?";
+    const rows=source?this.rows(base+category+' GROUP BY state',cycle,source):this.rows(base+' GROUP BY state',cycle);
     return {used:Number(rows.find(x=>x.state==='delivered')?.n||0),reserved:Number(rows.find(x=>x.state==='pending')?.n||0)};
   }
   status(ent,now) {
     return this.storage.transactionSync(()=>{
-      this.expire(now);const cycle=this.cycle(ent),c=this.count(cycle.id);
-      return {...c,remaining:ent.kind==='administrator'?null:Math.max(0,2-c.used-c.reserved),limit:ent.kind==='administrator'?null:2,cycle:{id:cycle.id,start:cycle.start,end:cycle.end},paidPeriod:ent};
+      this.expire(now);const cycle=this.cycle(ent);
+      const balance=(source,limit)=>{const c=this.count(cycle.id,source);return {...c,remaining:Math.max(0,limit-c.used-c.reserved),limit};};
+      const split=this.split && ent.kind!=='administrator';
+      const pdf=balance(split?'pdf':null,2);
+      return {...pdf,...(ent.kind==='administrator'?{remaining:null,limit:null}:{}),...(split?{balances:{pdf,text:balance('text',SPLIT_LIMITS.text)}}:{}),cycle:{id:cycle.id,start:cycle.start,end:cycle.end},paidPeriod:ent};
     });
   }
-  reserve(id,fingerprint,ent,now) {
+  reserve(id,fingerprint,ent,now,source='pdf') {
     return this.storage.transactionSync(()=>{
       this.expire(now);const existing=this.job(id);
       if (existing && existing.fingerprint!==fingerprint) throw new PdfError('idempotency_conflict','Essa tentativa pertence a outro arquivo ou seleção.',409);
@@ -36,10 +44,14 @@ export class Ledger {
       if (existing?.state==='pending') return {pending:existing};
       const cycle=this.cycle(ent);
       if (existing && existing.cycle!==cycle.id) throw new PdfError('cycle_changed','O ciclo mudou. Inicie uma nova tentativa.',409);
-      const c=this.count(cycle.id);
-      if (ent.kind!=='administrator' && c.used+c.reserved>=2) throw new PdfError('quota','Os dois créditos deste ciclo já foram usados ou estão em processamento.',429);
+      const c=this.count(cycle.id,this.split?source:null);
+      const limit=this.split?SPLIT_LIMITS[source]:2;
+      if (ent.kind!=='administrator' && c.used+c.reserved>=limit) {
+        const message=this.split?'Os créditos de '+(source==='text'?'texto':'PDF')+' deste ciclo já foram usados ou estão em processamento.':'Os dois créditos deste ciclo já foram usados ou estão em processamento.';
+        throw new PdfError('quota',message,429);
+      }
       const attempt=crypto.randomUUID();
-      this.sql.exec("INSERT INTO pdf_jobs(id,fingerprint,cycle,state,attempt,lease,created) VALUES (?,?,?,'pending',?,?,?) ON CONFLICT(id) DO UPDATE SET state='pending',attempt=excluded.attempt,lease=excluded.lease,error=NULL",id,fingerprint,cycle.id,attempt,now+LEASE_MS,now);
+      this.sql.exec("INSERT INTO pdf_jobs(id,fingerprint,cycle,state,attempt,lease,created,source) VALUES (?,?,?,'pending',?,?,?,?) ON CONFLICT(id) DO UPDATE SET state='pending',attempt=excluded.attempt,lease=excluded.lease,error=NULL,source=excluded.source",id,fingerprint,cycle.id,attempt,now+LEASE_MS,now,source);
       return {id,attempt,cycle:cycle.id,ent};
     });
   }

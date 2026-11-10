@@ -2,6 +2,7 @@ import {captureCheckout} from './meta-adapter.mjs';
 // Stripe Billing da Quiddo. Nenhum dado das salas ou dos jogadores passa por este modulo.
 import StripeClient from 'stripe';
 import type { CobrancaEnv } from './cobranca';
+import {stripeTestKey} from './stripe-test-mode.mjs';
 
 export interface CompraStripe {
   ref: string; ordem: string; email: string; valor: string; modo: string;
@@ -23,7 +24,8 @@ const idOf = (value: unknown): string => typeof value === 'string' ? value : val
 const codigoNovo = () => 'QD-' + [4, 4].map(n => [...crypto.getRandomValues(new Uint8Array(n))].map(v => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[v % 32]).join('')).join('-');
 export const stripeAmbiente = (env: CobrancaEnv): 'teste' | 'ligada' | null => {
   const key = String(env.STRIPE_KEY || '').trim();
-  return env.COBRANCA === 'ligada' ? (/^[sr]k_live_/.test(key) ? 'ligada' : null) : (/^[sr]k_test_/.test(key) ? 'teste' : null);
+  if (env.COBRANCA === 'ligada') return /^[sr]k_live_/.test(key) ? 'ligada' : null;
+  return stripeTestKey(env) ? 'teste' : null;
 };
 export const mensalConfigurado = (env: CobrancaEnv) => !!(stripeAmbiente(env) && env.STRIPE_PRICE_MENSAL && env.STRIPE_WEBHOOK_SECRET && env.STRIPE_PORTAL_CONFIG);
 export const anualConfigurado = (env: CobrancaEnv) => mensalConfigurado(env) && !!env.STRIPE_PRICE_ANUAL;

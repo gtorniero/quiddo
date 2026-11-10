@@ -5,10 +5,14 @@ import {readPdf,selectPdf} from './pdf.mjs';
 import {MODEL,PROMPT_VERSION,TEXT_PROMPT_VERSION,TEXT_REASONING,MAX_BYTES,PdfError,json,sha,profile,paidEntitlement,requestBody,textRequestBody,readBriefing,resultText,validateQuiz,costFromUsage} from './core.mjs';
 
 export class PdfAccount extends DurableObject {
-  constructor(ctx,env) { super(ctx,env);this.ctx=ctx;this.env=env;this.ledger=new Ledger(ctx.storage); }
+  constructor(ctx,env) { super(ctx,env);this.ctx=ctx;this.env=env;this.ledger=new Ledger(ctx.storage,{split:env.PDF_SPLIT_CREDITS==='true'}); }
   async settings() { return this.env.PDF_STAGE==='isolated' ? await this.ctx.storage.get('fixture') : null; }
   async entitlement(email,settings) {
     if (this.env.PDF_STAGE==='isolated') {
+      if (this.env.PDF_STRIPE_TEST==='true') {
+        if (!settings || settings.providerMode==='real') throw new PdfError('fixture','Use uma conta fictícia no teste de renovação.',403);
+        return entitlementFromStripe(this.env,email,settings.now||Date.now());
+      }
       if (!settings?.billing) throw new PdfError('monthly_required','A conta de staging não tem um ciclo mensal pago simulado.',403);
       return paidEntitlement({...settings.billing,live:false},settings.now || Date.now());
     }
@@ -54,7 +58,7 @@ export class PdfAccount extends DurableObject {
     if(path==='/api/pdf/status' && req.method==='GET') {
       const simulated=this.env.PDF_STAGE==='isolated' && !!settings && settings.providerMode!=='real';
       const funded=!!this.env.OPENAI_API_KEY && (await this.env.PDF_BUDGET.get(this.env.PDF_BUDGET.idFromName('test-budget-20261107')).summary()).available;
-      return json({...this.ledger.status(ent,now),enabled:true,pdfPromptVersion:PROMPT_VERSION,maxPages:50,maxBytes:MAX_BYTES,providerReady:simulated || funded,simulatedBilling:this.env.PDF_STAGE==='isolated'});
+      return json({...this.ledger.status(ent,now),enabled:true,pdfPromptVersion:PROMPT_VERSION,maxPages:50,maxBytes:MAX_BYTES,providerReady:simulated || funded,simulatedBilling:this.env.PDF_STAGE==='isolated' && this.env.PDF_STRIPE_TEST!=='true'});
     }
     const isText=path==='/api/pdf/generate-text';
     if(isText && ent.kind==='administrator')throw new PdfError('monthly_required','A geração por texto é exclusiva do Premium mensal.',403);
@@ -72,7 +76,7 @@ export class PdfAccount extends DurableObject {
     const fingerprint=await sha(JSON.stringify(isText
       ? {source,text:sourceSHA256,prompt:promptVersion,model:MODEL,config}
       : {file:sourceSHA256,pages:selected.pages,prompt:promptVersion,model:MODEL,config}));
-    const reservation=this.ledger.reserve(id,fingerprint,ent,now);
+    const reservation=this.ledger.reserve(id,fingerprint,ent,now,source);
     if(reservation.replay)return json({id,status:'delivered',result:reservation.replay.result,replayed:true});
     if(reservation.pending)return json({id,status:'pending'},202);
     let providerStarted=false, response=null, cost=null;

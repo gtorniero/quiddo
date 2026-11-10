@@ -1,4 +1,6 @@
 // Separate entrypoint. No production payment routes, schedules, services, or databases.
+import {rotaCobranca} from './cobranca';
+import {stripeAmbiente} from './stripe-assinatura';
 import {rotaQuizzes} from './quizzes';
 import {rotaLogin,emailDaSessao} from './login';
 import {pdfRoute} from './pdf-quiz/route.mjs';
@@ -11,6 +13,11 @@ export default {
   async fetch(req:Request,env:any):Promise<Response> {
     if(env.PDF_STAGE!=='isolated' || env.COBRANCA!=='simulacao' || !env.STAGING_ACCESS_TOKEN)return json({erro:'Staging fechado.'},503);
     const url=new URL(req.url);
+    if(env.PDF_STRIPE_TEST==='true' && url.pathname==='/api/stripe-webhook-test' && req.method==='POST') {
+      if(stripeAmbiente(env)!=='teste' || !env.STRIPE_WEBHOOK_SECRET) return json({erro:'Stripe de teste não configurado.'},503);
+      // Stripe does not send a browser cookie or Origin. The real handler verifies the raw signature.
+      return (await rotaCobranca(req,env,'/api/stripe-webhook'))!;
+    }
     if(url.pathname==='/__staging/unlock' && req.method==='POST') {
       if(req.headers.get('origin')!==url.origin)return json({erro:'Origem inválida.'},403);
       let token='';try{token=String((await req.json() as any).token||'');}catch{}

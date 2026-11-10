@@ -4,7 +4,7 @@ import {createRequire} from 'node:module';
 import fs from 'node:fs/promises';
 const require=createRequire(import.meta.url);
 const esbuild=await import(require.resolve('esbuild',{paths:[require.resolve('wrangler')]}));
-const {Miniflare}=await import(process.env.MINIFLARE_TEST_MODULE || 'miniflare');
+const {Miniflare,convertV4MiniflareOptions}=await import(process.env.MINIFLARE_TEST_MODULE || 'miniflare');
 const code=`export {PdfBudget} from './worker/pdf-quiz/budget.mjs';
 export default {async fetch(request,env){const a=await request.json(); const b=env.BUDGET.get(env.BUDGET.idFromName('persistent'));
 try {if(a.op==='reserve') await b.reserve(a.id); if(a.op==='settle') await b.settle(a.id,a.cost,{}); return Response.json(await b.summary());}
@@ -12,7 +12,8 @@ catch {return Response.json({error:'budget_exhausted'},{status:503});}}};`;
 await fs.mkdir('build',{recursive:true});
 await esbuild.build({stdin:{contents:code,resolveDir:process.cwd()},outfile:'build/budget-test.mjs',bundle:true,format:'esm',platform:'browser',external:['cloudflare:workers']});
 async function runtime(limit){
- const mf=new Miniflare({modules:true,scriptPath:'build/budget-test.mjs',compatibilityDate:'2026-05-01',host:'127.0.0.1',port:0,durableObjects:{BUDGET:{className:'PdfBudget',useSQLite:true}},bindings:{PDF_BUDGET_USD:limit}});
+ const options={modules:true,scriptPath:'build/budget-test.mjs',compatibilityDate:'2026-05-01',host:'127.0.0.1',port:0,durableObjects:{BUDGET:{className:'PdfBudget',useSQLite:true}},bindings:{PDF_BUDGET_USD:limit}};
+ const mf=new Miniflare(convertV4MiniflareOptions ? convertV4MiniflareOptions(options) : options);
  await mf.ready;
  return {mf,call: async body=>{const r=await mf.dispatchFetch('http://localhost/',{method:'POST',body:JSON.stringify(body)});return {status:r.status,data:await r.json()};}};
 }

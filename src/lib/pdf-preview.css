@@ -21,3 +21,6 @@
 .qd-pdf-filebox { background: var(--bg); }
 .qd-pdf-dialog .qd-pdf-pick { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .qd-pdf-dialog [data-document] { overflow-wrap: anywhere; margin: 10px 0 0; }
+.qd-ia-modos { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.qd-ia-modos button[aria-pressed="true"] { background: var(--amarelo); color: var(--fg); }
+.qd-pdf-dialog textarea { width: 100%; margin: 6px 0; resize: vertical; }

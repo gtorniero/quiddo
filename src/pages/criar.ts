@@ -33,11 +33,11 @@ function mount(main: HTMLElement) {
 function mountEditor(main: HTMLElement) {
   let vivo = true;
   let q: Quiz = atual();
-  let revisao: { anterior: Quiz } | null = null;
+  let revisao: { anterior: Quiz; source: 'pdf' | 'text' } | null = null;
   const reviewOwner = contaDosQuizzes();
   const reviewKey = reviewOwner ? 'pdf-review:' + reviewOwner : null;
-  const pendente = reviewKey ? store.get<{ draft: Quiz; anterior: Quiz } | null>(reviewKey, null) : null;
-  if (pendente?.draft && pendente?.anterior) { q = pendente.draft; revisao = { anterior: pendente.anterior }; }
+  const pendente = reviewKey ? store.get<{ draft: Quiz; anterior: Quiz; source?: 'pdf' | 'text' } | null>(reviewKey, null) : null;
+  if (pendente?.draft && pendente?.anterior) { q = pendente.draft; revisao = { anterior: pendente.anterior, source: pendente.source ?? 'pdf' }; }
   const focoPerguntas = () => { const el = main.querySelector<HTMLElement>('#h-perg'); el?.setAttribute('tabindex','-1'); el?.focus(); };
   // veio da vitrine de modos da home: aplica o modo escolhido (o visual volta para Floresta se não existir nele)
   const temaNovo = store.get<string>('temaNovo', '');
@@ -82,7 +82,7 @@ function mountEditor(main: HTMLElement) {
     saveTimer = 0;
     if (revisao) {
       editPending = false;
-      localSaveFailed = !reviewKey || !store.set(reviewKey, { draft: q, anterior: revisao.anterior });
+      localSaveFailed = !reviewKey || !store.set(reviewKey, { draft: q, ...revisao });
       refreshSaveStatus();
       return;
     }
@@ -231,7 +231,7 @@ function mountEditor(main: HTMLElement) {
     const cheio = n >= LIMITS.maxQuestions;
     return `<section class="panel" aria-labelledby="h-perg">${passo('Perguntas', 'h-perg')}
       ${q.tema === 'festa' ? secModelos() : ''}
-      ${revisao ? `<div class="qd-pdf-review"><b>Revise seu rascunho de IA</b><p class="small">Confira as perguntas, as fontes e o gabarito. A IA pode errar. Seu quiz anterior está preservado.</p><div class="btnrow"><button class="btn small auto" data-act="salvar-pdf">Salvar quiz</button><button class="btn sec small auto" data-act="voltar-pdf">Voltar ao quiz anterior</button></div><p class="err" data-pdf-erro role="status"></p></div>` : ''}
+      ${revisao ? `<div class="qd-pdf-review"><b>Revise seu rascunho de IA</b><p class="small">${q.perguntas.some(p => p.pdf) ? 'Confira as perguntas, as fontes e o gabarito.' : 'Confira as perguntas e o gabarito.'} A IA pode errar. Seu quiz anterior está preservado.</p><div class="btnrow"><button class="btn small auto" data-act="salvar-pdf">Salvar quiz</button><button class="btn sec small auto" data-act="voltar-pdf">Voltar ao quiz anterior</button></div><p class="err" data-pdf-erro role="status"></p></div>` : ''}
       <div class="add-topo" role="group" aria-labelledby="h-add-topo">
         <span class="add-topo-tit" id="h-add-topo"><span class="mais-ic" aria-hidden="true">+</span>Adicionar pergunta</span>
         <div class="add-topo-ops">
@@ -380,8 +380,13 @@ function mountEditor(main: HTMLElement) {
             const anterior = q;
             q = { ...novoQuiz(q.tema), visual: q.visual, tempo: q.tempo, marca: { ...q.marca }, logo: q.logo };
             q.id = resultado.id; q.titulo = resultado.title;
-            q.perguntas = resultado.items.map(item => ({t:item.t,o:[...item.a],c:item.c,tl:q.tempo,pdf:{page:item.page,evidence:item.evidence,answer:item.answer,topic:item.topic,hash:resultado.sourceSHA256}}));
-            revisao = {anterior}; persist(true);
+            q.perguntas = resultado.items.map(item => ({
+              t:item.t, o:[...item.a], c:item.c, tl:q.tempo,
+              ...(resultado.source !== 'text' && item.page != null && item.evidence ? {
+                pdf:{page:item.page,evidence:item.evidence,answer:item.answer,topic:item.topic,hash:resultado.sourceSHA256},
+              } : {}),
+            }));
+            revisao = {anterior, source:resultado.source ?? 'pdf'}; persist(true);
           }
           render(); requestAnimationFrame(focoPerguntas);
         });
@@ -391,7 +396,7 @@ function mountEditor(main: HTMLElement) {
         const aviso = main.querySelector('[data-pdf-erro]');
         if (!q.titulo.trim() || !q.perguntas.length || prontas() !== q.perguntas.length) { if (aviso) aviso.textContent = 'Preencha o título e revise todas as perguntas antes de salvar.'; return; }
         if (!salvar(q)) { if (aviso) aviso.textContent = 'Não deu para salvar neste navegador.'; return; }
-        void trackOnce('quiz_create',q.id+':pdf',{source:'pdf'});
+        void trackOnce('quiz_create',q.id+':'+revisao.source,{source:revisao.source});
         revisao = null; if (reviewKey) store.del(reviewKey); localSaveFailed = false; msg = 'Quiz salvo. Nenhum crédito adicional foi usado.';
         return render('[data-act="pdf-ia"]');
       }

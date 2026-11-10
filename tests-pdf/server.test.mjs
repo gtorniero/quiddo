@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs/promises';
-const {Miniflare}=await import(process.env.MINIFLARE_TEST_MODULE || 'miniflare');
+const {Miniflare,convertV4MiniflareOptions}=await import(process.env.MINIFLARE_TEST_MODULE || 'miniflare');
 import {PDFDocument} from '../vendor/pdf-lib.js';
 import {fixture,renew} from './fixtures.mjs';
 async function sample(pages){const doc=await PDFDocument.create();for(let n=0;n<pages;n++)doc.addPage().drawText('Fictional test page '+(n+1));return Buffer.from(await doc.save());}
@@ -18,10 +18,11 @@ const generate=(cookie,id=crypto.randomUUID(),pages='2-51',bytes=pdf,extra={})=>
 function record(name,details){evidence.cases.push({name,passed:true,...details});}
 
 test('HTTP routes, real durable storage, quota, isolation, concurrency, renewal and failures',async()=>{
- mf=new Miniflare({modules:true,scriptPath:'build/pdf-stage.mjs',compatibilityDate:'2026-05-01',host:'127.0.0.1',port:0,
+ const options={modules:true,scriptPath:'build/pdf-stage.mjs',compatibilityDate:'2026-05-01',host:'127.0.0.1',port:0,
   durableObjects:{PDF_ACCOUNTS:{className:'PdfAccount',useSQLite:true},PDF_BUDGET:{className:'PdfBudget',useSQLite:true}},d1Databases:{DB:'pdf-isolated-test'},
   bindings:{PDF_STAGE:'isolated',PDF_ENABLED:'true',COBRANCA:'simulacao',STAGING_ACCESS_TOKEN:gate,PDF_BUDGET_USD:'1'},
-  serviceBindings:{ASSETS:async()=>new Response('isolated assets')},log:undefined});
+  serviceBindings:{ASSETS:async()=>new Response('isolated assets')},log:undefined};
+ mf=new Miniflare(convertV4MiniflareOptions ? convertV4MiniflareOptions(options) : options);
  try{
   await mf.ready;
   assert.equal((await call('/api/pdf/status',{auth:false})).status,401);
@@ -59,12 +60,58 @@ test('HTTP routes, real durable storage, quota, isolation, concurrency, renewal 
   const revoke=await user('revoked-during'),rv=fixture({providerMode:'delayed'});await seed(revoke,rv);const pending=generate(revoke);await new Promise(resolve=>setTimeout(resolve,150));rv.billing.risk='refund';await seed(revoke,rv);assert.equal((await pending).status,403);rv.billing.risk='';await seed(revoke,rv);assert.equal((await status(revoke)).data.remaining,2);record('Entitlement revoked during processing blocks delivery and preserves credit');
   const fencing=await user('expired-reservation'),fx=fixture({providerMode:'delayed'});await seed(fencing,fx);const fencedId=crypto.randomUUID();const oldAttempt=generate(fencing,fencedId);await new Promise(resolve=>setTimeout(resolve,150));fx.now=Date.now()+300000;await seed(fencing,fx);const newAttempt=generate(fencing,fencedId);const fenced=await Promise.all([oldAttempt,newAttempt]);assert.deepEqual(fenced.map(x=>x.status),[409,200]);assert.equal((await status(fencing)).data.remaining,1);record('Expired reservation reclaimed; stale attempt cannot overwrite or debit new delivery',{statuses:fenced.map(x=>x.status)});
   const validation=await user('invalid-input');await seed(validation,fixture());assert.equal((await generate(validation,crypto.randomUUID(),'1-51')).status,400);assert.equal((await generate(validation,crypto.randomUUID(),'1',Buffer.from('not a pdf'))).status,400);assert.equal((await generate(validation,crypto.randomUUID(),'1',pdf,{'content-type':'image/png'})).status,415);assert.equal((await status(validation)).data.remaining,2);record('51 selected pages, fake PDF and wrong format rejected before debit');
+  const limit=25*1024*1024;
+  const large=Buffer.alloc(limit,32);
+  pdf.copy(large,limit-pdf.length);
+  large.write('%PDF-1.7',0);
+  const inspect=bytes=>call('/api/pdf/inspect',{cookie:validation,body:bytes,headers:{'content-type':'application/pdf'}});
+  const atLimit=await inspect(large);
+  assert.equal(atLimit.status,200,JSON.stringify(atLimit.data));
+  assert.equal(atLimit.data.bytes,limit);
+  assert.equal(atLimit.data.maxBytes,limit);
+  assert.equal((await inspect(Buffer.concat([large,Buffer.from(' ')]))).status,413);
+  record('A valid 25 MiB upload is accepted; one byte over the limit is rejected');
   const scanning=await user('scan');const sc=fixture();sc.quiz.questions[0].page=1;await seed(scanning,sc);const scanResult=await generate(scanning,crypto.randomUUID(),'1-8',scan);assert.equal(scanResult.status,200);record('Eight-page PDF parsed and selected on server; provider mocked',{pages:8});
   for(const plan of ['free','pass','courtesy','annual','unpaid']){
    const u=await user('plan-'+plan),x=fixture();if(['free','pass','courtesy'].includes(plan))x.billing=null;else if(plan==='annual')x.billing.subscription.items.data[0].price.recurring.interval='year';else x.billing.invoice.status='open';await seed(u,x);assert.equal((await generate(u)).status,403);record('Denied noneligible plan: '+plan);
   }
   const noKey=await user('no-key');await seed(noKey,fixture({providerMode:'real'}));assert.equal((await generate(noKey)).status,503);assert.equal((await status(noKey)).data.remaining,2);record('Missing provider key does not spend a subscriber credit');
   await call('/api/pdf/jobs/'+b.data.id,{cookie:owner,method:'DELETE'});assert.equal((await call('/api/pdf/jobs/'+b.data.id,{cookie:owner})).data.result.deleted,true);record('Content erasure keeps debit tombstone');
+  const textOwner=await user('briefing-owner');
+  const briefing='Encontro de família. Perguntas sobre comidas e brincadeiras brasileiras.';
+  const makeText=(body=briefing,id=crypto.randomUUID())=>call('/api/pdf/generate-text',{
+   cookie:textOwner,body,headers:{'content-type':'text/plain;charset=UTF-8','idempotency-key':id},
+  });
+  assert.equal((await makeText()).status,403);
+  await seed(textOwner,fixture());
+  assert.equal((await makeText('')).status,400);
+  assert.equal((await makeText('a'.repeat(4001))).status,413);
+  assert.equal((await status(textOwner)).data.remaining,2);
+  await seed(textOwner,fixture({providerMode:'malformed'}));
+  assert.equal((await makeText()).status,502);
+  assert.equal((await status(textOwner)).data.remaining,2);
+  await seed(textOwner,fixture());
+  const textId=crypto.randomUUID(), textResult=await makeText(briefing,textId);
+  assert.equal(textResult.status,200,JSON.stringify(textResult.data));
+  assert.equal(textResult.data.result.source,'text');
+  assert.equal(textResult.data.result.items[0].page,undefined);
+  assert.equal(textResult.data.result.items[0].evidence,undefined);
+  assert.equal((await status(textOwner)).data.remaining,1);
+  assert.equal((await makeText(briefing,textId)).data.replayed,true);
+  assert.equal((await makeText(briefing+' Tema novo.',textId)).status,409);
+  assert.equal((await generate(textOwner,textId)).status,409);
+  assert.equal((await status(textOwner)).data.remaining,1);
+  const mixed=await generate(textOwner);
+  assert.equal(mixed.status,200);
+  assert.equal(mixed.data.result.source,'pdf');
+  assert.equal((await status(textOwner)).data.remaining,0);
+  assert.equal((await makeText('Outro tema')).status,429);
+  const h=await call('/api/pdf/history',{cookie:textOwner});
+  assert.deepEqual(h.data.results.map(x=>x.source).sort(),['pdf','text']);
+  assert.equal(JSON.stringify(h.data).includes(briefing),false);
+  await seed(textOwner,renew(fixture()));
+  assert.equal((await status(textOwner)).data.remaining,2);
+  record('Text and PDF share quota; text-only history and replay; invalid input and output cost no credits');
   const last=await call('/__staging/evidence',{cookie:owner});assert.equal(last.data.budget.entries.length,0);evidence.realProviderCalls=0;evidence.providerCostUSD=null;
  }finally{
   evidence.finished=new Date().toISOString();if(process.env.PDF_TEST_EVIDENCE)await fs.writeFile(process.env.PDF_TEST_EVIDENCE,JSON.stringify(evidence,null,2)+'\n');await mf?.dispose();

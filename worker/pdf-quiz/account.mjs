@@ -2,7 +2,7 @@ import {DurableObject} from 'cloudflare:workers';
 import {Ledger} from './ledger.mjs';
 import {entitlementFromStripe,administratorEntitlement} from './entitlement.mjs';
 import {readPdf,selectPdf} from './pdf.mjs';
-import {MODEL,PROMPT_VERSION,TEXT_PROMPT_VERSION,MAX_BYTES,PdfError,json,sha,profile,paidEntitlement,requestBody,textRequestBody,readBriefing,resultText,validateQuiz,costFromUsage} from './core.mjs';
+import {MODEL,PROMPT_VERSION,TEXT_PROMPT_VERSION,TEXT_REASONING,MAX_BYTES,PdfError,json,sha,profile,paidEntitlement,requestBody,textRequestBody,readBriefing,resultText,validateQuiz,costFromUsage} from './core.mjs';
 
 export class PdfAccount extends DurableObject {
   constructor(ctx,env) { super(ctx,env);this.ctx=ctx;this.env=env;this.ledger=new Ledger(ctx.storage); }
@@ -63,7 +63,7 @@ export class PdfAccount extends DurableObject {
     if(path==='/api/pdf/inspect')return json({pages:parsed.count,bytes:parsed.size,sha256:parsed.hash,maxBytes:MAX_BYTES});
     const id=req.headers.get('idempotency-key')||'';
     if(!/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(id))throw new PdfError('idempotency','Identificador de tentativa inválido.');
-    const config=isText?{effort:'none'}:profile(url.searchParams.get('profile')||'none-high',this.env.PDF_STAGE==='isolated');
+    const config=isText?{effort:TEXT_REASONING}:profile(url.searchParams.get('profile')||'none-high',this.env.PDF_STAGE==='isolated');
     const briefing=isText?await readBriefing(req):null;
     const selected=isText?null:await selectPdf(parsed,url.searchParams.get('pages')||'');
     const source=isText?'text':'pdf', promptVersion=isText?TEXT_PROMPT_VERSION:PROMPT_VERSION;

@@ -4,6 +4,7 @@ import {createHmac,randomUUID} from 'node:crypto';
 import {PDFDocument} from '../vendor/pdf-lib.js';
 import {fixture,renew} from './fixtures.mjs';
 import {MONTHLY_PRICE} from '../worker/pdf-quiz/core.mjs';
+import {stripeTestKey} from '../worker/stripe-test-mode.mjs';
 
 const {Miniflare,convertV4MiniflareOptions}=await import(process.env.MINIFLARE_TEST_MODULE || 'miniflare');
 const stage='http://localhost';
@@ -22,7 +23,7 @@ for(const split of [false,true])test('isolated webhook refills '+(split?'separat
  };
  const options={modules:true,scriptPath:'build/pdf-stage.mjs',compatibilityDate:'2026-05-01',host:'127.0.0.1',port:0,outboundService:stripeFixture,
    durableObjects:{PDF_ACCOUNTS:{className:'PdfAccount',useSQLite:true},PDF_BUDGET:{className:'PdfBudget',useSQLite:true}},d1Databases:{DB:'stripe-renewal-local'},
-   bindings:{PDF_STAGE:'isolated',PDF_STRIPE_TEST:'true',PDF_SPLIT_CREDITS:String(split),PDF_ENABLED:'true',COBRANCA:'simulacao',STAGING_ACCESS_TOKEN:gate,STRIPE_KEY:'rk_test_fixture',STRIPE_WEBHOOK_SECRET:secret,STRIPE_PRICE_MENSAL:MONTHLY_PRICE,STRIPE_PORTAL_CONFIG:'bpc_fixture'},
+   bindings:{PDF_STAGE:'isolated',PDF_STRIPE_TEST:'true',PDF_SPLIT_CREDITS:String(split),PDF_ENABLED:'true',COBRANCA:'simulacao',STAGING_ACCESS_TOKEN:gate,STRIPE_KEY:split?'rk_test_fixture':'rkcs_fixture',STRIPE_WEBHOOK_SECRET:secret,STRIPE_PRICE_MENSAL:MONTHLY_PRICE,STRIPE_PORTAL_CONFIG:'bpc_fixture'},
    serviceBindings:{ASSETS:async()=>new Response('isolated assets')}};
  const mf=new Miniflare(convertV4MiniflareOptions?convertV4MiniflareOptions(options):options);
  let cookie='';
@@ -46,6 +47,9 @@ for(const split of [false,true])test('isolated webhook refills '+(split?'separat
  const generate=(expected=200)=>call('/api/pdf/generate-text',{body:'Quiz de família',type:'text/plain',id:randomUUID(),expected});
  try {
    await mf.ready;
+   await call('/__staging/unlock',{body:{token:'invalid'},expected:401});
+   await call('/__staging/unlock',{body:{token:gate}});
+   assert.match(cookie,/^qd_stage=/);
    await event(first.billing.invoice,{sign:false,expected:401});
    await event(first.billing.invoice,{live:true,expected:400});
    await event({id:'in_bootstrap'});
@@ -113,4 +117,14 @@ test('split balances preserve old text debits after content deletion and preserv
    const status=ledger.status({start:1,end:100,invoice:'cycle'},10);
    assert.deepEqual([status.balances.text.remaining,status.balances.pdf.remaining],[3,1]);
  }finally{db.close();}
+});
+
+test('disposable Stripe key is restricted to explicitly isolated test billing',()=>{
+ const settings={STRIPE_KEY:'rkcs_fixture',COBRANCA:'simulacao',PDF_STAGE:'isolated',PDF_STRIPE_TEST:'true'};
+ assert.equal(stripeTestKey(settings),true);
+ for(const setting of ['COBRANCA','PDF_STAGE','PDF_STRIPE_TEST']){
+   assert.equal(stripeTestKey({...settings,[setting]:undefined}),false);
+ }
+ assert.equal(stripeTestKey({...settings,STRIPE_KEY:'rk_live_fixture'}),false);
+ assert.equal(stripeTestKey({STRIPE_KEY:'rk_test_fixture'}),true);
 });

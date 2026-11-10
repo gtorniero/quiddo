@@ -1,3 +1,4 @@
+import {stripeTestKey} from '../stripe-test-mode.mjs';
 import {MONTHLY_PRICE,paidEntitlement,PdfError,idOf} from './core.mjs';
 
 // Called only with the session identity forwarded by pdfRoute, never a client field.
@@ -14,7 +15,7 @@ export async function entitlementFromStripe(env,email,now=Date.now()) {
   const key=test?env.STRIPE_KEY:env.STRIPE_LIVE_KEY;
   const price=test?env.STRIPE_PRICE_MENSAL:MONTHLY_PRICE;
   // Test credentials are accepted only by the isolated Worker.
-  if (!env.DB || (test ? !/^price_[a-zA-Z0-9_]+$/.test(price||'') || !/^[sr]k_test_/.test(key||'')
+  if (!env.DB || (test ? !/^price_[a-zA-Z0-9_]+$/.test(price||'') || !stripeTestKey(env)
     : env.COBRANCA!=='ligada' || env.STRIPE_PRECO_MENSAL_ID!==price || !/^[sr]k_live_/.test(key||''))) {
     throw new PdfError('unavailable','A geração por PDF ainda não está disponível.',503);
   }

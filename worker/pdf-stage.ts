@@ -1,5 +1,6 @@
 // Separate entrypoint. No production payment routes, schedules, services, or databases.
 import {rotaCobranca} from './cobranca';
+import {stripeAmbiente} from './stripe-assinatura';
 import {rotaQuizzes} from './quizzes';
 import {rotaLogin,emailDaSessao} from './login';
 import {pdfRoute} from './pdf-quiz/route.mjs';
@@ -13,14 +14,18 @@ export default {
     if(env.PDF_STAGE!=='isolated' || env.COBRANCA!=='simulacao' || !env.STAGING_ACCESS_TOKEN)return json({erro:'Staging fechado.'},503);
     const url=new URL(req.url);
     if(env.PDF_STRIPE_TEST==='true' && url.pathname==='/api/stripe-webhook-test' && req.method==='POST') {
-      if(!/^[sr]k_test_/.test(env.STRIPE_KEY||'') || !env.STRIPE_WEBHOOK_SECRET) return json({erro:'Stripe de teste não configurado.'},503);
+      if(stripeAmbiente(env)!=='teste' || !env.STRIPE_WEBHOOK_SECRET) return json({erro:'Stripe de teste não configurado.'},503);
       // Stripe does not send a browser cookie or Origin. The real handler verifies the raw signature.
       return (await rotaCobranca(req,env,'/api/stripe-webhook'))!;
     }
     if(url.pathname==='/__staging/unlock' && req.method==='POST') {
       if(req.headers.get('origin')!==url.origin)return json({erro:'Origem inválida.'},403);
       let token='';try{token=String((await req.json() as any).token||'');}catch{}
-      if(await sha(token)!==await sha(env.STAGING_ACCESS_TOKEN))return url.pathname.startsWith('/api/')||url.pathname.startsWith('/__staging/') ? json({erro:'Acesso privado.'},401) : new Response(gate,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-robots-tag':'noindex, nofollow'}});
+      if(await sha(token)!==await sha(env.STAGING_ACCESS_TOKEN))return json({erro:'Acesso negado.'},401);
+      return json({ok:true},200,{'set-cookie':'qd_stage='+encodeURIComponent(token)+'; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=10800'});
+    }
+    const token=req.headers.get('Authorization')?.replace(/^Bearer /,'') || decodeURIComponent(req.headers.get('cookie')?.match(/(?:^|;\s*)qd_stage=([^;]*)/)?.[1]||'');
+    if(await sha(token)!==await sha(env.STAGING_ACCESS_TOKEN))return url.pathname.startsWith('/api/')||url.pathname.startsWith('/__staging/') ? json({erro:'Acesso privado.'},401) : new Response(gate,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-robots-tag':'noindex, nofollow'}});
     if(req.method==='POST' && req.headers.get('origin')!==url.origin)return json({erro:'Origem inválida.'},403);
     const login=await rotaLogin(req,env,url.pathname);if(login)return login;
     if(url.pathname==='/api/conta' && req.method==='GET')return json({email:await emailDaSessao(req,env)||null,acesso:null,assinatura:null,simulado:true});

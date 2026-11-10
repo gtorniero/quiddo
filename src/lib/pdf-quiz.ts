@@ -15,7 +15,7 @@ export function openPdfQuiz(onReview:(result:PdfResult)=>void|Promise<void>) {
   const $=<T extends HTMLElement>(s:string)=>dialog.querySelector<T>(s)!;
   const picker=$<HTMLInputElement>('[data-file]'), form=$<HTMLFormElement>('[data-pdf-form]'), message=$('[data-status]');
   const textForm=$<HTMLFormElement>('[data-text-form]'), briefing=$<HTMLTextAreaElement>('#qd-ia-briefing');
-  let file:File|null=null,hash='',busy=false,remaining=0,providerReady=false,version=0,objectURL='';
+  let file:File|null=null,hash='',busy=false,remaining=0,providerReady=false,version=0,objectURL='',pdfPromptVersion='';
   const controls=(disabled:boolean)=>dialog.querySelectorAll<HTMLButtonElement|HTMLInputElement|HTMLTextAreaElement>('button,input,textarea').forEach(x=>x.disabled=disabled);
   const refreshButtons=()=>dialog.querySelectorAll<HTMLButtonElement>('button[type=submit]').forEach(b=>b.disabled=busy||!remaining||!providerReady);
   for(const mode of dialog.querySelectorAll<HTMLButtonElement>('[data-mode]')) {
@@ -31,6 +31,7 @@ export function openPdfQuiz(onReview:(result:PdfResult)=>void|Promise<void>) {
   async function refresh() {
     try {
       const d=await api('status');
+      pdfPromptVersion=d.pdfPromptVersion||'';
       const admin=d.paidPeriod.kind==='administrator';
       remaining=admin?1:d.remaining;providerReady=d.providerReady===true;
       if(admin)$<HTMLButtonElement>('[data-mode="pdf"]').click();
@@ -92,7 +93,7 @@ export function openPdfQuiz(onReview:(result:PdfResult)=>void|Promise<void>) {
   form.onsubmit=event=>{
     event.preventDefault();if(!file)return;
     const pages=$<HTMLInputElement>('[data-pages]').value.trim();
-    void generate('generate?pages='+encodeURIComponent(pages),file,'application/pdf','quiddo-pdf-attempt:'+hash+':'+pages);
+    void generate('generate?pages='+encodeURIComponent(pages),file,'application/pdf','quiddo-pdf-attempt:'+hash+':'+pages+(pdfPromptVersion?':'+pdfPromptVersion:''));
   };
   textForm.onsubmit=async event=>{
     event.preventDefault();

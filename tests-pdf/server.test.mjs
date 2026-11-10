@@ -49,7 +49,7 @@ test('HTTP routes, real durable storage, quota, isolation, concurrency, renewal 
   const intruder=await user('other-owner');await seed(intruder,fixture());assert.equal((await call('/api/pdf/jobs/'+first,{cookie:intruder})).status,404);record('Other account cannot read saved delivery');
   const failure=await user('failures'),f=fixture({providerMode:'failure'});await seed(failure,f);const retryId=crypto.randomUUID();assert.equal((await generate(failure,retryId)).status,502);assert.equal((await status(failure)).data.remaining,2);
   f.providerMode='refusal';await seed(failure,f);assert.equal((await generate(failure,retryId)).status,422);assert.equal((await status(failure)).data.remaining,2);
-  f.providerMode='malformed';await seed(failure,f);assert.equal((await generate(failure,retryId)).status,502);assert.equal((await status(failure)).data.remaining,2);
+  f.providerMode='malformed';await seed(failure,f);const empty=await generate(failure,retryId);assert.equal(empty.status,422);assert.equal(empty.data.code,'insufficient_content');assert.equal((await status(failure)).data.remaining,2);
   f.providerMode='mock';await seed(failure,f);assert.equal((await generate(failure,retryId)).status,200);assert.equal((await status(failure)).data.remaining,1);
   record('Failure, refusal and invalid output debit zero; successful retry debits once');
   const race=await user('concurrent'),r=fixture();await seed(race,r);assert.equal((await generate(race)).status,200);r.providerMode='delayed';await seed(race,r);

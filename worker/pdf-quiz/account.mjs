@@ -1,6 +1,6 @@
 import {DurableObject} from 'cloudflare:workers';
 import {Ledger} from './ledger.mjs';
-import {entitlementFromStripe} from './entitlement.mjs';
+import {entitlementFromStripe,administratorEntitlement} from './entitlement.mjs';
 import {readPdf,selectPdf} from './pdf.mjs';
 import {MODEL,PROMPT_VERSION,TEXT_PROMPT_VERSION,MAX_BYTES,PdfError,json,sha,profile,paidEntitlement,requestBody,textRequestBody,readBriefing,resultText,validateQuiz,costFromUsage} from './core.mjs';
 
@@ -12,7 +12,7 @@ export class PdfAccount extends DurableObject {
       if (!settings?.billing) throw new PdfError('monthly_required','A conta de staging não tem um ciclo mensal pago simulado.',403);
       return paidEntitlement({...settings.billing,live:false},settings.now || Date.now());
     }
-    return entitlementFromStripe(this.env,email);
+    return administratorEntitlement(this.env,email) || entitlementFromStripe(this.env,email);
   }
   async fetch(req) {
     try { return await this.handle(req); }
@@ -57,6 +57,7 @@ export class PdfAccount extends DurableObject {
       return json({...this.ledger.status(ent,now),enabled:true,maxPages:50,maxBytes:MAX_BYTES,providerReady:simulated || funded,simulatedBilling:this.env.PDF_STAGE==='isolated'});
     }
     const isText=path==='/api/pdf/generate-text';
+    if(isText && ent.kind==='administrator')throw new PdfError('monthly_required','A geração por texto é exclusiva do Premium mensal.',403);
     if (!['/api/pdf/inspect','/api/pdf/generate','/api/pdf/generate-text'].includes(path) || req.method!=='POST')throw new PdfError('route','Não encontrado.',404);
     const parsed=isText?null:await readPdf(req);
     if(path==='/api/pdf/inspect')return json({pages:parsed.count,bytes:parsed.size,sha256:parsed.hash,maxBytes:MAX_BYTES});

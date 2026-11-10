@@ -156,6 +156,7 @@ function mountEditor(main: HTMLElement) {
         <span class="btn sec small filebtn">Importar arquivo<input type="file" id="imp" accept="application/json,.json" aria-label="Importar quiz em JSON"></span>
         <button class="btn sec small" data-act="exportar">Exportar este quiz</button>
       </div>
+      <p class="small"><a href="https://quiddo.com.br/criar?recuperar=1">Recuperar quizzes do endereço antigo</a></p>
       <p class="small" id="quiz-save-status" role="status" aria-live="polite">${esc(status.text)}</p>
       <button class="btn sec small" data-act="copia-conflito"${status.conflict ? '' : ' hidden'}>Salvar minha edição como cópia</button>
       <button class="btn sec small" data-act="retry-save"${status.retry ? '' : ' hidden'}>Tentar salvar novamente</button>

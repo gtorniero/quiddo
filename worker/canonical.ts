@@ -102,20 +102,26 @@ export async function canonicalResponse(req: Request, env: LoginEnv): Promise<Re
       ),
     );
   }
-  if (old && req.method === 'HEAD' && !url.pathname.startsWith('/api/'))
-    return new Response(null, { status: 308, headers: { Location: OFFICIAL + url.pathname + url.search } });
-  if (!old || req.method !== 'GET' || url.pathname.startsWith('/api/')) return null;
-  const headers = await compartilharSessao(req, env);
+  if (!old || !['GET', 'HEAD'].includes(req.method) || url.pathname.startsWith('/api/')) return null;
+  const recover = req.method === 'GET' && url.searchParams.get('recuperar') === '1';
+  if (url.searchParams.get('recuperar') === '1') url.searchParams.delete('recuperar');
+  const destination = url.pathname + url.search;
+  const target = OFFICIAL + destination;
+  const headers = req.method === 'GET' ? await compartilharSessao(req, env) : new Headers();
+  if (!recover) {
+    headers.set('Location', target);
+    headers.set('Cache-Control', 'no-store');
+    return new Response(null, { status: 308, headers });
+  }
   // Cross-origin form POST must retain its Origin for the destination's CSRF check.
   // Send only the origin, never the path, query, or draft content in the referrer.
   headers.set('Referrer-Policy', 'strict-origin');
-  const target = OFFICIAL + url.pathname + url.search;
   return html(
     page(
       '<h1>Leve seus quizzes com você</h1><p id="status" role="status">Procurando quizzes neste navegador…</p><form id="transfer" method="post" action="' +
         OFFICIAL +
         '/api/migrar-navegador" hidden><input type="hidden" name="dados" id="dados"><button>Continuar com meus quizzes</button></form><a class="backup" id="download" href="#" hidden>Baixar uma cópia de segurança</a><small id="transfer-note" hidden>Os originais continuam neste navegador. Depois de entrar, você pode escolher quais quizzes salvar na sua conta.</small>',
-      'const get=(k,d)=>{try{return JSON.parse(localStorage.getItem("sr:"+k)||"null")||d}catch{return d}};const quizzes=get("quizzes",[]),atual=get("atual",""),match=location.pathname.match(/^\\/host\\/([A-Z2-9]{4})$/),host=match?match[1]:"",hostKey=host?get("host:"+host,""):"",acesso=get("acesso","");const data={quizzes,atual,host,hostKey,acesso,acessoAte:get("acessoAte",""),volta:location.pathname+location.search+location.hash};if(!quizzes.length&&!hostKey&&!acesso)location.replace(' +
+      'const get=(k,d)=>{try{return JSON.parse(localStorage.getItem("sr:"+k)||"null")||d}catch{return d}};const quizzes=get("quizzes",[]),atual=get("atual",""),match=location.pathname.match(/^\\/host\\/([A-Z2-9]{4})$/),host=match?match[1]:"",hostKey=host?get("host:"+host,""):"",acesso=get("acesso","");const data={quizzes,atual,host,hostKey,acesso,acessoAte:get("acessoAte",""),volta:' + JSON.stringify(destination) + '+location.hash};if(!quizzes.length&&!hostKey&&!acesso)location.replace(' +
         JSON.stringify(target) +
         '+location.hash);else{document.getElementById("status").textContent=quizzes.length?"Você tem "+quizzes.length+(quizzes.length===1?" quiz salvo":" quizzes salvos")+" neste navegador. Leve "+(quizzes.length===1?"seu quiz":"seus quizzes")+" para www.quiddo.com.br.":"Leve seu acesso para www.quiddo.com.br.";if(!quizzes.length){document.querySelector("#transfer button").textContent="Continuar para o Quiddo";}document.getElementById("transfer").hidden=false;document.getElementById("dados").value=JSON.stringify(data);const link=document.getElementById("download");link.hidden=!quizzes.length;document.getElementById("transfer-note").hidden=!quizzes.length;link.href=URL.createObjectURL(new Blob([JSON.stringify({formato:"quiddo-backup/1",quizzes},null,2)],{type:"application/json"}));link.download="quiddo-backup-navegador.json";}',
     ),

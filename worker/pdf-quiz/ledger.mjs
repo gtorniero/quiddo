@@ -1,5 +1,5 @@
 import {LEASE_MS,PdfError} from './core.mjs';
-import {MONTHLY_AI_CREDITS,SHARED_AI_CREDITS} from '../../shared/ai-credits.mjs';
+import {SUBSCRIPTION_AI_CREDITS,LEGACY_SHARED_AI_CREDITS} from '../../shared/ai-credits.mjs';
 export class Ledger {
   constructor(storage,{split=false}={}) {
     this.split=split; this.storage=storage; this.sql=storage.sql;
@@ -28,14 +28,14 @@ export class Ledger {
     const rows=source?this.rows(base+category+' GROUP BY state',cycle,source,source):this.rows(base+' GROUP BY state',cycle);
     return {used:Number(rows.find(x=>x.state==='delivered')?.n||0),reserved:Number(rows.find(x=>x.state==='pending')?.n||0)};
   }
-  splitFor(ent) { return this.split && ent.plan==='mensal' && ent.kind!=='administrator'; }
+  splitFor(ent) { return this.split && ['mensal','anual'].includes(ent.plan) && ent.kind!=='administrator'; }
   status(ent,now) {
     return this.storage.transactionSync(()=>{
       this.expire(now);const cycle=this.cycle(ent);
       const balance=(source,limit)=>{const c=this.count(cycle.id,source);return {...c,remaining:Math.max(0,limit-c.used-c.reserved),limit};};
       const split=this.splitFor(ent);
-      const pdf=balance(split?'pdf':null,split?MONTHLY_AI_CREDITS.pdf:SHARED_AI_CREDITS);
-      return {...pdf,...(ent.kind==='administrator'?{remaining:null,limit:null}:{}),...(split?{balances:{pdf,text:balance('text',MONTHLY_AI_CREDITS.text)}}:{}),cycle:{id:cycle.id,start:cycle.start,end:cycle.end},paidPeriod:ent};
+      const pdf=balance(split?'pdf':null,split?SUBSCRIPTION_AI_CREDITS.pdf:LEGACY_SHARED_AI_CREDITS);
+      return {...pdf,...(ent.kind==='administrator'?{remaining:null,limit:null}:{}),...(split?{balances:{pdf,text:balance('text',SUBSCRIPTION_AI_CREDITS.text)}}:{}),cycle:{id:cycle.id,start:cycle.start,end:cycle.end},paidPeriod:ent};
     });
   }
   reserve(id,fingerprint,ent,now,source='pdf') {
@@ -48,7 +48,7 @@ export class Ledger {
       if (existing && existing.cycle!==cycle.id) throw new PdfError('cycle_changed','O ciclo mudou. Inicie uma nova tentativa.',409);
       const split=this.splitFor(ent);
       const c=this.count(cycle.id,split?source:null);
-      const limit=split?MONTHLY_AI_CREDITS[source]:SHARED_AI_CREDITS;
+      const limit=split?SUBSCRIPTION_AI_CREDITS[source]:LEGACY_SHARED_AI_CREDITS;
       if (ent.kind!=='administrator' && c.used+c.reserved>=limit) {
         const message=split?'Os créditos de '+(source==='text'?'texto':'PDF')+' deste ciclo já foram usados ou estão em processamento.':'Os três créditos deste ciclo já foram usados ou estão em processamento.';
         throw new PdfError('quota',message,429);

@@ -116,6 +116,8 @@ Mesmo modelo do Retrozap. Os planos estão em `/precos`:
 
 Na assinatura, o período pago vale até o fim: cancelar só impede a próxima renovação. O preço no Stripe tem que ser igual ao do site (o servidor confere e recusa se não bater).
 
+**É uma única assinatura Premium, com exatamente os mesmos benefícios no Mensal e no Anual.** Os dois incluem salas de até 200 pessoas, jogos ilimitados e, a cada mês, 5 créditos de texto e 2 de PDF em saldos separados, sem acúmulo. No Anual, a cota renova mensalmente durante o ano já pago, sem nova cobrança. Só mudam o preço e a frequência de pagamento. A cota comum é definida em `shared/ai-credits.mjs`.
+
 **Janela de pagamento:** só os planos, o e-mail, os botões de pagar, "Continuar grátis, até 10 pessoas" (fecha a janela) e o link "Dúvidas? Veja as perguntas frequentes" (abre `/precos#perguntas` em outra aba). Regras de renovação e devolução ficam nas perguntas frequentes, não na janela.
 
 **Oferta da sala cheia:** quando alguém tenta entrar na sala grátis cheia, o celular dessa pessoa fica esperando (e entra sozinho quando liberar) e a tela do anfitrião mostra no topo quantos estão esperando, com o Passe 7 dias de R$ 12,99 por R$ 9,99 (`PRECO_OFERTA`), só no Pix. O servidor confere na própria sala: chave do anfitrião, sala grátis e gente esperando.

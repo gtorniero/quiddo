@@ -176,7 +176,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
           <span class="pg-plano-preco">R$ ${esc(p.preco.replace(/,00$/, ''))}${p.id === 'mensal' ? '<small>/mês</small>' : p.id === 'anual' ? '<small>/ano</small>' : ''}</span>
           <span class="pg-plano-txt">${
             p.id === 'anual'
-              ? `<small class="pg-vantagem">mais vantagem</small> Sai por R$ ${esc((Number(p.preco.replace(',', '.')) / 12).toFixed(2).replace('.', ',').replace(/,00$/, ''))} por mês.`
+              ? `<small class="pg-vantagem">economia anual</small> Sai por R$ ${esc((Number(p.preco.replace(',', '.')) / 12).toFixed(2).replace('.', ',').replace(/,00$/, ''))} por mês.`
               : p.id === 'mensal'
                 ? 'Cobrança mensal, renova a cada mês.'
                 : '<small class="pg-avulso">avulso</small> Para um evento: 7 dias.'
@@ -187,6 +187,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
       <p class="muted">A sala grátis vai até ${c.gratis} pessoas. Liberado, até ${c.pago}, quantos jogos quiser.</p>
       <form class="pg-form" data-pg-form novalidate>
         <fieldset class="pg-planos"><legend>Escolha o plano</legend>${opcoes}</fieldset>
+        <p class="small">Mensal e Anual são a mesma assinatura, com os mesmos benefícios.</p>
         ${
           logado()
             ? `<p class="small">O plano fica na sua conta, <b>${esc(logado())}</b>.</p><input type="hidden" id="pg-email" value="${esc(logado())}">`

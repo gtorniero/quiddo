@@ -1,6 +1,8 @@
 # PDF no Quiddo — ativação e validação
 
-A geração exige sessão real e assinatura mensal Stripe paga no ciclo vigente. Dois créditos por ciclo, reserva idempotente e isolamento por conta. Anual, cortesia e cobrança não paga não dão acesso. Bases existentes são preservadas; credenciais ficam somente no servidor.
+> Registro histórico. A elegibilidade e as cotas atuais estão em [benefícios da assinatura](beneficios-assinatura.md): Mensal e Anual têm os mesmos benefícios, com 5 textos + 2 PDFs por mês.
+
+A geração exigia sessão real e assinatura mensal Stripe paga no ciclo vigente. Dois créditos por ciclo, reserva idempotente e isolamento por conta. Naquela versão, Anual, cortesia e cobrança não paga não davam acesso. Bases existentes são preservadas; credenciais ficam somente no servidor.
 
 O limite de oito chamadas do piloto foi substituído por teto persistente de US$1, sem reinício em deploy ou renovação. Reserva conservadora antes da chamada; custo desconhecido mantém a reserva. Limites inválidos falham fechados e valores acima de US$1 são limitados a US$1. Não há compra nem recarga automática por esta integração.
 

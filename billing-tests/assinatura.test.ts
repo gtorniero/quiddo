@@ -29,18 +29,18 @@ it.each(['mensal','anual'])('signed %s webhook bridges paid identity to shared A
  }},transactionSync:(fn:()=>any)=>{sqlite.exec('BEGIN');try{const result=fn();sqlite.exec('COMMIT');return result;}catch(e){sqlite.exec('ROLLBACK');throw e;}}};
  const ledger=new Ledger(storage);
  const ent=await entitlementFromStripe(env,EMAIL);
- expect(ledger.status(ent,Date.now()).remaining).toBe(2);
- for(const source of ['pdf','text']){
+ expect(ledger.status(ent,Date.now()).remaining).toBe(3);
+ for(const source of ['pdf','text','pdf-third']){
   const reservation=ledger.reserve(source,source,ent,Date.now());
   ledger.complete(reservation,{source},await entitlementFromStripe(env,EMAIL),Date.now());
  }
  expect(ledger.status(ent,Date.now()).remaining).toBe(0);
  await webhook('invoice.paid',invoice,true);
  expect(ledger.status(await entitlementFromStripe(env,EMAIL),Date.now()).remaining).toBe(0);
- expect(()=>ledger.reserve('third','third',ent,Date.now())).toThrow();
+ expect(()=>ledger.reserve('fourth','fourth',ent,Date.now())).toThrow();
  expect(ledger.reserve('text','text',ent,Date.now()).replay.result).toEqual({source:'text'});
  await expect(entitlementFromStripe(env,'other@example.com')).rejects.toMatchObject({status:403});
- if(plan==='anual'){vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(ent.end+1000);const mid=await entitlementFromStripe(env,EMAIL);expect(mid.invoice).toBe(ent.invoice);expect(ledger.status(mid,Date.now()).remaining).toBe(2);}
+ if(plan==='anual'){vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(ent.end+1000);const mid=await entitlementFromStripe(env,EMAIL);expect(mid.invoice).toBe(ent.invoice);expect(ledger.status(mid,Date.now()).remaining).toBe(3);}
  const start=sub.items.data[0].current_period_end,end=start+(plan==='anual'?365:30)*86400;
  Object.assign(sub.items.data[0],{current_period_start:start,current_period_end:end});
  Object.assign(invoice,{id:'in_next',status:'open',amount_paid:0});
@@ -51,11 +51,11 @@ it.each(['mensal','anual'])('signed %s webhook bridges paid identity to shared A
  Object.assign(invoice,{status:'paid',amount_paid:plan==='anual'?15600:1599});sub.status='active';
  expect((await webhook('invoice.paid',invoice,true))!.status).toBe(200);
  const next=await entitlementFromStripe(env,EMAIL);
- expect(ledger.status(next,Date.now()).remaining).toBe(2);
- expect(ledger.history()).toHaveLength(2);
+ expect(ledger.status(next,Date.now()).remaining).toBe(3);
+ expect(ledger.history()).toHaveLength(3);
  sub.cancel_at_period_end=true;
  await webhook('customer.subscription.updated',sub,true);
- expect(ledger.status(await entitlementFromStripe(env,EMAIL),Date.now()).remaining).toBe(2);
+ expect(ledger.status(await entitlementFromStripe(env,EMAIL),Date.now()).remaining).toBe(3);
  sub.status='canceled';await webhook('customer.subscription.deleted',sub,true);
  await expect(entitlementFromStripe(env,EMAIL)).rejects.toMatchObject({status:403});
  expect(apiCalls.every(c=>c.method==='GET')).toBe(true);

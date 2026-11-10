@@ -57,7 +57,6 @@ export class PdfAccount extends DurableObject {
       return json({...this.ledger.status(ent,now),enabled:true,pdfPromptVersion:PROMPT_VERSION,maxPages:50,maxBytes:MAX_BYTES,providerReady:simulated || funded,simulatedBilling:this.env.PDF_STAGE==='isolated'});
     }
     const isText=path==='/api/pdf/generate-text';
-    if(isText && ent.kind==='administrator')throw new PdfError('monthly_required','A geração por texto é exclusiva do Premium.',403);
     if (!['/api/pdf/inspect','/api/pdf/generate','/api/pdf/generate-text'].includes(path) || req.method!=='POST')throw new PdfError('route','Não encontrado.',404);
     const parsed=isText?null:await readPdf(req);
     if(path==='/api/pdf/inspect')return json({pages:parsed.count,bytes:parsed.size,sha256:parsed.hash,maxBytes:MAX_BYTES});

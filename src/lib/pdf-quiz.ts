@@ -36,10 +36,10 @@ export function openPdfQuiz(onReview:(result:PdfResult)=>void|Promise<void>) {
       const d=await api('status');
       pdfPromptVersion=d.pdfPromptVersion||'';
       const admin=d.paidPeriod.kind==='administrator';
-      remaining=d.balances ? {pdf:d.balances.pdf.remaining,text:d.balances.text.remaining} : {pdf:admin?1:d.remaining,text:d.remaining};
+      const sharedRemaining=admin?1:d.remaining;
+      remaining=d.balances ? {pdf:d.balances.pdf.remaining,text:d.balances.text.remaining} : {pdf:sharedRemaining,text:sharedRemaining};
       providerReady=d.providerReady===true;
-      if(admin)$<HTMLButtonElement>('[data-mode="pdf"]').click();
-      $('.qd-ia-modos').hidden=admin;
+      $('.qd-ia-modos').hidden=false;
       $('[data-shared-balance]').hidden=admin||!!d.balances;
       $('.tag').textContent=admin?'Administrador':'Premium';
       $('[data-balance]').textContent=admin?'Acesso de administrador':d.balances

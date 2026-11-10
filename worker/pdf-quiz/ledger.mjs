@@ -50,7 +50,7 @@ export class Ledger {
       const c=this.count(cycle.id,split?source:null);
       const limit=split?MONTHLY_AI_CREDITS[source]:SHARED_AI_CREDITS;
       if (ent.kind!=='administrator' && c.used+c.reserved>=limit) {
-        const message=split?'Os créditos de '+(source==='text'?'texto':'PDF')+' deste ciclo já foram usados ou estão em processamento.':'Os dois créditos deste ciclo já foram usados ou estão em processamento.';
+        const message=split?'Os créditos de '+(source==='text'?'texto':'PDF')+' deste ciclo já foram usados ou estão em processamento.':'Os três créditos deste ciclo já foram usados ou estão em processamento.';
         throw new PdfError('quota',message,429);
       }
       const attempt=crypto.randomUUID();

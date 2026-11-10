@@ -20,4 +20,8 @@ Esse ensaio utilizou o ambiente isolado da PR65 e geração de IA simulada. O v�
 
 Nenhuma cobrança real, consumo pago de IA ou compra de créditos foi realizado nesta validação. O Anual, as falhas de pagamento e os controles de autorização foram cobertos pelos testes isolados; a renovação externa via Stripe foi mensal. Evidências detalhadas e identificadores ficam no registro privado da operação, sem segredos no repositório.
 
-Publicação: fluxo existente do Quiddo na Cloudflare. GitHub Pages permanece desativado.
+## Prévia e publicação
+
+O fluxo existente da Cloudflare usa `wrangler preview` nas branches. O bloco `previews` ausente impedia essa validação, embora a compilação passasse. A configuração agora usa um banco vazio exclusivo de prévias e Durable Objects isolados automaticamente pela Cloudflare. As tabelas locais do aplicativo são inicializadas sob demanda. Bancos comerciais de promoções, serviços de produção, preços Stripe e segredos não são copiados. Cobrança simulada, IA paga e administração desativadas, sem envio de eventos de publicidade.
+
+A publicação de produção continua usando os recursos e configurações comerciais existentes no nível principal. Validar a prévia antes de integrar esta correção. GitHub Pages permanece desativado.

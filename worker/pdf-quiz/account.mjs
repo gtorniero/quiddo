@@ -54,7 +54,7 @@ export class PdfAccount extends DurableObject {
     if(path==='/api/pdf/status' && req.method==='GET') {
       const simulated=this.env.PDF_STAGE==='isolated' && !!settings && settings.providerMode!=='real';
       const funded=!!this.env.OPENAI_API_KEY && (await this.env.PDF_BUDGET.get(this.env.PDF_BUDGET.idFromName('test-budget-20261107')).summary()).available;
-      return json({...this.ledger.status(ent,now),enabled:true,maxPages:50,maxBytes:MAX_BYTES,providerReady:simulated || funded,simulatedBilling:this.env.PDF_STAGE==='isolated'});
+      return json({...this.ledger.status(ent,now),enabled:true,pdfPromptVersion:PROMPT_VERSION,maxPages:50,maxBytes:MAX_BYTES,providerReady:simulated || funded,simulatedBilling:this.env.PDF_STAGE==='isolated'});
     }
     const isText=path==='/api/pdf/generate-text';
     if(isText && ent.kind==='administrator')throw new PdfError('monthly_required','A geração por texto é exclusiva do Premium mensal.',403);

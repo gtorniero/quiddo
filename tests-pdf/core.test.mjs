@@ -55,3 +55,15 @@ test('briefing supports a short theme and text-only structured output without fa
  assert.equal(question.a[question.c],quiz.questions[0].answer);
  assert.throws(()=>validateQuiz(quiz,[2]),{code:'invalid_result'});
 });
+
+test('rejects mixed-script corruption without silently rewriting answers',()=>{
+ const q=fixture().quiz;
+ q.questions[0].options[0]='Reduzir fragmentação sem substituir as人';q.questions[0].answer=q.questions[0].options[0];
+ assert.throws(()=>validateQuiz(q,[2]),e=>e.code==='invalid_result'&&e.fields.includes('questions.0.mixed_script'));
+ const normal=fixture().quiz;normal.questions[0].options[0]='Atender João e famílias com atenção';normal.questions[0].answer=normal.questions[0].options[0];
+ assert.equal(validateQuiz(normal,[2]).items.length,1);
+});
+test('unreadable PDF reports insufficient content and preserves credit; text behavior unchanged',()=>{
+ assert.throws(()=>validateQuiz({title:'Documento ilegível',questions:[]},[1]),e=>e.code==='insufficient_content'&&e.status===422);
+ assert.throws(()=>validateQuiz({title:'Tema',questions:[]}),{code:'invalid_result'});
+});

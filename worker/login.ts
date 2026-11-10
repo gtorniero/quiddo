@@ -155,14 +155,34 @@ export async function rotaLogin(req: Request, env: LoginEnv, caminho: string): P
     const token = [...crypto.getRandomValues(new Uint8Array(32))].map((b) => b.toString(16).padStart(2, '0')).join('');
     await db.prepare('INSERT INTO sessoes (token, email, criado, expira, simulado) VALUES (?, ?, ?, ?, ?)').bind(await resumo(token), email, agora, agora + SESSAO_S * 1000, loginSimulado(env) ? 1 : 0).run();
     await db.prepare('DELETE FROM sessoes WHERE expira < ?').bind(agora).run();
-    return json({ ok: true, email }, 200, { 'set-cookie': `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSAO_S}` });
+    const official = ['quiddo.com.br', 'www.quiddo.com.br'].includes(new URL(req.url).hostname);
+    const value = `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; ${official ? 'Domain=quiddo.com.br; ' : ''}Max-Age=${SESSAO_S}`;
+    if (!official) return json({ ok: true, email }, 200, { 'set-cookie': value });
+    // Clear the old host-only cookie first; then issue the shared-domain session.
+    const response = json({ ok: true, email }, 200, { 'set-cookie': `${COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0` });
+    response.headers.append('set-cookie', value);
+    return response;
   }
 
   // POST /api/sair: fecha a sessão
   if (caminho === '/api/sair') {
     const token = cookieDe(req);
     if (token) await db.prepare('DELETE FROM sessoes WHERE token = ?').bind(await resumo(token)).run();
-    return json({ ok: true }, 200, { 'set-cookie': `${COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0` });
+    const response = json({ ok: true }, 200, { 'set-cookie': `${COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0` });
+    if (['quiddo.com.br', 'www.quiddo.com.br'].includes(new URL(req.url).hostname)) response.headers.append('set-cookie', `${COOKIE}=; Domain=quiddo.com.br; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+    return response;
   }
   return null;
+}
+
+/** Promote a valid old host-only session without exposing its token to page scripts. */
+export async function compartilharSessao(req: Request, env: LoginEnv): Promise<Headers> {
+ const headers=new Headers();
+ if(new URL(req.url).hostname!=='quiddo.com.br'||!env.DB||!(await emailDaSessao(req,env)))return headers;
+ const token=cookieDe(req);
+ const row=await env.DB.prepare('SELECT expira FROM sessoes WHERE token=?').bind(await resumo(token)).first<{expira:number}>();
+ if(!row)return headers;
+ headers.append('set-cookie',`${COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+ headers.append('set-cookie',`${COOKIE}=${token}; Domain=quiddo.com.br; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${Math.max(0,Math.floor((row.expira-Date.now())/1000))}`);
+ return headers;
 }

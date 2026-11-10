@@ -1,4 +1,5 @@
 import {probeMeta} from './meta-probe.mjs';
+import {servicePayments} from './btw-payments.mjs';
 import {runMeta,metaRoute} from './meta-adapter.mjs';
 // Worker: serve os arquivos do site e a API das salas.
 //   POST /api/salas              abre uma sala (corpo: CreateRoomBody) → { code, hostKey }
@@ -14,6 +15,8 @@ import { CODE_RE, LIMITS, normalizeCode, randomCode, validateCreate } from '../s
 import { cobrancaVale, codigoValido, rotaCobranca } from './cobranca';
 import { anotaUso, rotaUso } from './uso';
 import { rotaLogin } from './login';
+import { canonicalResponse } from './canonical';
+import { rotaQuizzes } from './quizzes';
 import type { Env } from './room';
 
 export { Room } from './room';
@@ -26,6 +29,9 @@ const app = {
     const url = new URL(req.url);
     const parts = url.pathname.split('/').filter(Boolean); // ['api', 'salas', 'ABCD', 'ws']
 
+    const canonical = await canonicalResponse(req, env);
+    if (canonical) return canonical;
+
     if (parts[0] !== 'api') return env.ASSETS.fetch(req);
 
     if(url.pathname==='/api/btw/promos')return servicePromos(req,env);
@@ -37,6 +43,8 @@ const app = {
     // login sem senha (código por e-mail)
     const login = await rotaLogin(req, env, url.pathname);
     if (login) return login;
+    const quizzes = await rotaQuizzes(req, env, url.pathname);
+    if (quizzes) return quizzes;
     // cobrança: Pix, cartão/Apple Pay/Google Pay e conferência do código de acesso
     const cob = await rotaCobranca(req, env, url.pathname, async (sala, hostKey) => {
       const code = normalizeCode(sala);
@@ -75,4 +83,4 @@ const app = {
   },
 } satisfies ExportedHandler<Env>;
 
-export default {...app,async fetch(...args:Parameters<typeof app.fetch>){const route=await metaRoute(args[0],args[1]);if(route)return route;const response=await app.fetch(...args);args[2].waitUntil(runMeta(args[1]));return response},async scheduled(_event:unknown,env:Env,ctx:ExecutionContext){ctx.waitUntil(Promise.all([runMeta(env),probeMeta(env,'quiddo')]))}};
+export default {...app,async fetch(...args:Parameters<typeof app.fetch>){if(new URL(args[0].url).pathname==='/api/btw/payments')return servicePayments(args[0],args[1]);const route=await metaRoute(args[0],args[1]);if(route)return route;const response=await app.fetch(...args);args[2].waitUntil(runMeta(args[1]));return response},async scheduled(_event:unknown,env:Env,ctx:ExecutionContext){ctx.waitUntil(Promise.all([runMeta(env),probeMeta(env,'quiddo')]))}};

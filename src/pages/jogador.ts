@@ -29,6 +29,8 @@ export function page(code: string): Page {
 }
 
 function mount(main: HTMLElement, code: string) {
+  const measureState = gameMeasurement('player');
+  let measuredJoinAttempt = false;
   let seat = store.get<Seat | null>('jog:' + code, null);
   let sock: RoomSocket | null = null;
   let s: PlayerState | null = null;
@@ -103,6 +105,7 @@ function mount(main: HTMLElement, code: string) {
   }
 
   function connect() {
+    if (!measuredJoinAttempt) { measuredJoinAttempt = true; void track('join_room_start', {role:'player'}); }
     main.innerHTML = `<section class="panel center"><p class="muted dots">Entrando na sala ${code}</p></section>`;
     const me = seat!;
     sock = new RoomSocket({
@@ -116,6 +119,7 @@ function mount(main: HTMLElement, code: string) {
 
   function onMessage(m: ServerMsg) {
     if (m.type === 'error' || m.type === 'kicked' || m.type === 'closed') {
+      if (!s) void track('join_room_error', {role:'player',error_category:'rejected'});
       const c = m.type === 'error' ? m.code : m.type === 'closed' && m.motivo === 'inativa' ? 'inativa' : m.type;
       banner('');
       if (c === 'bad_nick') {
@@ -136,6 +140,7 @@ function mount(main: HTMLElement, code: string) {
     esperandoVaga = false;
     const prev = s;
     s = m;
+    measureState({phase:s.phase,qIndex:s.qIndex,answered:s.me.choice != null});
     applyTheme(s.theme, s.brand.color, s.visual);
     if (s.me.choice != null || s.phase !== 'question') sending = null;
     if (s.phase === 'final' && s.drawn.length && (!prev || prev.drawn.length < s.drawn.length)) {
@@ -415,3 +420,5 @@ function mount(main: HTMLElement, code: string) {
     main.removeEventListener('click', onClick);
   };
 }
+import { track } from '../lib/measurement';
+import { gameMeasurement } from '../lib/game-measurement';

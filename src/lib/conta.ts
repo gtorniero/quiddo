@@ -7,15 +7,18 @@ export interface Assinatura { status: string; renova: boolean; ate: string; test
 export const logado = () => store.get<string>('logado', '');
 
 /** Pergunta ao servidor quem está logado e traz o plano do e-mail para este navegador. */
-export async function sincronizaConta(): Promise<{ email: string | null; acesso: Acesso | null; assinatura?: Assinatura | null }> {
+export async function sincronizaConta(): Promise<{ email: string | null; acesso: Acesso | null; assinatura?: Assinatura | null; confirmada?: boolean }> {
   try {
-    const r = await fetch('/api/conta');
+    const r = await fetch('/api/conta', { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) throw new Error('conta_indisponivel');
+    const previousEmail = logado();
     const d = (await r.json()) as { email: string | null; acesso: Acesso | null; assinatura?: Assinatura | null };
     if (d.email) store.set('logado', d.email);
     else store.del('logado');
     if (d.acesso) guardaAcesso(d.acesso);
     else if (d.email) { store.del('acesso'); store.del('acessoAte'); }
-    return d;
+    if (previousEmail !== (d.email || '')) window.dispatchEvent(new Event('qd:account'));
+    return { ...d, confirmada: true };
   } catch {
     return { email: logado() || null, acesso: null };
   }
@@ -26,4 +29,5 @@ export async function sair() {
   store.del('logado');
   store.del('acesso');
   store.del('acessoAte');
+  window.dispatchEvent(new Event('qd:account-out'));
 }

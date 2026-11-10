@@ -1,6 +1,7 @@
 // Roteador da aplicação. Cada página monta o <main> e devolve uma função de limpeza.
 import './styles.css';
-import { initMeasurement, measurePage } from './lib/measurement';
+import { initMeasurement, measurePage, track } from './lib/measurement';
+import { publicPath } from './lib/measurement-policy';
 import * as privacidade from './pages/privacidade';
 
 // o endereço provisório da Cloudflare leva para o domínio oficial, no mesmo caminho
@@ -100,8 +101,8 @@ function render() {
   document.title = page.title === 'Quiddo' ? 'Quiddo · Quizz do seu jeito' : `${page.title} · Quiddo`;
   metas(page);
   main.innerHTML = '';
-  cleanup = page.mount(main);
   measurePage(location.pathname);
+  cleanup = page.mount(main);
 }
 
 window.addEventListener('sr:nav', (e) => {
@@ -115,6 +116,8 @@ document.addEventListener('click', (e) => {
   const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[data-link]');
   if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
   e.preventDefault();
+  const destination = publicPath(new URL(a.href, location.origin).pathname);
+  if (destination) void track('navigation', {destination});
   navigate(a.getAttribute('href')!);
 });
 window.addEventListener('popstate', render);
@@ -122,3 +125,9 @@ initMeasurement();
 render();
 // quem entrou na conta traz o plano comprado em outro aparelho (a página de conta faz isso sozinha)
 if (logado() && location.pathname !== '/conta') sincronizaConta();
+
+if (import.meta.env.DEV) {
+ const testBadge=document.createElement('aside');testBadge.textContent='TESTE LOCAL · dados fictícios · nada é cobrado';testBadge.style.cssText='position:fixed;bottom:8px;right:8px;background:#ffe092;color:#16392e;padding:8px 14px;border:2px solid #16392e;border-radius:12px;z-index:9999;font:13px system-ui';document.body.appendChild(testBadge);
+}
+
+window.addEventListener('qd:account', () => header(location.pathname, route(location.pathname).compact));

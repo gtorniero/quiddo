@@ -16,6 +16,15 @@ const seed=(cookie,s)=>call('/__staging/fixture',{cookie,body:s});
 const status=cookie=>call('/api/pdf/status',{cookie});
 const generate=(cookie,id=crypto.randomUUID(),pages='2-51',bytes=pdf,extra={})=>call('/api/pdf/generate?pages='+encodeURIComponent(pages),{cookie,body:bytes,headers:{'content-type':'application/pdf','idempotency-key':id,...extra}});
 function record(name,details){evidence.cases.push({name,passed:true,...details});}
+function annualFixture(){
+  const annual=fixture(), annualPrice='price_1UXtqY134hMOoEZVGgIdzQ7a';
+  const item=annual.billing.subscription.items.data[0],line=annual.billing.invoice.lines.data[0];
+  annual.billing.expectedPrice=annualPrice;
+  item.price.id=annualPrice;item.price.unit_amount=15600;item.price.recurring.interval='year';
+  item.current_period_end=item.current_period_start+365*86400;
+  annual.billing.invoice.amount_paid=15600;line.amount=15600;line.pricing.price_details.price=annualPrice;line.period.end=item.current_period_end;
+  return annual;
+}
 
 test('HTTP routes, real durable storage, quota, isolation, concurrency, renewal and failures',async()=>{
  const options={modules:true,scriptPath:'build/pdf-stage.mjs',compatibilityDate:'2026-05-01',host:'127.0.0.1',port:0,
@@ -116,12 +125,7 @@ test('HTTP routes, real durable storage, quota, isolation, concurrency, renewal 
   await seed(textOwner,renew(fixture()));
   assert.equal((await status(textOwner)).data.remaining,3);
   record('Text and PDF share quota; text-only history and replay; invalid input and output cost no credits');
-  const annual=fixture(), annualPrice='price_1UXtqY134hMOoEZVGgIdzQ7a';
-  const item=annual.billing.subscription.items.data[0],line=annual.billing.invoice.lines.data[0];
-  annual.billing.expectedPrice=annualPrice;
-  item.price.id=annualPrice;item.price.unit_amount=15600;item.price.recurring.interval='year';
-  item.current_period_end=item.current_period_start+365*86400;
-  annual.billing.invoice.amount_paid=15600;line.amount=15600;line.pricing.price_details.price=annualPrice;line.period.end=item.current_period_end;
+  const annual=annualFixture();
   const annualOwner=await user('annual-owner');await seed(annualOwner,annual);
   const annualStatus=await status(annualOwner);assert.equal(annualStatus.data.remaining,3);
   assert.equal((await generate(annualOwner)).status,200);
@@ -141,3 +145,71 @@ test('HTTP routes, real durable storage, quota, isolation, concurrency, renewal 
   evidence.finished=new Date().toISOString();if(process.env.PDF_TEST_EVIDENCE)await fs.writeFile(process.env.PDF_TEST_EVIDENCE,JSON.stringify(evidence,null,2)+'\n');await mf?.dispose();
  }
 },{timeout:120000});
+
+test('the production split flag affects the monthly plan only',async()=>{
+ const options={modules:true,scriptPath:'build/pdf-stage.mjs',compatibilityDate:'2026-05-01',host:'127.0.0.1',port:0,
+  durableObjects:{PDF_ACCOUNTS:{className:'PdfAccount',useSQLite:true},PDF_BUDGET:{className:'PdfBudget',useSQLite:true}},d1Databases:{DB:'pdf-monthly-split-test'},
+  bindings:{PDF_STAGE:'isolated',PDF_ENABLED:'true',PDF_SPLIT_CREDITS:'true',COBRANCA:'simulacao',STAGING_ACCESS_TOKEN:gate,PDF_BUDGET_USD:'4'},
+  serviceBindings:{ASSETS:async()=>new Response('isolated assets')}};
+ mf=new Miniflare(convertV4MiniflareOptions ? convertV4MiniflareOptions(options) : options);
+ const text=(cookie,id=crypto.randomUUID())=>call('/api/pdf/generate-text',{cookie,body:'Quiz em família',headers:{'content-type':'text/plain','idempotency-key':id}});
+ const balances=async cookie=>{const r=await status(cookie);assert.equal(r.status,200);return [r.data.balances.text.remaining,r.data.balances.pdf.remaining];};
+ try{
+  await mf.ready;
+  const monthly=await user('monthly-split'), start=fixture();
+  assert.equal((await seed(monthly,start)).status,200);
+  assert.deepEqual(await balances(monthly),[5,2]);
+  const firstId=crypto.randomUUID();
+  assert.equal((await text(monthly,firstId)).status,200);
+  for(let i=0;i<4;i++)assert.equal((await text(monthly)).status,200);
+  assert.equal((await text(monthly)).status,429);
+  assert.equal((await text(monthly,firstId)).data.replayed,true);
+  assert.deepEqual(await balances(monthly),[0,2]);
+  for(let i=0;i<2;i++)assert.equal((await generate(monthly,crypto.randomUUID(),'2',pdf)).status,200);
+  assert.equal((await generate(monthly,crypto.randomUUID(),'2',pdf)).status,429);
+  assert.deepEqual(await balances(monthly),[0,0]);
+  assert.equal((await seed(monthly,renew(start))).status,200);
+  assert.deepEqual(await balances(monthly),[5,2]);
+
+  const annual=await user('annual-split-flag');
+  assert.equal((await seed(annual,annualFixture())).status,200);
+  const initialAnnual=await status(annual);
+  assert.equal(initialAnnual.data.balances,undefined);
+  assert.equal(initialAnnual.data.remaining,3);
+  assert.equal((await text(annual)).status,200);
+  assert.equal((await generate(annual,crypto.randomUUID(),'2',pdf)).status,200);
+  assert.equal((await status(annual)).data.remaining,1);
+  assert.equal((await text(annual)).status,200);
+  assert.equal((await status(annual)).data.remaining,0);
+  assert.equal((await text(annual)).status,429);
+ }finally{await mf.dispose();}
+},{timeout:120000});
+
+test('legacy jobs keep their debits when the monthly split activates',async()=>{
+ const {DatabaseSync}=await import('node:sqlite');
+ const {Ledger}=await import('../worker/pdf-quiz/ledger.mjs');
+ const db=new DatabaseSync(':memory:');
+ try{
+  db.exec("CREATE TABLE pdf_jobs (id TEXT PRIMARY KEY,fingerprint TEXT NOT NULL,cycle TEXT NOT NULL,state TEXT NOT NULL,attempt TEXT NOT NULL,lease INTEGER NOT NULL,result TEXT,error TEXT,created INTEGER NOT NULL)");
+  db.exec("CREATE TABLE pdf_attempts (id TEXT PRIMARY KEY,job TEXT NOT NULL,detail TEXT NOT NULL)");
+  const insert=db.prepare("INSERT INTO pdf_jobs VALUES (?,?,'1-100',?,?,90,?,NULL,1)");
+  insert.run('pdf','pdf','delivered','a-pdf',JSON.stringify({title:'PDF'}));
+  insert.run('text','text','delivered','a-text',JSON.stringify({source:'text'}));
+  insert.run('deleted','deleted','delivered','a-deleted',JSON.stringify({deleted:true}));
+  insert.run('in-flight','in-flight','pending','a-pending',null);
+  db.prepare('INSERT INTO pdf_attempts VALUES (?,?,?)').run('a-deleted','deleted',JSON.stringify({source:'text'}));
+  const ledger=new Ledger({sql:{exec(query,...params){
+   const statement=db.prepare(query);
+   if(/^(SELECT|PRAGMA)\b/i.test(query))return statement.all(...params);
+   statement.run(...params);return [];
+  }},transactionSync(fn){
+   db.exec('BEGIN');
+   try{const result=fn();db.exec('COMMIT');return result;}
+   catch(error){db.exec('ROLLBACK');throw error;}
+  }},{split:true});
+  const ent={start:1,end:100,invoice:'cycle',plan:'mensal'};
+  const balance=now=>{const s=ledger.status(ent,now);return [s.balances.text.remaining,s.balances.pdf.remaining];};
+  assert.deepEqual(balance(10),[2,0]);
+  assert.deepEqual(balance(91),[3,1]);
+ }finally{db.close();}
+});

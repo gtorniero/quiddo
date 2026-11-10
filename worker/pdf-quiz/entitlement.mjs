@@ -1,5 +1,13 @@
 import {MONTHLY_PRICE,paidEntitlement,PdfError,idOf} from './core.mjs';
 
+// Called only with the session identity forwarded by pdfRoute, never a client field.
+export function administratorEntitlement(env,email,now=Date.now()) {
+  const owner=env.PROMO_ADMIN_EMAIL?.trim().toLowerCase();
+  if(env.PDF_ADMIN_ENABLED!=='true' || !owner || typeof email!=='string' || email.trim().toLowerCase()!==owner)return null;
+  const date=new Date(now),start=Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),1),end=Date.UTC(date.getUTCFullYear(),date.getUTCMonth()+1,1);
+  return {kind:'administrator',start,end,invoice:'admin:'+start};
+}
+
 export async function entitlementFromStripe(env,email,now=Date.now()) {
   // Fail closed. Never accept a code, browser plan label, courtesy access, or simulated session.
   if (env.COBRANCA!=='ligada' || !env.DB || env.STRIPE_PRECO_MENSAL_ID!==MONTHLY_PRICE || !/^[sr]k_live_/.test(env.STRIPE_LIVE_KEY||'')) throw new PdfError('unavailable','A geração por PDF ainda não está disponível.',503);

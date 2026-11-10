@@ -292,6 +292,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
     const t = e.target as HTMLInputElement;
     if (t.name !== 'pg-plano') return;
     escolhido = t.value === 'semana' ? 'semana' : t.value === 'anual' ? 'anual' : 'mensal';
+    if(c?.modo==='ligada'&&!testeCobranca()) void track('select_plan',{plano:escolhido});
     const botaoPix = d.querySelector<HTMLElement>('[data-meio="pix"]');
     if (botaoPix) botaoPix.hidden = escolhido === 'mensal' || escolhido === 'anual';
     // o cartão é o botão principal quando é o único meio (Mensal); com Pix, fica em segundo

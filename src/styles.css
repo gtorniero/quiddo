@@ -5833,6 +5833,11 @@ body.modo-foto .btn-som {
 }
 /* janela de pagamento: botões numa linha só no celular */
 .pagamento .pg-pix,
+.pagamento .pg-cartao:not(.sec) {
+  background: #0b5d45;
+  color: #ffffff;
+}
+.pagamento .pg-pix,
 .pagamento .pg-cartao,
 .pagamento .pg-gratis {
   font-size: 16px;

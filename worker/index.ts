@@ -1,3 +1,6 @@
+import {pdfRoute} from './pdf-quiz/route.mjs';
+export {PdfAccount} from './pdf-quiz/account.mjs';
+export {PdfBudget} from './pdf-quiz/budget.mjs';
 import {probeMeta} from './meta-probe.mjs';
 import {servicePayments} from './btw-payments.mjs';
 import {runMeta,metaRoute} from './meta-adapter.mjs';
@@ -32,6 +35,7 @@ const app = {
     const canonical = await canonicalResponse(req, env);
     if (canonical) return canonical;
 
+    const pdf = await pdfRoute(req,env); if (pdf) return pdf;
     if (parts[0] !== 'api') return env.ASSETS.fetch(req);
 
     if(url.pathname==='/api/btw/promos')return servicePromos(req,env);

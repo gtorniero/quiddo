@@ -1,0 +1,9 @@
+{
+  "library": "pdf-lib",
+  "version": "1.17.1",
+  "license": "MIT",
+  "licenseFile": "pdf-lib-LICENSE.md",
+  "sourceSHA256": "4bd8dd3155d7b1062a161567bf68168c55283bd5fad6a638b16ae028846b52c5",
+  "bundledSHA256": "83c1c1fe2d1385dc867a698415b0b7f4f51b9f23a975197040a3906815b64b29",
+  "transformation": "esbuild minify ESM; no API changes"
+}

@@ -2,6 +2,7 @@ import { prepararBiblioteca, contaDosQuizzes, syncStatus, carregarQuiz, quizCurr
 import { track, trackOnce } from '../lib/measurement';
 // /criar: editor do quiz e configuração do anfitrião (modo, visual, tempo, marca, perguntas) e abertura da sala.
 // O visual só aparece depois do modo e lista apenas os visuais daquele modo. Floresta é o padrão.
+import { openPdfQuiz, pdfButton, type PdfResult } from '../lib/pdf-quiz';
 import type { Page } from '../main';
 import type { CreateRoomBody, CreateRoomResult, Theme, Visual } from '../../shared/protocol';
 import { LIMITS, VISUAIS_DO_MODO, compactQuestion, isReady, visualDoModo } from '../../shared/rules';
@@ -32,6 +33,12 @@ function mount(main: HTMLElement) {
 function mountEditor(main: HTMLElement) {
   let vivo = true;
   let q: Quiz = atual();
+  let revisao: { anterior: Quiz } | null = null;
+  const reviewOwner = contaDosQuizzes();
+  const reviewKey = reviewOwner ? 'pdf-review:' + reviewOwner : null;
+  const pendente = reviewKey ? store.get<{ draft: Quiz; anterior: Quiz } | null>(reviewKey, null) : null;
+  if (pendente?.draft && pendente?.anterior) { q = pendente.draft; revisao = { anterior: pendente.anterior }; }
+  const focoPerguntas = () => { const el = main.querySelector<HTMLElement>('#h-perg'); el?.setAttribute('tabindex','-1'); el?.focus(); };
   // veio da vitrine de modos da home: aplica o modo escolhido (o visual volta para Floresta se não existir nele)
   const temaNovo = store.get<string>('temaNovo', '');
   if (temaNovo === 'corp' || temaNovo === 'festa' || temaNovo === 'escola') {
@@ -72,6 +79,13 @@ function mountEditor(main: HTMLElement) {
 
   const persist = (now = false) => {
     clearTimeout(saveTimer);
+    saveTimer = 0;
+    if (revisao) {
+      editPending = false;
+      localSaveFailed = !reviewKey || !store.set(reviewKey, { draft: q, anterior: revisao.anterior });
+      refreshSaveStatus();
+      return;
+    }
     editPending = true;
     refreshSaveStatus();
     const snapshot = structuredClone(q);
@@ -108,7 +122,7 @@ function mountEditor(main: HTMLElement) {
   }
 
   function refreshSaveStatus() {
-    const status = localSaveFailed ? { text: "Esta edição ainda não foi salva. Exporte uma cópia antes de sair.", conflict: false, retry: true } : editPending ? { text: "Salvando…", conflict: false, retry: false } : syncStatus(q.id);
+    const status = localSaveFailed ? { text: "Esta edição ainda não foi salva. Exporte uma cópia antes de sair.", conflict: false, retry: true } : revisao ? { text: 'Rascunho de IA neste aparelho · revise e salve na conta', conflict: false, retry: false } : editPending ? { text: "Salvando…", conflict: false, retry: false } : syncStatus(q.id);
     const el = main.querySelector('#quiz-save-status');
     if (el) el.textContent = status.text;
     const copy = main.querySelector<HTMLElement>('[data-act="copia-conflito"]');
@@ -124,7 +138,7 @@ function mountEditor(main: HTMLElement) {
     const account = contaDosQuizzes();
     const migrated = idsLocaisImportados();
     const locals = localQuizzes().filter(x => !migrated[x.id]);
-    const status = localSaveFailed ? { text: "Esta edição ainda não foi salva. Exporte uma cópia antes de sair.", conflict: false, retry: true } : editPending ? { text: "Salvando…", conflict: false, retry: false } : syncStatus(q.id);
+    const status = localSaveFailed ? { text: "Esta edição ainda não foi salva. Exporte uma cópia antes de sair.", conflict: false, retry: true } : revisao ? { text: 'Rascunho de IA neste aparelho · revise e salve na conta', conflict: false, retry: false } : editPending ? { text: "Salvando…", conflict: false, retry: false } : syncStatus(q.id);
     return `<section class="panel" aria-labelledby="h-meus">
       <h1 id="h-meus" class="sr">Criar meu quiz</h1>
       <div class="tag">Meus quizzes</div><p class="small">${account ? `Na conta <b>${esc(account)}</b>` : `Neste navegador · <a href="/entrar?volta=/criar">Entre para salvar na sua conta</a>`}</p>
@@ -136,8 +150,9 @@ function mountEditor(main: HTMLElement) {
             }<button class="linkbtn" data-act="excluirquiz" data-v="${x.id}" aria-label="Excluir ${esc(x.titulo)}">Excluir</button></div>`,
         )
         .join('')}</div>
-      <div class="btnrow">
+      <div class="btnrow qd-pdf-actions">
         <button class="btn sec small" data-act="novo">Novo quiz</button>
+        ${pdfButton}
         <span class="btn sec small filebtn">Importar arquivo<input type="file" id="imp" accept="application/json,.json" aria-label="Importar quiz em JSON"></span>
         <button class="btn sec small" data-act="exportar">Exportar este quiz</button>
       </div>
@@ -215,6 +230,7 @@ function mountEditor(main: HTMLElement) {
     const cheio = n >= LIMITS.maxQuestions;
     return `<section class="panel" aria-labelledby="h-perg">${passo('Perguntas', 'h-perg')}
       ${q.tema === 'festa' ? secModelos() : ''}
+      ${revisao ? `<div class="qd-pdf-review"><b>Revise seu rascunho de IA</b><p class="small">Confira as perguntas, as fontes e o gabarito. A IA pode errar. Seu quiz anterior está preservado.</p><div class="btnrow"><button class="btn small auto" data-act="salvar-pdf">Salvar quiz</button><button class="btn sec small auto" data-act="voltar-pdf">Voltar ao quiz anterior</button></div><p class="err" data-pdf-erro role="status"></p></div>` : ''}
       <div class="add-topo" role="group" aria-labelledby="h-add-topo">
         <span class="add-topo-tit" id="h-add-topo"><span class="mais-ic" aria-hidden="true">+</span>Adicionar pergunta</span>
         <div class="add-topo-ops">
@@ -242,7 +258,7 @@ function mountEditor(main: HTMLElement) {
   const nomeTipo = (p: Quiz['perguntas'][number]) => (p.vf ? 'Verdadeiro ou falso' : p.tipo === 'opiniao' ? 'Enquete' : p.tipo === 'quem' ? 'Quem é mais provável' : 'Múltipla escolha');
   const titulo = (i: number) => `${nomeTipo(q.perguntas[i])} ${i + 1}${isReady(q.perguntas[i]) ? '' : ' · falta completar'}`;
 
-  const contagem = () => `${prontas()} de ${q.perguntas.length} prontas.${q.perguntas.length <= 2 ? ' As 2 primeiras são só modelos: edite ou remova.' : ''} Marque a resposta certa de cada uma (no celular, toque na letra).`;
+  const contagem = () => `${prontas()} de ${q.perguntas.length} prontas.${q.perguntas.some(p => p.pdf) ? ' Confira as fontes e o gabarito antes de jogar.' : q.perguntas.length <= 2 ? ' As 2 primeiras são só modelos: edite ou remova.' : ''} Marque a resposta certa de cada uma (no celular, toque na letra).`;
 
   function editorPergunta(i: number, n: number) {
     const p = q.perguntas[i];
@@ -257,6 +273,7 @@ function mountEditor(main: HTMLElement) {
       <textarea data-i="${i}" data-f="t" maxlength="${LIMITS.questionText}" aria-label="Texto da pergunta ${num}" placeholder="${
         p.vf ? 'Escreva uma afirmação. Ex.: O Brasil tem 26 estados e o Distrito Federal.' : p.tipo === 'quem' ? 'Ex.: Quem é mais provável chegar atrasado no próprio casamento?' : p.tipo === 'opiniao' ? 'Ex.: Praia ou montanha?' : 'Escreva a pergunta'
       }">${esc(p.t)}</textarea>
+      ${p.pdf ? `<p class="small qd-pdf-source"><b>Fonte original · pág. ${p.pdf.page}</b><br>${esc(p.pdf.evidence)}<br>Resposta original: ${esc(p.pdf.answer)}. Confira a fonte novamente se editar a pergunta.</p>` : ''}
       ${
         p.img
           ? `<div class="qimg-ed"><img src="${esc(p.img)}" alt="Imagem da pergunta ${num}"><button class="btn sec small auto" data-act="semimg" data-i="${i}">Remover imagem</button></div>`
@@ -333,6 +350,10 @@ function mountEditor(main: HTMLElement) {
     const v = b.dataset.v || '';
     const i = Number(b.dataset.i);
     const p = q.perguntas[i];
+    if (revisao && ['novo','abrirquiz','excluirquiz','modelo','abrir','importar-locais','copia-conflito'].includes(a)) {
+      const aviso = main.querySelector('[data-pdf-erro]'); if (aviso) aviso.textContent = 'Salve o rascunho ou volte ao quiz anterior antes de continuar.';
+      return focoPerguntas();
+    }
     msg = '';
     if (saveTimer) persist(true);
     switch (a) {
@@ -347,6 +368,36 @@ function mountEditor(main: HTMLElement) {
         persist(true);
         return render('textarea[data-i="0"]');
       }
+      case 'pdf-ia':
+        if (revisao) return focoPerguntas();
+        openPdfQuiz(async (resultado: PdfResult) => {
+          if (!vivo || !reviewOwner || contaDosQuizzes() !== reviewOwner) throw new Error('Entre novamente na conta que iniciou esta geração.');
+          persist(true);
+          const existente = listar().find(quiz => quiz.id === resultado.id);
+          if (existente) { q = await carregarQuiz(existente.id); store.set(quizCurrentKey(), q.id); }
+          else {
+            const anterior = q;
+            q = { ...novoQuiz(q.tema), visual: q.visual, tempo: q.tempo, marca: { ...q.marca }, logo: q.logo };
+            q.id = resultado.id; q.titulo = resultado.title;
+            q.perguntas = resultado.items.map(item => ({t:item.t,o:[...item.a],c:item.c,tl:q.tempo,pdf:{page:item.page,evidence:item.evidence,answer:item.answer,topic:item.topic,hash:resultado.sourceSHA256}}));
+            revisao = {anterior}; persist(true);
+          }
+          render(); requestAnimationFrame(focoPerguntas);
+        });
+        return;
+      case 'salvar-pdf': {
+        if (!revisao) return;
+        const aviso = main.querySelector('[data-pdf-erro]');
+        if (!q.titulo.trim() || !q.perguntas.length || prontas() !== q.perguntas.length) { if (aviso) aviso.textContent = 'Preencha o título e revise todas as perguntas antes de salvar.'; return; }
+        if (!salvar(q)) { if (aviso) aviso.textContent = 'Não deu para salvar neste navegador.'; return; }
+        void trackOnce('quiz_create',q.id+':pdf',{source:'pdf'});
+        revisao = null; if (reviewKey) store.del(reviewKey); localSaveFailed = false; msg = 'Quiz salvo. Nenhum crédito adicional foi usado.';
+        return render('[data-act="pdf-ia"]');
+      }
+      case 'voltar-pdf':
+        if (!revisao) return;
+        q = revisao.anterior; revisao = null; if (reviewKey) store.del(reviewKey); localSaveFailed = false; store.set(quizCurrentKey(),q.id);
+        return render('[data-act="pdf-ia"]');
       case 'novo':
         q = novoQuiz(q.tema);
         void track('quiz_create', {source:'manual'});
@@ -582,6 +633,7 @@ function mountEditor(main: HTMLElement) {
       return render('#bL');
     }
     if (t.id === 'imp' && t.files && t.files[0]) {
+      if (revisao) { t.value = ''; const aviso = main.querySelector('[data-pdf-erro]'); if (aviso) aviso.textContent = 'Salve o rascunho ou volte ao quiz anterior para importar.'; return focoPerguntas(); }
       try {
         q = importar(await t.files[0].text());
         void track('quiz_create', {source:'import'});

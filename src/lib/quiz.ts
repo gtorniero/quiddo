@@ -4,9 +4,10 @@ import type { Brand, Question, Theme, Visual } from '../../shared/protocol';
 import { IMG_RE, LIMITS, cleanText, visualDoModo } from '../../shared/rules';
 import { pacote } from '../data/pacotes';
 import { store, uid } from './storage';
+import { pdfSource, type PdfSource } from '../../shared/pdf-source';
 
 /** Pergunta no editor. `vf` marca as de verdadeiro ou falso (respostas fixas). */
-export type Pergunta = Question & { vf?: boolean };
+export type Pergunta = Question & { vf?: boolean; pdf?: PdfSource };
 
 export interface Quiz extends CloudMeta {
   id: string;
@@ -110,6 +111,8 @@ export function importar(texto: string): Quiz {
       out.c = p.c === 1 ? 1 : 0;
     }
     if (typeof p?.img === 'string' && p.img.length <= LIMITS.imgBytes && IMG_RE.test(p.img)) out.img = p.img;
+    const pdf = pdfSource(p?.pdf);
+    if (pdf) out.pdf = pdf;
     return out;
   });
   q.tempo = TEMPOS.includes(Number(d.tempo)) ? Number(d.tempo) : 0;

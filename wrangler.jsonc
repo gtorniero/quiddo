@@ -11,16 +11,16 @@
     "run_worker_first": ["/*", "!/assets/*", "!/marca/*", "!/fonts/*", "!/favicon.ico", "!/favicon.svg", "!/robots.txt", "!/sitemap.xml", "!/.well-known/*"]
   },
   "durable_objects": {
-    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+    "bindings": [{ "name": "ROOMS", "class_name": "Room" }, {"name":"PDF_ACCOUNTS","class_name":"PdfAccount"}, {"name":"PDF_BUDGET","class_name":"PdfBudget"}]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }, {"tag":"v2-pdf-20261109","new_sqlite_classes":["PdfAccount","PdfBudget"]}],
   // banco das compras. Na primeira publicação a Cloudflare cria o banco "quiddo" sozinha.
   "d1_databases": [{ "binding": "DB", "database_name": "quiddo", "database_id": "b6dce314-f542-4178-be68-9b7215118fa2" }, {"binding":"PROMOS","database_name":"btw-promocoes","database_id":"84c12b97-d46d-4ba6-abe5-f6e8e7bcf84c"}, {"binding":"PROMO_RETROZAP","database_name":"retrozap","database_id":"b598acfa-5fa4-4e88-9042-9460c021ad3c"}, {"binding":"PROMO_SPORTDNA","database_name":"sportdna-payments-test","database_id":"936d7152-4ddd-4764-9cd5-a6cd8e966582"}],
   // cobrança: "simulacao" (para todos, com Pix de mentira e sem cartão), "teste" (só com ?teste_cobranca=1),
   // "ligada" (de verdade, para todos) ou "desligada". Preços (PRECO_MENSAL, PRECO_SEMANA; padrão 15.99 e 12.99; anual 156.00 e oferta 9.99)
   // e segredos (MP_TOKEN, STRIPE_KEY) ficam só no painel da Cloudflare.
   // ids dos preços de produção no Stripe (não são segredo): Mensal R$ 15,99 e Anual R$ 156
-  "vars": {"PROMO_ADMIN_EMAIL":"guitorniero@outlook.com","STRIPE_PRECO_MENSAL_ID":"price_1UXtp0134hMOoEZV4zpJZiw6","STRIPE_PRECO_ANUAL_ID":"price_1UXtqY134hMOoEZVGgIdzQ7a"},
+  "vars": {"PDF_ENABLED":"true","PROMO_ADMIN_EMAIL":"guitorniero@outlook.com","STRIPE_PRECO_MENSAL_ID":"price_1UXtp0134hMOoEZV4zpJZiw6","STRIPE_PRECO_ANUAL_ID":"price_1UXtqY134hMOoEZVGgIdzQ7a"},
   // COBRANCA fica no painel; um deploy nao deve sobrescrever a escolha de modo.
   // mantém variáveis criadas no painel
   "keep_vars": true,

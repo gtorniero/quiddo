@@ -1,5 +1,6 @@
 import { IMG_RE, LIMITS, cleanText, visualDoModo } from './rules';
 import type { Brand, Question, Theme, Visual } from './protocol';
+import { pdfSource, type PdfSource } from './pdf-source';
 export interface QuizDocument {
   id: string;
   titulo: string;
@@ -9,7 +10,7 @@ export interface QuizDocument {
   dobroUltima?: boolean;
   marca: Brand & { ultima?: string };
   logo: string;
-  perguntas: (Question & { vf?: boolean })[];
+  perguntas: (Question & { vf?: boolean; pdf?: PdfSource })[];
   atualizado: number;
 }
 export const QUIZ_ID = /^[A-Za-z0-9_-]{1,100}$/;
@@ -40,6 +41,7 @@ export function quizDocument(raw: unknown): QuizDocument {
     const o = p.o.map((x) => String(x ?? '').slice(0, LIMITS.answerText));
     const c = tipo ? -1 : Number.isInteger(p.c) && Number(p.c) >= 0 && Number(p.c) < o.length ? Number(p.c) : -1;
     const img = image(p.img, LIMITS.imgBytes);
+    const pdf = pdfSource(p.pdf);
     return {
       t: String(p.t ?? '').slice(0, LIMITS.questionText),
       o,
@@ -48,6 +50,7 @@ export function quizDocument(raw: unknown): QuizDocument {
       ...(tipo ? { tipo } : {}),
       ...(p.vf === true ? { vf: true } : {}),
       ...(img ? { img } : {}),
+      ...(pdf ? { pdf } : {}),
     };
   });
   if (imageSize > LIMITS.imgTotal) throw new Error('As imagens deste quiz passaram do limite.');

@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {parsePages,paidEntitlement,validateQuiz,costFromUsage,requestBody,textRequestBody,readBriefing} from '../worker/pdf-quiz/core.mjs';
+import {parsePages,paidEntitlement,annualCreditPeriod,validateQuiz,costFromUsage,requestBody,textRequestBody,readBriefing} from '../worker/pdf-quiz/core.mjs';
 import {fixture} from './fixtures.mjs';
 test('page selection counts actual unique pages and rejects 51, out-of-range, and non-integers',()=>{
  assert.equal(parsePages('2-51',52).length,50);assert.deepEqual(parsePages('1,1,2-3',3),[1,2,3]);
@@ -66,4 +66,19 @@ test('rejects mixed-script corruption without silently rewriting answers',()=>{
 test('unreadable PDF reports insufficient content and preserves credit; text behavior unchanged',()=>{
  assert.throws(()=>validateQuiz({title:'Documento ilegível',questions:[]},[1]),e=>e.code==='insufficient_content'&&e.status===422);
  assert.throws(()=>validateQuiz({title:'Tema',questions:[]}),{code:'invalid_result'});
+});
+
+test('annual monthly buckets preserve anniversary across short months, leap years and final expiry',()=>{
+ for(const year of [2024,2025,2026]){
+  const start=Date.UTC(year,0,31,12),end=Date.UTC(year+1,0,31,12);
+  let previous=start;
+  for(let n=0;n<12;n++){
+   const period=annualCreditPeriod(start,end,previous);
+   assert.equal(period.start,previous);assert.ok(period.end>period.start);
+   assert.deepEqual(annualCreditPeriod(start,end,period.end-1),period);
+   previous=period.end;
+  }
+  assert.equal(previous,end);assert.throws(()=>annualCreditPeriod(start,end,end));
+  assert.equal(new Date(annualCreditPeriod(start,end,Date.UTC(year,2,31,12)).start).getUTCDate(),31);
+ }
 });

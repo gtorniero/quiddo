@@ -112,6 +112,24 @@ test('HTTP routes, real durable storage, quota, isolation, concurrency, renewal 
   await seed(textOwner,renew(fixture()));
   assert.equal((await status(textOwner)).data.remaining,2);
   record('Text and PDF share quota; text-only history and replay; invalid input and output cost no credits');
+  const annual=fixture(), annualPrice='price_1UXtqY134hMOoEZVGgIdzQ7a';
+  const item=annual.billing.subscription.items.data[0],line=annual.billing.invoice.lines.data[0];
+  annual.billing.expectedPrice=annualPrice;
+  item.price.id=annualPrice;item.price.unit_amount=15600;item.price.recurring.interval='year';
+  item.current_period_end=item.current_period_start+365*86400;
+  annual.billing.invoice.amount_paid=15600;line.amount=15600;line.pricing.price_details.price=annualPrice;line.period.end=item.current_period_end;
+  const annualOwner=await user('annual-owner');await seed(annualOwner,annual);
+  const annualStatus=await status(annualOwner);assert.equal(annualStatus.data.remaining,2);
+  assert.equal((await generate(annualOwner)).status,200);
+  assert.equal((await call('/api/pdf/generate-text',{cookie:annualOwner,body:briefing,headers:{'content-type':'text/plain','idempotency-key':crypto.randomUUID()}})).status,200);
+  assert.equal((await status(annualOwner)).data.remaining,0);
+  assert.equal((await generate(annualOwner)).status,429);
+  annual.now=annualStatus.data.paidPeriod.end+1000;await seed(annualOwner,annual);
+  assert.equal((await status(annualOwner)).data.remaining,2);
+  assert.equal((await call('/api/pdf/history',{cookie:annualOwner})).data.results.length,2);
+  annual.billing.invoice.status='open';await seed(annualOwner,annual);
+  assert.equal((await generate(annualOwner)).status,403);
+  record('Annual paid subscription shares two PDF/text credits and renews monthly without another charge');
   const last=await call('/__staging/evidence',{cookie:owner});assert.equal(last.data.budget.entries.length,0);evidence.realProviderCalls=0;evidence.providerCostUSD=null;
  }finally{
   evidence.finished=new Date().toISOString();if(process.env.PDF_TEST_EVIDENCE)await fs.writeFile(process.env.PDF_TEST_EVIDENCE,JSON.stringify(evidence,null,2)+'\n');await mf?.dispose();

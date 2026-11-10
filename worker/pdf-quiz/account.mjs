@@ -1,6 +1,6 @@
 import {DurableObject} from 'cloudflare:workers';
 import {Ledger} from './ledger.mjs';
-import {entitlementFromStripe} from './entitlement.mjs';
+import {entitlementFromStripe,administratorEntitlement} from './entitlement.mjs';
 import {readPdf,selectPdf} from './pdf.mjs';
 import {MODEL,PROMPT_VERSION,MAX_BYTES,PdfError,json,sha,profile,paidEntitlement,requestBody,resultText,validateQuiz,costFromUsage} from './core.mjs';
 
@@ -12,7 +12,7 @@ export class PdfAccount extends DurableObject {
       if (!settings?.billing) throw new PdfError('monthly_required','A conta de staging não tem um ciclo mensal pago simulado.',403);
       return paidEntitlement({...settings.billing,live:false},settings.now || Date.now());
     }
-    return entitlementFromStripe(this.env,email);
+    return administratorEntitlement(this.env,email) || entitlementFromStripe(this.env,email);
   }
   async fetch(req) {
     try { return await this.handle(req); }

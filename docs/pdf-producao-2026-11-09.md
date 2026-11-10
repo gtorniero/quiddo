@@ -9,3 +9,7 @@ Cabeçalhos opcionais OpenAI são omitidos quando ausentes. Prompt v3 pede objet
 Validação em 10/11/2026: 156 testes da aplicação, oito testes PDF isolados, tipagens e build aprovados. Teste com Responses real e PDF fictício de duas páginas gerou sete perguntas, revisadas contra a fonte, por US$0.0003461 estimados pelo uso retornado. Salvamento e reabertura em nova sessão preservaram respostas e referências; repetição idempotente não gerou nova chamada; outra conta recebeu acesso negado.
 
 O teste real de modelo usou armazenamento isolado e elegibilidade de cobrança simulada. Não representa compra real nem validação nova de entrega automática de webhook Stripe. Calibração ampla em diferentes documentos permanece pendente. Nenhum documento de cliente ou segredo está no repositório.
+
+## Acesso do administrador — 10/11/2026
+
+Com PDF_ADMIN_ENABLED=true, a identidade autenticada correspondente a PROMO_ADMIN_EMAIL pode gerar sem assinatura e sem a quota mensal de dois PDFs. A rota usa a sessão validada no servidor e sobrescreve qualquer identidade enviada em cabeçalhos pelo cliente. O acesso é revalidado antes de entregar a geração. Desativar a variável revoga a exceção. Contas de clientes mantêm assinatura paga e dois créditos; o teto persistente de gasto da API continua valendo também para o administrador. Não é acesso gratuito à API nem autorização de recarga.

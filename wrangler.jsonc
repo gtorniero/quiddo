@@ -20,7 +20,7 @@
   // "ligada" (de verdade, para todos) ou "desligada". Preços (PRECO_MENSAL, PRECO_SEMANA; padrão 15.99 e 12.99; anual 156.00 e oferta 9.99)
   // e segredos (MP_TOKEN, STRIPE_KEY) ficam só no painel da Cloudflare.
   // ids dos preços de produção no Stripe (não são segredo): Mensal R$ 15,99 e Anual R$ 156
-  "vars": {"PDF_ENABLED":"true","PDF_BUDGET_USD":"1","PROMO_ADMIN_EMAIL":"guitorniero@outlook.com","STRIPE_PRECO_MENSAL_ID":"price_1UXtp0134hMOoEZV4zpJZiw6","STRIPE_PRECO_ANUAL_ID":"price_1UXtqY134hMOoEZVGgIdzQ7a"},
+  "vars": {"PDF_ENABLED":"true","PDF_ADMIN_ENABLED":"true","PDF_BUDGET_USD":"1","PROMO_ADMIN_EMAIL":"guitorniero@outlook.com","STRIPE_PRECO_MENSAL_ID":"price_1UXtp0134hMOoEZV4zpJZiw6","STRIPE_PRECO_ANUAL_ID":"price_1UXtqY134hMOoEZVGgIdzQ7a"},
   // COBRANCA fica no painel; um deploy nao deve sobrescrever a escolha de modo.
   // mantém variáveis criadas no painel
   "keep_vars": true,

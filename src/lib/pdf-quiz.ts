@@ -19,9 +19,11 @@ export function openPdfQuiz(onReview:(result:PdfResult)=>void|Promise<void>) {
   const review=async(r:PdfResult)=>{try{await onReview(r);void trackOnce('ai_review_open',r.id,{source:'pdf'});dialog.close();}catch(error){message.textContent=(error as Error).message;}};
   async function refresh() {
     try {
-      const d=await api('status');remaining=d.remaining;providerReady=d.providerReady===true;
-      $('[data-balance]').textContent=d.remaining+' de 2 disponíveis';
-      $('[data-cycle]').textContent='Ciclo até '+new Date(d.paidPeriod.end).toLocaleDateString('pt-BR')+(d.simulatedBilling?' · cobrança simulada':'');
+      const d=await api('status');remaining=d.paidPeriod.kind==='administrator'?1:d.remaining;providerReady=d.providerReady===true;
+      const admin=d.paidPeriod.kind==='administrator';
+      $('.tag').textContent=admin?'Administrador':'Premium mensal';
+      $('[data-balance]').textContent=admin?'Acesso de administrador':d.remaining+' de '+d.limit+' disponíveis';
+      $('[data-cycle]').textContent=admin?'Sem assinatura · limite de gasto preservado':'Ciclo até '+new Date(d.paidPeriod.end).toLocaleDateString('pt-BR')+(d.simulatedBilling?' · cobrança simulada':'');
       if(!d.providerReady)message.textContent='A geração está temporariamente indisponível. Seu saldo está preservado.';
       $('button[type=submit]').toggleAttribute('disabled',busy||!remaining||!providerReady);
     }catch(e){remaining=0;$('[data-balance]').textContent='Saldo indisponível';message.textContent=(e as Error).message;form.hidden=true;}

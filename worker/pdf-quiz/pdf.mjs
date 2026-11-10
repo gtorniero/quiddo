@@ -4,14 +4,14 @@ import { MAX_BYTES, PdfError, parsePages, sha } from './core.mjs';
 export async function readPdf(req) {
   if (req.headers.get('content-type')?.split(';')[0] !== 'application/pdf') throw new PdfError('format','Envie um arquivo PDF.',415);
   const length = Number(req.headers.get('content-length') || 0);
-  if (length > MAX_BYTES) throw new PdfError('size','Escolha um PDF de até 20 MB.',413);
+  if (length > MAX_BYTES) throw new PdfError('size','Escolha um PDF de até 25 MB.',413);
   const reader = req.body?.getReader();
   if (!reader) throw new PdfError('file','Selecione um PDF.');
   const chunks = []; let size = 0;
   for (;;) {
     const {done,value} = await reader.read(); if (done) break;
     size += value.length;
-    if (size > MAX_BYTES) { await reader.cancel(); throw new PdfError('size','Escolha um PDF de até 20 MB.',413); }
+    if (size > MAX_BYTES) { await reader.cancel(); throw new PdfError('size','Escolha um PDF de até 25 MB.',413); }
     chunks.push(value);
   }
   const bytes = new Uint8Array(size); let offset = 0;
@@ -36,7 +36,7 @@ export async function selectPdf(parsed, expression) {
   }
   selected.setProducer('Quiddo PDF staging');selected.setCreator('Quiddo');
   const bytes = await selected.save({useObjectStreams:true,addDefaultPage:false});
-  if (bytes.length > MAX_BYTES) throw new PdfError('size','As páginas escolhidas excedem 20 MB.',413);
+  if (bytes.length > MAX_BYTES) throw new PdfError('size','As páginas escolhidas excedem 25 MB.',413);
   let binary='';
   for (let i=0;i<bytes.length;i+=8192) binary+=String.fromCharCode(...bytes.subarray(i,i+8192));
   return {pages,dataUrl:'data:application/pdf;base64,'+btoa(binary),bytes:bytes.length,hash:await sha(bytes),count:selected.getPageCount()};

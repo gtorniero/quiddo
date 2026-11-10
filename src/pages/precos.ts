@@ -73,7 +73,7 @@ function mount(main: HTMLElement) {
               ? `<p class="pc-preco">R$ ${esc(reais(num(preco('anual')) / 12))}<small>/mês</small></p><p class="pc-sub">R$ ${esc(preco('anual'))} cobrança anual</p>`
               : `<p class="pc-preco">R$ ${esc(preco('mensal'))}<small>/mês</small></p><p class="pc-sub">Cobrança mensal</p>`
           }
-          <ul><li>${ok}Jogos ilimitados ${per === 'anual' ? 'o ano todo' : 'o mês todo'}</li><li>${ok}Use em qualquer aparelho</li><li>${ok}Renova a cada ${per === 'anual' ? 'ano' : 'mês'}</li></ul>
+          <ul><li>${ok}Jogos ilimitados ${per === 'anual' ? 'o ano todo' : 'o mês todo'}</li><li>${ok}Use em qualquer aparelho</li>${per === 'mensal' ? `<li>${ok}2 quizzes com IA por ciclo</li>` : ''}<li>${ok}Renova a cada ${per === 'anual' ? 'ano' : 'mês'}</li></ul>
           <button type="button" class="btn" data-plano="${per}">Assinar o ${per === 'anual' ? 'Anual' : 'Mensal'}</button>
         </article>
       </section>

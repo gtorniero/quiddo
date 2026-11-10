@@ -3,7 +3,7 @@ export const PROMPT_VERSION = 'quiddo-pdf-2026-11-09-v3';
 export const MONTHLY_PRICE = 'price_1UXtp0134hMOoEZV4zpJZiw6';
 export const MAX_PAGES = 50;
 // Deliberately below the provider's 50 MB ceiling: PDF decoding also uses memory.
-export const MAX_BYTES = 20 * 1024 * 1024;
+export const MAX_BYTES = 25 * 1024 * 1024;
 export const MAX_OUTPUT = 6000;
 export const LEASE_MS = 240000;
 export const RESERVE_USD = 0.55; // upper bound: entire 1.05M context at long 12h-write price + output

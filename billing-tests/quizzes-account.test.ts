@@ -123,7 +123,9 @@ it('shares a new session across the official hostnames and promotes valid legacy
   expect(migrated!.headers.get('set-cookie')).toContain('Domain=quiddo.com.br');
   expect(env.DB.db.prepare('SELECT expira FROM sessoes').get().expira).toBe(before);
   expect(await canonicalResponse(req('/criar'), env)).toBe(null);
-  expect(await migrated!.text()).toContain('Continuar com meus quizzes');
+  expect(migrated!.status).toBe(308);
+  expect(migrated!.headers.get('Location')).toBe('https://www.quiddo.com.br/criar');
+  expect(await migrated!.text()).toBe('');
 });
 it('rejects cross-site browser transfers and prevents a destination outside Quiddo', async () => {
   const { canonicalResponse } = await import('../worker/canonical');

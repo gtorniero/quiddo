@@ -58,10 +58,21 @@ it('executes the real transfer response safely and preserves its destination and
   expect(JSON.parse(map.get('sr:quizzes')!)).toHaveLength(1);
 });
 
+it('redirects legacy visits straight to the same page on the official domain', async () => {
+  for (const method of ['GET', 'HEAD']) {
+    const response = await canonicalResponse(new Request('https://quiddo.com.br/criar?modelo=natal', { method }), {});
+    expect(response!.status).toBe(308);
+    expect(response!.headers.get('Location')).toBe('https://www.quiddo.com.br/criar?modelo=natal');
+    expect(await response!.text()).toBe('');
+  }
+  expect(await canonicalResponse(new Request('https://www.quiddo.com.br/criar'), {})).toBeNull();
+});
+
 it('retains the origin on the migration form while hiding the path and query', async () => {
-  const response = await canonicalResponse(new Request('https://quiddo.com.br/criar?privado=1'), {});
+  const response = await canonicalResponse(new Request('https://quiddo.com.br/criar?recuperar=1&privado=1'), {});
   expect(response!.headers.get('Referrer-Policy')).toBe('strict-origin');
   const html = await response!.text();
+  expect(html).toContain('volta:"/criar?privado=1"+location.hash');
   expect(html).toContain('action="https://www.quiddo.com.br/api/migrar-navegador"');
   const transfer = await canonicalResponse(new Request('https://www.quiddo.com.br/api/migrar-navegador', {
     method: 'POST', headers: { Origin: 'null' }, body: new URLSearchParams({dados:JSON.stringify({quizzes:[]})}),

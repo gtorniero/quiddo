@@ -113,9 +113,9 @@ beforeEach(async () => {
  sqlite.prepare('INSERT INTO sessoes (token, email, criado, expira) VALUES (?,?,?,?)').run(createHash('sha256').update(TOKEN).digest('hex'), EMAIL, Date.now(), Date.now() + 86400e3);
  env = { DB: d1(sqlite), COBRANCA: 'simulacao', STRIPE_KEY: TEST_KEY, STRIPE_PRICE_MENSAL: 'price_qd_month_test', STRIPE_WEBHOOK_SECRET: SECRET, STRIPE_PORTAL_CONFIG: 'bpc_quiddo_test' };
  await tabelasStripe(env.DB!);
- const end = Math.floor(Date.now() / 1000) + 30 * 86400;
- invoice = { id: 'in_quiddo', object: 'invoice', status: 'paid', currency: 'brl', amount_paid: 1599, parent: { type: 'subscription_details', subscription_details: { subscription: 'sub_quiddo' } } };
- sub = { id: 'sub_quiddo', object: 'subscription', customer: 'cus_quiddo', status: 'active', livemode: false, cancel_at_period_end: false, latest_invoice: invoice, items: { data: [{ id: 'si_quiddo', quantity: 1, price: price(), current_period_end: end }] } };
+ const start = Math.floor(Date.now() / 1000), end = start + 30 * 86400;
+ invoice = { id: 'in_quiddo', object: 'invoice', customer: 'cus_quiddo', livemode: false, status: 'paid', currency: 'brl', amount_paid: 1599, parent: { type: 'subscription_details', subscription_details: { subscription: 'sub_quiddo' } }, lines: { has_more: false, data: [{ quantity: 1, amount: 1599, period: { start, end }, pricing: { price_details: { price: price().id } }, parent: { subscription_item_details: { subscription: 'sub_quiddo', proration: false } } }] } };
+ sub = { id: 'sub_quiddo', object: 'subscription', customer: 'cus_quiddo', status: 'active', livemode: false, cancel_at_period_end: false, latest_invoice: invoice, items: { data: [{ id: 'si_quiddo', quantity: 1, price: price(), current_period_start: start, current_period_end: end }] } };
  session = { id: 'cs_quiddo', object: 'checkout.session', client_reference_id: REF, mode: 'subscription', livemode: false, currency: 'brl', amount_total: 1599, subscription: 'sub_quiddo', customer: 'cus_quiddo', status: 'complete', payment_status: 'paid' };
  apiCalls = []; checkoutMode = 'subscription'; vi.stubGlobal('fetch', vi.fn(api));
 });
@@ -170,9 +170,69 @@ describe('Quiddo Stripe mensal', () => {
  });
  it('paid renewal extends expiry once without replacing the code', async () => {
   await seedPurchase(); await webhook('checkout.session.completed', session); const before = read('SELECT codigo,expira FROM compras')!;
-  sub.items.data[0].current_period_end += 30 * 86400; invoice = { ...invoice, id: 'in_renewal' }; sub.latest_invoice = invoice;
+  const start = sub.items.data[0].current_period_end, end = start + 30 * 86400;
+  Object.assign(sub.items.data[0], { current_period_start: start, current_period_end: end });
+  invoice = { ...invoice, id: 'in_renewal' }; invoice.lines.data[0].period = { start, end }; sub.latest_invoice = invoice;
   await webhook('invoice.paid', invoice); await webhook('invoice.paid', invoice);
   const after = read('SELECT codigo,expira FROM compras')!; expect(after.codigo).toBe(before.codigo); expect(Date.parse(after.expira)).toBeGreaterThan(Date.parse(before.expira));
+ });
+ it('an old paid invoice cannot extend access when the subscription period changes', async () => {
+  await seedPurchase(); await webhook('checkout.session.completed', session);
+  const before = read('SELECT codigo,expira FROM compras')!;
+  const start = sub.items.data[0].current_period_end;
+  Object.assign(sub.items.data[0], { current_period_start: start, current_period_end: start + 30 * 86400 });
+  await webhook('customer.subscription.updated', sub);
+  await webhook('invoice.paid', invoice);
+  expect(read('SELECT codigo,expira FROM compras')).toEqual(before);
+  vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(start * 1000 + 1000);
+  expect(await codigoValido(env, before.codigo)).toBe(false);
+ });
+ it.each([
+  ['customer', () => { invoice.customer = 'cus_other'; }],
+  ['mode', () => { invoice.livemode = true; }],
+  ['price', () => { invoice.lines.data[0].pricing.price_details.price = 'price_other'; }],
+  ['subscription', () => { invoice.lines.data[0].parent.subscription_item_details.subscription = 'sub_other'; }],
+  ['proration', () => { invoice.lines.data[0].parent.subscription_item_details.proration = true; }],
+  ['quantity', () => { invoice.lines.data[0].quantity = 2; }],
+  ['amount', () => { invoice.lines.data[0].amount = 1; }],
+  ['partial lines', () => { invoice.lines.has_more = true; }],
+  ['duplicate lines', () => { invoice.lines.data.push(structuredClone(invoice.lines.data[0])); }],
+  ['period', () => { invoice.lines.data[0].period.end += 86400; }],
+  ['missing period', () => { delete invoice.lines.data[0].period; }],
+ ] as const)('a paid invoice with incompatible %s does not unlock access', async (_name, change) => {
+  await seedPurchase(); change();
+  expect((await webhook('invoice.paid', invoice))!.status).toBe(200);
+  expect(read('SELECT status,codigo FROM compras')).toMatchObject({ status: 'suspenso', codigo: null });
+  expect(read('SELECT paid_until FROM qd_assinaturas')!.paid_until).toBe(0);
+ });
+ it('a delayed older event consults the current invoice without regressing paid access', async () => {
+  await seedPurchase(); await webhook('checkout.session.completed', session);
+  const old = structuredClone(invoice), start = sub.items.data[0].current_period_end, end = start + 30 * 86400;
+  Object.assign(sub.items.data[0], { current_period_start: start, current_period_end: end });
+  invoice.id = 'in_new'; invoice.lines.data[0].period = { start, end };
+  await webhook('invoice.paid', invoice);
+  const current = read('SELECT codigo,expira FROM compras');
+  await webhook('invoice.payment_failed', { ...old, status: 'open', amount_paid: 0 });
+  expect(read('SELECT codigo,expira FROM compras')).toEqual(current);
+ });
+ it('a temporary Stripe failure asks for webhook retry and preserves paid access', async () => {
+  await seedPurchase(); await webhook('checkout.session.completed', session);
+  const current = read('SELECT codigo,expira,status FROM compras');
+  vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('temporary outage'); }));
+  expect((await webhook('invoice.paid', invoice))!.status).toBe(503);
+  expect(read('SELECT codigo,expira,status FROM compras')).toEqual(current);
+ });
+ it('expired signatures and altered bodies cannot activate a purchase', async () => {
+  await seedPurchase();
+  const body = JSON.stringify({ id: 'evt_signed', object: 'event', livemode: false, type: 'invoice.paid', data: { object: invoice } });
+  for (const [age, suffix] of [[301, ''], [0, ' ']] as const) {
+   const timestamp = Math.floor(Date.now() / 1000) - age;
+   const sig = createHmac('sha256', SECRET).update(timestamp + '.' + body).digest('hex');
+   const result = await rotaCobranca(new Request(ORIGIN + '/api/stripe-webhook', { method: 'POST', headers: { 'stripe-signature': `t=${timestamp},v1=${sig}` }, body: body + suffix }), env, '/api/stripe-webhook');
+   expect(result!.status).toBe(401);
+  }
+  expect(read('SELECT status,codigo FROM compras')).toMatchObject({ status: 'pendente', codigo: null });
+  expect(apiCalls).toHaveLength(0);
  });
  it('failed renewal cannot extend the last paid-through date', async () => {
   await seedPurchase(); await webhook('checkout.session.completed', session); const before = read('SELECT codigo,expira FROM compras')!;

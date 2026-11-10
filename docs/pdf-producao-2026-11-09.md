@@ -9,3 +9,12 @@ A interface inclui PDF, mas geração retorna indisponível e não consome créd
 Validação: 156 testes da aplicação, tipagens frontend/Worker/cobrança e build aprovados. Testes PDF com PDFs sintéticos e runtime isolado cobrem duas entregas, renovação, reentrega, concorrência, falhas e isolamento. Não equivalem a uma nova geração real, calibração completa ou entrega automática nova de webhook do Stripe. Oito PDFs de calibração continuam pendentes.
 
 Para ativar geração: configurar credencial própria por canal seguro, confirmar limite de uso e concluir teste real controlado/fluxo de assinatura. Nenhuma compra de créditos ou recarga automática está autorizada por este documento.
+
+
+## Revisão do orçamento e da qualidade
+
+O limite de oito chamadas do piloto é substituído por um teto persistente de US$1, sem reinício por deploy/renovação. Reserva conservadora antes da chamada e custo desconhecido retido; dois créditos mensais por assinante preservados. Status considera disponibilidade do orçamento. Limites inválidos falham fechados; valores acima de US$1 são limitados a US$1.
+
+Cabeçalhos opcionais OpenAI são omitidos quando não configurados. Prompt v3 reforça perguntas distintas por objetivo e distingue regras vigentes de histórico. Calibração real do v3 ainda pendente. Credencial de produção não está neste código; sem configuração válida, a geração permanece indisponível.
+
+Validação: 156 testes da aplicação, 8 testes PDF isolados, tipagens e build. Testes novos cobrem mais de oito chamadas pequenas, limites inválidos, reserva concorrente e custo desconhecido; não fazem chamadas pagas. Ativação depende de credencial válida e validação real do fluxo.

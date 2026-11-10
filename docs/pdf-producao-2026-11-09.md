@@ -1,11 +1,11 @@
-# PDF no Quiddo — integração autorizada em 09/11/2026
+# PDF no Quiddo — ativação e validação
 
-Gui autorizou explicitamente incluir PDF e publicar, substituindo a limitação anterior de staging. Código do piloto integrado à biblioteca e ao telão atuais. O caminho de produção exige sessão real, mensal Stripe efetivamente pago, ciclo vigente e identidade conferida no servidor; não aceita cupom, anual ou fixture. Dois créditos por ciclo, com reserva idempotente, isolamento por conta e preservação de crédito em falhas.
+A geração exige sessão real e assinatura mensal Stripe paga no ciclo vigente. Dois créditos por ciclo, reserva idempotente e isolamento por conta. Anual, cortesia e cobrança não paga não dão acesso. Bases existentes são preservadas; credenciais ficam somente no servidor.
 
-As novas classes PdfAccount e PdfBudget são aditivas; Room e bases existentes são preservadas. Nenhuma chave, banco ou documento de cliente está neste PR. A dependência pdf-lib foi minificada sem mudança de API; licença e hashes em vendor/.
+O limite de oito chamadas do piloto foi substituído por teto persistente de US$1, sem reinício em deploy ou renovação. Reserva conservadora antes da chamada; custo desconhecido mantém a reserva. Limites inválidos falham fechados e valores acima de US$1 são limitados a US$1. Não há compra nem recarga automática por esta integração.
 
-A interface inclui PDF, mas geração retorna indisponível e não consome crédito até existir OPENAI_API_KEY de produção e PDF_BUDGET_USD positivo. Verificados apenas os nomes dos secrets no painel: a chave OpenAI não estava configurada. Não reutilizar a chave temporária expirada do piloto. O limite herdado é estrito: no máximo USD 1 e 8 chamadas; não é uma política de escala aprovada. Não elevar esse limite silenciosamente.
+Cabeçalhos opcionais OpenAI são omitidos quando ausentes. Prompt v3 pede objetivos distintos e distingue regras vigentes de histórico.
 
-Validação: 156 testes da aplicação, tipagens frontend/Worker/cobrança e build aprovados. Testes PDF com PDFs sintéticos e runtime isolado cobrem duas entregas, renovação, reentrega, concorrência, falhas e isolamento. Não equivalem a uma nova geração real, calibração completa ou entrega automática nova de webhook do Stripe. Oito PDFs de calibração continuam pendentes.
+Validação em 10/11/2026: 156 testes da aplicação, oito testes PDF isolados, tipagens e build aprovados. Teste com Responses real e PDF fictício de duas páginas gerou sete perguntas, revisadas contra a fonte, por US$0.0003461 estimados pelo uso retornado. Salvamento e reabertura em nova sessão preservaram respostas e referências; repetição idempotente não gerou nova chamada; outra conta recebeu acesso negado.
 
-Para ativar geração: configurar credencial própria por canal seguro, confirmar limite de uso e concluir teste real controlado/fluxo de assinatura. Nenhuma compra de créditos ou recarga automática está autorizada por este documento.
+O teste real de modelo usou armazenamento isolado e elegibilidade de cobrança simulada. Não representa compra real nem validação nova de entrega automática de webhook Stripe. Calibração ampla em diferentes documentos permanece pendente. Nenhum documento de cliente ou segredo está no repositório.

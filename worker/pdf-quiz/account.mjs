@@ -51,7 +51,11 @@ export class PdfAccount extends DurableObject {
     }
     if(path==='/api/pdf/history' && req.method==='GET')return json({results:this.ledger.history()});
     const ent=await this.entitlement(email,settings);
-    if(path==='/api/pdf/status' && req.method==='GET') return json({...this.ledger.status(ent,now),enabled:true,maxPages:50,maxBytes:MAX_BYTES,providerReady:(!!this.env.OPENAI_API_KEY && Number(this.env.PDF_BUDGET_USD)>0) || (this.env.PDF_STAGE==='isolated' && !!settings && settings.providerMode!=='real'),simulatedBilling:this.env.PDF_STAGE==='isolated'});
+    if(path==='/api/pdf/status' && req.method==='GET') {
+      const simulated=this.env.PDF_STAGE==='isolated' && !!settings && settings.providerMode!=='real';
+      const funded=!!this.env.OPENAI_API_KEY && (await this.env.PDF_BUDGET.get(this.env.PDF_BUDGET.idFromName('test-budget-20261107')).summary()).available;
+      return json({...this.ledger.status(ent,now),enabled:true,maxPages:50,maxBytes:MAX_BYTES,providerReady:simulated || funded,simulatedBilling:this.env.PDF_STAGE==='isolated'});
+    }
     if (!['/api/pdf/inspect','/api/pdf/generate'].includes(path) || req.method!=='POST')throw new PdfError('route','Não encontrado.',404);
     const parsed=await readPdf(req);
     if(path==='/api/pdf/inspect')return json({pages:parsed.count,bytes:parsed.size,sha256:parsed.hash,maxBytes:MAX_BYTES});
@@ -75,10 +79,10 @@ export class PdfAccount extends DurableObject {
         else response={status:'completed',model:MODEL,output:[{content:[{type:'output_text',text:JSON.stringify(settings.providerMode==='malformed'?{title:'Inválido',questions:[]}:settings.quiz)}]}]};
       } else {
         if(!this.env.OPENAI_API_KEY)throw new PdfError('provider_unavailable','A geração está temporariamente indisponível. Nenhum crédito foi consumido.',503);
-        try { await budget.reserve(reservation.attempt); } catch { throw new PdfError('test_budget','A geração está temporariamente indisponível. Nenhum crédito foi consumido.',503); }
+        try { await budget.reserve(reservation.attempt); } catch { throw new PdfError('budget_exhausted','A geração está temporariamente indisponível. Nenhum crédito foi consumido.',503); }
         providerStarted=true;
         const remote=await fetch('https://api.openai.com/v1/responses',{
-          method:'POST',headers:{Authorization:'Bearer '+this.env.OPENAI_API_KEY,'Content-Type':'application/json','OpenAI-Organization':this.env.OPENAI_ORGANIZATION,'OpenAI-Project':this.env.OPENAI_PROJECT},
+          method:'POST',headers:{Authorization:'Bearer '+this.env.OPENAI_API_KEY,'Content-Type':'application/json',...(this.env.OPENAI_ORGANIZATION?{'OpenAI-Organization':this.env.OPENAI_ORGANIZATION}:{}),...(this.env.OPENAI_PROJECT?{'OpenAI-Project':this.env.OPENAI_PROJECT}:{})},
           body:JSON.stringify(requestBody(selected.dataUrl,selected.pages,config)),signal:AbortSignal.timeout(150000)
         });
         audit.httpStatus=remote.status;audit.requestId=remote.headers.get('x-request-id');

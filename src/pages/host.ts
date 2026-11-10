@@ -1,4 +1,5 @@
 // /host/{CODIGO}: tela do anfitrião, a que vai na TV ou no projetor.
+import { abertoComoApp, chaveDoEndereco, emTelaCheia, ligarTelao, pedirTelaCheia, temTelaCheia } from '../lib/telao';
 import type { Page } from '../main';
 import type { ClientMsg, HostState, ServerMsg } from '../../shared/protocol';
 import { TEMAS } from '../data/pacotes';
@@ -24,6 +25,12 @@ export function page(code: string): Page {
 }
 
 function mount(main: HTMLElement, code: string) {
+  // quem abriu pelo ícone da tela de início (iPhone) traz a chave no endereço: guarda e limpa
+  const veio = chaveDoEndereco();
+  if (veio) {
+    store.set('host:' + code, veio);
+    history.replaceState(history.state, '', location.pathname + location.search);
+  }
   const hostKey = store.get<string>('host:' + code, '');
   const link = `${location.origin}/${code}`;
   let s: HostState | null = null;
@@ -376,20 +383,23 @@ function mount(main: HTMLElement, code: string) {
 
   /** Modo foto: esconde tudo menos o cartão do pódio, em tela cheia se o navegador deixar. */
   /** Tela cheia da tela principal. Só funciona a partir de um clique ou tecla da pessoa. */
-  function telaCheia(on: boolean) {
-    try {
-      if (on && !document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
-      if (!on && document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
-    } catch {}
-  }
-  // botão fixo no canto para entrar e sair da tela cheia quando quiser
+  const telaCheia = (on: boolean) => pedirTelaCheia(on);
+  // celular deitado espelhado na TV: desenha como um telão de 1280 px
+  const desligarTelao = ligarTelao();
+  // botões fixos no canto: som e tela cheia, lado a lado sem se cobrir
+  const cantos = document.createElement('div');
+  cantos.className = 'cantos-tv';
   const btnCheia = document.createElement('button');
   btnCheia.className = 'btn-cheia';
   btnCheia.type = 'button';
-  const rotuloCheia = () => (btnCheia.textContent = document.fullscreenElement ? 'Sair da tela cheia' : 'Tela cheia');
+  const rotuloCheia = () => {
+    btnCheia.textContent = emTelaCheia() ? 'Sair da tela cheia' : 'Tela cheia';
+    btnCheia.setAttribute('aria-haspopup', temTelaCheia() ? 'false' : 'dialog');
+  };
   rotuloCheia();
-  btnCheia.addEventListener('click', () => telaCheia(!document.fullscreenElement));
-  if (document.fullscreenEnabled) document.body.appendChild(btnCheia);
+  btnCheia.addEventListener('click', () => (temTelaCheia() ? telaCheia(!emTelaCheia()) : comoTelaCheia()));
+  // aberto pelo ícone da tela de início já ocupa a tela toda: o botão não tem o que fazer
+  if (temTelaCheia() || !abertoComoApp()) cantos.appendChild(btnCheia);
   const btnSom = document.createElement('button');
   btnSom.className = 'btn-som';
   btnSom.type = 'button';
@@ -403,11 +413,50 @@ function mount(main: HTMLElement, code: string) {
     if (alternarSom() && s && s.phase !== 'lobby') ligarMusica();
     rotuloSom();
   });
-  document.body.appendChild(btnSom);
+  cantos.prepend(btnSom);
+  document.body.appendChild(cantos);
+
+  // celular em pé: dica para deitar antes de espelhar (some quando deita ou quando fecha)
+  const dica = document.createElement('div');
+  dica.className = 'dica-deitar';
+  dica.setAttribute('role', 'status');
+  dica.innerHTML = `<p><b>Vai espelhar na TV?</b> Deite o celular. A tela se ajusta ao telão.</p><button type="button" aria-label="Fechar a dica">Ok</button>`;
+  dica.querySelector('button')!.addEventListener('click', () => dica.remove());
+  document.body.appendChild(dica);
+
+  /** iPhone não tem tela cheia no navegador: explica o caminho pela tela de início. */
+  function comoTelaCheia() {
+    // o atalho da tela de início guarda o endereço atual; com a chave nele, a sala abre como anfitrião
+    history.replaceState(history.state, '', location.pathname + location.search + '#k=' + encodeURIComponent(hostKey));
+    const dlg = document.createElement('dialog');
+    dlg.className = 'dlg-cheia';
+    dlg.setAttribute('aria-labelledby', 'dlg-cheia-t');
+    dlg.innerHTML = `<h2 id="dlg-cheia-t">Tela cheia no iPhone</h2>
+      <p>O Safari não deixa o site ocupar a tela toda. Para jogar sem a barra do navegador:</p>
+      <ol>
+        <li>Feche este aviso e toque em <b>Compartilhar</b>, o quadrado com a seta para cima.</li>
+        <li>Escolha <b>Adicionar à Tela de Início</b>.</li>
+        <li>Abra o Quiddo pelo ícone novo. A sala abre direto, em tela cheia.</li>
+      </ol>
+      <p class="muted">Dica: deite o celular antes de espelhar. Na Central de Controle, toque em <b>Espelhar Tela</b> e escolha a TV.</p>
+      <button type="button" class="btn">Entendi</button>`;
+    const fechar = () => {
+      dlg.close();
+      dlg.remove();
+      // a chave fica no endereço enquanto a pessoa está nesta tela, para o atalho levar junto
+    };
+    dlg.querySelector('button')!.addEventListener('click', fechar);
+    dlg.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      fechar();
+    });
+    document.body.appendChild(dlg);
+    dlg.showModal();
+  }
 
   let cheiaAntesDaFoto = false;
   function modoFoto(on: boolean) {
-    if (on) cheiaAntesDaFoto = !!document.fullscreenElement;
+    if (on) cheiaAntesDaFoto = emTelaCheia();
     document.body.classList.toggle('modo-foto', on);
     let x = document.getElementById('sair-foto');
     if (on && !x) {
@@ -424,16 +473,17 @@ function mount(main: HTMLElement, code: string) {
   }
   const onFull = () => {
     rotuloCheia();
-    if (!document.fullscreenElement && document.body.classList.contains('modo-foto')) modoFoto(false);
+    if (!emTelaCheia() && document.body.classList.contains('modo-foto')) modoFoto(false);
   };
   document.addEventListener('fullscreenchange', onFull);
+  document.addEventListener('webkitfullscreenchange', onFull);
 
   // seta para a direita, Page Down e espaço avançam: funciona com passador de slides
   const onKey = (e: KeyboardEvent) => {
     if (e.key === 'Escape' && document.body.classList.contains('modo-foto')) return modoFoto(false);
     const tag = (e.target as HTMLElement).tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON' || tag === 'A') return;
-    if (e.key === 'f' || e.key === 'F') return telaCheia(!document.fullscreenElement);
+    if (e.key === 'f' || e.key === 'F') return telaCheia(!emTelaCheia());
     if (e.key === 'm' || e.key === 'M') {
       alternarSom();
       return rotuloSom();
@@ -489,8 +539,12 @@ function mount(main: HTMLElement, code: string) {
     pararSuspense(4);
     modoFoto(false);
     document.removeEventListener('fullscreenchange', onFull);
-    btnCheia.remove();
-    btnSom.remove();
+    document.removeEventListener('webkitfullscreenchange', onFull);
+    cantos.remove();
+    dica.remove();
+    document.querySelector('.dlg-cheia')?.remove();
+    if (chaveDoEndereco()) history.replaceState(history.state, '', location.pathname + location.search);
+    desligarTelao();
     pararMusica();
     document.getElementById('entrou')?.remove();
     main.removeEventListener('click', onClick);

@@ -17,7 +17,7 @@ const EVENTS = ['create_room','begin_checkout','purchase','navigation','quiz_cre
 export type MeasureEvent = typeof EVENTS[number];
 let campaign = campaignQuery(typeof location === 'undefined' ? '' : location.search);
 export type Sale = { transaction_id: string; value: number; currency: 'BRL'; plano: 'mensal' | 'anual' | 'semana' | 'oferta' };
-export type MeasureParams = Partial<Sale> & { payment_type?: 'pix' | 'card'; role?: 'host' | 'player'; source?: 'manual' | 'template' | 'import' | 'pdf'; storage?: 'local' | 'cloud'; method?: 'promo' | 'existing_code'; destination?: string; question_count?: number; error_category?: 'network' | 'rejected' | 'invalid_input' | 'quota' | 'provider' | 'pending' | 'conflict' | 'storage' | 'unknown' | 'login_required' | 'already_subscribed' };
+export type MeasureParams = Partial<Sale> & { payment_type?: 'pix' | 'card'; role?: 'host' | 'player'; source?: 'manual' | 'template' | 'import' | 'pdf' | 'text'; storage?: 'local' | 'cloud'; method?: 'promo' | 'existing_code'; destination?: string; question_count?: number; error_category?: 'network' | 'rejected' | 'invalid_input' | 'quota' | 'provider' | 'pending' | 'conflict' | 'storage' | 'unknown' | 'login_required' | 'already_subscribed' };
 let sequence = 0;
 const callbacks = new Map<number, (queued: boolean) => void>();
 const purchasesInFlight = new Set<string>();

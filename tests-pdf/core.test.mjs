@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {parsePages,paidEntitlement,validateQuiz,costFromUsage,requestBody} from '../worker/pdf-quiz/core.mjs';
+import {parsePages,paidEntitlement,validateQuiz,costFromUsage,requestBody,textRequestBody,readBriefing} from '../worker/pdf-quiz/core.mjs';
 import {fixture} from './fixtures.mjs';
 test('page selection counts actual unique pages and rejects 51, out-of-range, and non-integers',()=>{
  assert.equal(parsePages('2-51',52).length,50);assert.deepEqual(parsePages('1,1,2-3',3),[1,2,3]);
@@ -30,4 +30,28 @@ test('structured generation constrains page and size; audit identifies invalid f
  assert.equal(body.prompt_cache_options.ttl,'30m');
  const q=structuredClone(fixture().quiz);q.questions[0].answer='not an option';
  assert.throws(()=>validateQuiz(q,[2]),e=>e.code==='invalid_result'&&e.fields.includes('questions.0.answer'));
+});
+
+test('briefing supports a short theme and text-only structured output without fabricated PDF evidence',async()=>{
+ const make=(body,contentType='text/plain')=>new Request('https://stage.example/api/pdf/generate-text',{method:'POST',headers:{'content-type':contentType},body});
+ const briefing=await readBriefing(make('  Encontro de família  '));
+ assert.equal(briefing,'Encontro de família');
+ await assert.rejects(readBriefing(make('  ')),{code:'briefing'});
+ await assert.rejects(readBriefing(make('x'.repeat(4001))),{code:'size'});
+ await assert.rejects(readBriefing(make('😀'.repeat(8000))),{code:'size'});
+ await assert.rejects(readBriefing(make('quiz','application/pdf')),{code:'format'});
+ const body=textRequestBody(briefing);
+ assert.deepEqual(body.input[0].content,[{type:'input_text',text:briefing}]);
+ assert.equal(body.store,false);
+ const schema=body.text.format.schema.properties.questions.items;
+ assert.equal(schema.properties.page,undefined);
+ assert.equal(schema.properties.evidence,undefined);
+ const quiz=fixture().quiz;
+ delete quiz.questions[0].page;
+ delete quiz.questions[0].evidence;
+ const {items:[question]}=validateQuiz(quiz);
+ assert.equal(question.page,undefined);
+ assert.equal(question.evidence,undefined);
+ assert.equal(question.a[question.c],quiz.questions[0].answer);
+ assert.throws(()=>validateQuiz(quiz,[2]),{code:'invalid_result'});
 });

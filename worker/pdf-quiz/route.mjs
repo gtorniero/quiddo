@@ -7,7 +7,7 @@ export async function pdfRoute(req,env) {
   const stage=env.PDF_STAGE==='isolated';
   if(!stage && (url.pathname.startsWith('/__staging/') || loginSimulado(env)))return json({erro:'Não encontrado.'},404);
   // Do not advertise a paid feature as ready before its production provider and spend guard are configured.
-  if(!stage && ['/api/pdf/status','/api/pdf/inspect','/api/pdf/generate'].includes(url.pathname) && (!env.OPENAI_API_KEY || !(Number(env.PDF_BUDGET_USD)>0)))return json({erro:'A geração por PDF aguarda ativação. Seus créditos estão preservados.',code:'provider_unavailable'},503);
+  if(!stage && ['/api/pdf/status','/api/pdf/inspect','/api/pdf/generate','/api/pdf/generate-text'].includes(url.pathname) && (!env.OPENAI_API_KEY || !(Number(env.PDF_BUDGET_USD)>0)))return json({erro:'A geração com IA aguarda ativação. Seus créditos estão preservados.',code:'provider_unavailable'},503);
   if(!['GET','POST','DELETE'].includes(req.method))return json({erro:'Método inválido.'},405);
   if(req.method!=='GET' && req.headers.get('origin')!==url.origin)return json({erro:'Origem inválida.'},403);
   const email=await emailDaSessao(req,env);

@@ -2,7 +2,7 @@ import {DurableObject} from 'cloudflare:workers';
 import {Ledger} from './ledger.mjs';
 import {entitlementFromStripe} from './entitlement.mjs';
 import {readPdf,selectPdf} from './pdf.mjs';
-import {MODEL,PROMPT_VERSION,MAX_BYTES,PdfError,json,sha,profile,paidEntitlement,requestBody,resultText,validateQuiz,costFromUsage} from './core.mjs';
+import {MODEL,PROMPT_VERSION,TEXT_PROMPT_VERSION,MAX_BYTES,PdfError,json,sha,profile,paidEntitlement,requestBody,textRequestBody,readBriefing,resultText,validateQuiz,costFromUsage} from './core.mjs';
 
 export class PdfAccount extends DurableObject {
   constructor(ctx,env) { super(ctx,env);this.ctx=ctx;this.env=env;this.ledger=new Ledger(ctx.storage); }
@@ -56,20 +56,27 @@ export class PdfAccount extends DurableObject {
       const funded=!!this.env.OPENAI_API_KEY && (await this.env.PDF_BUDGET.get(this.env.PDF_BUDGET.idFromName('test-budget-20261107')).summary()).available;
       return json({...this.ledger.status(ent,now),enabled:true,maxPages:50,maxBytes:MAX_BYTES,providerReady:simulated || funded,simulatedBilling:this.env.PDF_STAGE==='isolated'});
     }
-    if (!['/api/pdf/inspect','/api/pdf/generate'].includes(path) || req.method!=='POST')throw new PdfError('route','Não encontrado.',404);
-    const parsed=await readPdf(req);
+    const isText=path==='/api/pdf/generate-text';
+    if (!['/api/pdf/inspect','/api/pdf/generate','/api/pdf/generate-text'].includes(path) || req.method!=='POST')throw new PdfError('route','Não encontrado.',404);
+    const parsed=isText?null:await readPdf(req);
     if(path==='/api/pdf/inspect')return json({pages:parsed.count,bytes:parsed.size,sha256:parsed.hash,maxBytes:MAX_BYTES});
     const id=req.headers.get('idempotency-key')||'';
     if(!/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(id))throw new PdfError('idempotency','Identificador de tentativa inválido.');
-    const config=profile(url.searchParams.get('profile')||'none-high',this.env.PDF_STAGE==='isolated');
-    const selected=await selectPdf(parsed,url.searchParams.get('pages')||'');
-    const fingerprint=await sha(JSON.stringify({file:parsed.hash,pages:selected.pages,prompt:PROMPT_VERSION,model:MODEL,config}));
+    const config=isText?{effort:'none'}:profile(url.searchParams.get('profile')||'none-high',this.env.PDF_STAGE==='isolated');
+    const briefing=isText?await readBriefing(req):null;
+    const selected=isText?null:await selectPdf(parsed,url.searchParams.get('pages')||'');
+    const source=isText?'text':'pdf', promptVersion=isText?TEXT_PROMPT_VERSION:PROMPT_VERSION;
+    const sourceSHA256=isText?await sha(briefing):parsed.hash;
+    // The PDF fingerprint is unchanged so old retries remain recoverable after this update.
+    const fingerprint=await sha(JSON.stringify(isText
+      ? {source,text:sourceSHA256,prompt:promptVersion,model:MODEL,config}
+      : {file:sourceSHA256,pages:selected.pages,prompt:promptVersion,model:MODEL,config}));
     const reservation=this.ledger.reserve(id,fingerprint,ent,now);
     if(reservation.replay)return json({id,status:'delivered',result:reservation.replay.result,replayed:true});
     if(reservation.pending)return json({id,status:'pending'},202);
     let providerStarted=false, response=null, cost=null;
     const started=Date.now();
-    const audit={id:reservation.attempt,job:id,prompt:PROMPT_VERSION,model:MODEL,config,originalPages:parsed.count,selectedPages:selected.pages,selectedCount:selected.count,sourceSHA256:parsed.hash,sentSHA256:selected.hash,sentBytes:selected.bytes,started:new Date(started).toISOString(),providerMode:this.env.PDF_STAGE==='isolated' ? settings.providerMode : 'real'};
+    const audit={id:reservation.attempt,job:id,prompt:promptVersion,model:MODEL,config,source,...(isText?{inputCharacters:briefing.length}:{originalPages:parsed.count,selectedPages:selected.pages,selectedCount:selected.count,sentSHA256:selected.hash,sentBytes:selected.bytes}),sourceSHA256,started:new Date(started).toISOString(),providerMode:this.env.PDF_STAGE==='isolated' ? settings.providerMode : 'real'};
     const budget=this.env.PDF_BUDGET.get(this.env.PDF_BUDGET.idFromName('test-budget-20261107'));
     try {
       if (this.env.PDF_STAGE==='isolated' && settings.providerMode!=='real') {
@@ -83,7 +90,7 @@ export class PdfAccount extends DurableObject {
         providerStarted=true;
         const remote=await fetch('https://api.openai.com/v1/responses',{
           method:'POST',headers:{Authorization:'Bearer '+this.env.OPENAI_API_KEY,'Content-Type':'application/json',...(this.env.OPENAI_ORGANIZATION?{'OpenAI-Organization':this.env.OPENAI_ORGANIZATION}:{}),...(this.env.OPENAI_PROJECT?{'OpenAI-Project':this.env.OPENAI_PROJECT}:{})},
-          body:JSON.stringify(requestBody(selected.dataUrl,selected.pages,config)),signal:AbortSignal.timeout(150000)
+          body:JSON.stringify(isText?textRequestBody(briefing):requestBody(selected.dataUrl,selected.pages,config)),signal:AbortSignal.timeout(150000)
         });
         audit.httpStatus=remote.status;audit.requestId=remote.headers.get('x-request-id');
         response=await remote.json();
@@ -93,11 +100,11 @@ export class PdfAccount extends DurableObject {
       }
       const raw=resultText(response);
       // Fictional test inputs only, behind the private staging gate. Production keeps no raw output audit.
-      if(this.env.PDF_STAGE==='isolated'&&settings.providerMode==='real')audit.rawResult=raw;
-      const validated=validateQuiz(raw,selected.pages);
+      if(!isText&&this.env.PDF_STAGE==='isolated'&&settings.providerMode==='real')audit.rawResult=raw;
+      const validated=validateQuiz(raw,selected?.pages);
       settings=await this.settings();now=settings?.now||Date.now();
       const current=await this.entitlement(email,settings);
-      const result={id,...validated,pages:selected.pages,source:'pdf',model:audit.model,promptVersion:PROMPT_VERSION,config,created:new Date().toISOString(),sourceSHA256:parsed.hash,metrics:{latencyMs:Date.now()-started,usage:response.usage||null,cost,simulated:audit.providerMode!=='real'}};
+      const result={id,...validated,...(isText?{}:{pages:selected.pages}),source,model:audit.model,promptVersion,config,created:new Date().toISOString(),sourceSHA256,metrics:{latencyMs:Date.now()-started,usage:response.usage||null,cost,simulated:audit.providerMode!=='real'}};
       this.ledger.complete(reservation,result,current,now);audit.outcome='delivered';
       return json({id,status:'delivered',result});
     } catch(e) {

@@ -8,6 +8,7 @@ import { esc } from './dom';
 import { qrSvg } from './qr';
 import { store } from './storage';
 import { logado } from './conta';
+import { SUBSCRIPTION_AI_CREDITS } from '../../shared/ai-credits.mjs';
 
 export type Plano = 'mensal' | 'anual' | 'semana' | 'oferta';
 
@@ -113,8 +114,10 @@ const ICONE_PIX =
  * `aoPagar` recebe o código quando o pagamento é confirmado (ou quando a pessoa usa um código que já tem).
  * `plano` já deixa um plano marcado (a página de preços manda o que a pessoa clicou).
  */
-export async function abrirPagamento(volta: string, aoPagar: (codigo: string) => void, plano: Plano = 'anual', sala?: { codigo: string; hostKey: string }) {
-  const c = await cobranca();
+export async function abrirPagamento(volta: string, aoPagar: (codigo: string) => void, plano: Plano = 'anual', sala?: { codigo: string; hostKey: string }, contexto?: 'ia') {
+  const c0 = await cobranca();
+  // criar com IA é só da assinatura: o Passe 7 dias sai da lista
+  const c = c0 && contexto === 'ia' ? { ...c0, planos: c0.planos.filter((x) => x.id === 'mensal' || x.id === 'anual') } : c0;
   // oferta da sala cheia: o anfitrião, com gente esperando, libera com desconto no Pix (o servidor confere na sala)
   const oferta = !!sala && !!c?.oferta && (c.pix || c.cartao);
   const tem = (p: Plano) => !!c?.planos.some((x) => x.id === p);
@@ -139,7 +142,9 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
 
   // regras e devolução ficam nas perguntas frequentes (abre em outra aba, para não sair da sala)
   const rodape = '<p class="pg-legal"><a href="/precos#perguntas" target="_blank" rel="noopener">Dúvidas? Veja as perguntas frequentes</a></p>';
-  const gratis = `<div class="pg-ou" aria-hidden="true"><span>ou</span></div><button type="button" class="btn sec pg-gratis" data-pg="fechar">Continuar grátis, até ${c?.gratis || 10} pessoas</button>`;
+  const gratis = contexto === 'ia'
+    ? `<button type="button" class="btn sec pg-gratis" data-pg="fechar">Agora não</button>`
+    : `<div class="pg-ou" aria-hidden="true"><span>ou</span></div><button type="button" class="btn sec pg-gratis" data-pg="fechar">Continuar grátis, até ${c?.gratis || 10} pessoas</button>`;
   const fechar = `<button type="button" class="pg-x" data-pg="fechar" aria-label="Fechar">×</button>`;
 
   const promo = '<details class="pg-promo"><summary>Tenho um código promocional</summary><form class="pg-form" data-pg-promo><label>Código promocional<input name="promo" autocomplete="off" maxlength="80" required></label><button class="btn sec" type="submit">Aplicar código</button><p role="alert" data-promo-error></p></form></details>';
@@ -183,8 +188,12 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
           }</span></label>`,
       )
       .join('');
-    d.innerHTML = `${fechar}<span class="selo">Quiddo liberado</span><h2 id="pg-t">Salas com até ${c.pago} pessoas</h2>
-      <p class="muted">A sala grátis vai até ${c.gratis} pessoas. Liberado, até ${c.pago}, quantos jogos quiser.</p>
+    const topo = contexto === 'ia'
+      ? `<span class="selo">Assinatura</span><h2 id="pg-t">Crie quizzes com IA</h2>
+      <p class="muted">Com a assinatura, a IA monta o quiz a partir de um tema ou de um PDF: ${SUBSCRIPTION_AI_CREDITS.text} criações por texto e ${SUBSCRIPTION_AI_CREDITS.pdf} por PDF todo mês. E as salas vão até ${c.pago} pessoas.</p>`
+      : `<span class="selo">Quiddo liberado</span><h2 id="pg-t">Salas com até ${c.pago} pessoas</h2>
+      <p class="muted">A sala grátis vai até ${c.gratis} pessoas. Liberado, até ${c.pago}, quantos jogos quiser.</p>`;
+    d.innerHTML = `${fechar}${topo}
       <form class="pg-form" data-pg-form novalidate>
         <fieldset class="pg-planos"><legend>Escolha o plano</legend>${opcoes}</fieldset>
         <p class="small">Mensal e Anual são a mesma assinatura, com os mesmos benefícios.</p>

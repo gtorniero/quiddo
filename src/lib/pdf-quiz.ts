@@ -1,7 +1,19 @@
 import './pdf-preview.css';
 import { track, trackOnce } from './measurement';
 export interface PdfResult {id:string;title:string;sourceSHA256:string;source?:'pdf'|'text';items:{t:string;a:string[];c:number;page?:number;evidence?:string;answer:string;topic:string}[]}
-export const pdfButton = '<button type="button" class="btn small qd-pdf-button" data-act="pdf-ia"><span class="qd-ai-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M10 2.5c.7 4 2.8 6.1 6.8 6.8-4 .7-6.1 2.8-6.8 6.8-.7-4-2.8-6.1-6.8-6.8 4-.7 6.1-2.8 6.8-6.8Z"/><path d="M18.4 12.4c.4 2.4 1.7 3.7 4.1 4.1-2.4.4-3.7 1.7-4.1 4.1-.4-2.4-1.7-3.7-4.1-4.1 2.4-.4 3.7-1.7 4.1-4.1Z" opacity=".8"/></svg></span>Criar quiz com IA</button>';
+const CADEADO = '<svg class="qd-ia-lock" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="currentColor" stroke="none"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>';
+/** Botão "Criar quiz com IA"; trancado mostra o cadeado e abre os planos ao clicar. */
+export const pdfButton = (trancado = false) => '<button type="button" class="btn small qd-pdf-button" data-act="pdf-ia"' + (trancado ? ' data-trancado aria-label="Criar quiz com IA, exige assinatura"' : '') + '><span class="qd-ai-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M10 2.5c.7 4 2.8 6.1 6.8 6.8-4 .7-6.1 2.8-6.8 6.8-.7-4-2.8-6.1-6.8-6.8 4-.7 6.1-2.8 6.8-6.8Z"/><path d="M18.4 12.4c.4 2.4 1.7 3.7 4.1 4.1-2.4.4-3.7 1.7-4.1 4.1-.4-2.4-1.7-3.7-4.1-4.1 2.4-.4 3.7-1.7 4.1-4.1Z" opacity=".8"/></svg></span>Criar quiz com IA' + (trancado ? CADEADO : '') + '</button>';
+
+/** "trancada": sem conta ou sem assinatura Mensal/Anual (mostra os planos); "ok" ou "outro" abrem a janela da IA. */
+export async function iaAcesso(): Promise<'ok'|'trancada'|'outro'> {
+  try {
+    const r = await fetch('/api/pdf/status', {credentials:'same-origin'});
+    if (r.ok) return 'ok';
+    const d = await r.json().catch(() => ({}));
+    return d.code === 'session' || d.code === 'monthly_required' ? 'trancada' : 'outro';
+  } catch { return 'outro'; }
+}
 
 async function api(path:string,init:RequestInit={}) {
   const r=await fetch('/api/pdf/'+path,{credentials:'same-origin',...init});

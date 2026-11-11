@@ -24,3 +24,4 @@
 .qd-ia-modos { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
 .qd-ia-modos button[aria-pressed="true"] { background: var(--amarelo); color: var(--fg); }
 .qd-pdf-dialog textarea { width: 100%; margin: 6px 0; resize: vertical; }
+.qd-pdf-button[data-trancado] .qd-ia-lock { margin-left: 2px; }

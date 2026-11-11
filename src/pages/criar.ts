@@ -2,7 +2,7 @@ import { prepararBiblioteca, contaDosQuizzes, syncStatus, carregarQuiz, quizCurr
 import { track, trackOnce } from '../lib/measurement';
 // /criar: editor do quiz e configuração do anfitrião (modo, visual, tempo, marca, perguntas) e abertura da sala.
 // O visual só aparece depois do modo e lista apenas os visuais daquele modo. Floresta é o padrão.
-import { openPdfQuiz, pdfButton, type PdfResult } from '../lib/pdf-quiz';
+import { iaAcesso, openPdfQuiz, pdfButton, type PdfResult } from '../lib/pdf-quiz';
 import type { Page } from '../main';
 import type { CreateRoomBody, CreateRoomResult, Theme, Visual } from '../../shared/protocol';
 import { LIMITS, VISUAIS_DO_MODO, compactQuestion, isReady, visualDoModo } from '../../shared/rules';
@@ -33,6 +33,16 @@ function mount(main: HTMLElement) {
 
 function mountEditor(main: HTMLElement) {
   let vivo = true;
+  // criar com IA é da assinatura: sem conta ou sem Mensal/Anual, o botão vem com cadeado e abre os planos
+  let iaTrancada = false;
+  const confereIa = () =>
+    iaAcesso().then((a) => {
+      if (!vivo || (a === 'trancada') === iaTrancada) return;
+      iaTrancada = a === 'trancada';
+      const b = main.querySelector<HTMLElement>('[data-act="pdf-ia"]');
+      if (b) b.outerHTML = pdfButton(iaTrancada);
+    });
+  void confereIa();
   let q: Quiz = atual();
   let revisao: { anterior: Quiz; source: 'pdf' | 'text' } | null = null;
   const reviewOwner = contaDosQuizzes();
@@ -153,7 +163,7 @@ function mountEditor(main: HTMLElement) {
         .join('')}</div>
       <div class="btnrow qd-pdf-actions">
         <button class="btn sec small" data-act="novo">Novo quiz</button>
-        ${pdfButton}
+        ${pdfButton(iaTrancada)}
         <span class="btn sec small filebtn">Importar arquivo<input type="file" id="imp" accept="application/json,.json" aria-label="Importar quiz em JSON"></span>
         <button class="btn sec small" data-act="exportar">Exportar este quiz</button>
       </div>
@@ -372,6 +382,10 @@ function mountEditor(main: HTMLElement) {
       }
       case 'pdf-ia':
         if (revisao) return focoPerguntas();
+        if (iaTrancada || (await iaAcesso()) === 'trancada') {
+          iaTrancada = true;
+          return void abrirPagamento('/criar', () => void confereIa(), 'anual', undefined, 'ia');
+        }
         openPdfQuiz(async (resultado: PdfResult) => {
           if (!vivo || !reviewOwner || contaDosQuizzes() !== reviewOwner) throw new Error('Entre novamente na conta que iniciou esta geração.');
           persist(true);

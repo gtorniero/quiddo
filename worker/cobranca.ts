@@ -263,12 +263,13 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     try {
       const b=await lerJson(req);
       const email=(await emailDaSessao(req,env)) || emailDe(b);
-      const g=await redeemPromo(env.PROMOS,req,'quiddo','semana',b?.codigo,email);
-      const expira=new Date(g.created+7*86400000).toISOString();
-      if (expira<=new Date().toISOString()) return json({erro:'Você já utilizou os 7 dias deste código.'},409);
+      const g=await redeemPromo(env.PROMOS,req,'quiddo','auto',b?.codigo,email);
+      const plano=g.product==='mensal'?'mensal':'semana';
+      const expira=new Date(g.created+(plano==='mensal'?30:7)*86400000).toISOString();
+      if (expira<=new Date().toISOString()) return json({erro:'Você já utilizou o período gratuito deste código.'},409);
       await tabela(db);
       const ref='promo:'+g.id, codigo=`QD-${aleatorio(4)}-${aleatorio(4)}`;
-      await db.prepare("INSERT OR IGNORE INTO compras (ref,ordem,email,status,codigo,criado,pago,valor,modo,plano,expira,tipo) VALUES (?,? ,?,'pago',?,?,?,'0','ligada','semana',?,'promo')").bind(ref,ref,email,codigo,new Date(g.created).toISOString(),new Date(g.created).toISOString(),expira).run();
+      await db.prepare("INSERT OR IGNORE INTO compras (ref,ordem,email,status,codigo,criado,pago,valor,modo,plano,expira,tipo) VALUES (?,? ,?,'pago',?,?,?,'0','ligada',?,?,'promo')").bind(ref,ref,email,codigo,new Date(g.created).toISOString(),new Date(g.created).toISOString(),plano,expira).run();
       const a=await db.prepare('SELECT codigo,plano,expira FROM compras WHERE ref=?').bind(ref).first<Acesso>();
       return json({ok:true,...a});
     } catch(e) {const error=e as Error & {status?:number};return json({erro:error.status?error.message:'Não foi possível aplicar o código.'},error.status||503);}

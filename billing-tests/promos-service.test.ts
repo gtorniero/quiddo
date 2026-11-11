@@ -16,3 +16,9 @@ it('matches recipients across product databases and deduplicates repeated SPORT 
  const broken=await (await servicePromos(request(undefined,'?campaign='+id),{...env,PROMO_SPORTDNA:undefined})).json() as any;expect(broken.sources.sportdna).toBe('unavailable');expect(broken.redemptions.find((g:any)=>g.site==='sportdna')).toMatchObject({email:null,identity_status:'unavailable'});
 });
 it('pages without dropping records and rejects malformed filters/bodies',async()=>{const {env,db}=await fixture();for(let i=0;i<52;i++)await db.prepare('INSERT INTO promo_codes(id,hash,label,sites,created) VALUES (?,?,?,?,?)').bind('c'+String(i).padStart(2,'0'),'hash'+i,'Campaign '+i,'["quiddo"]',10).run();const a=await (await servicePromos(request(),env)).json() as any,b=await (await servicePromos(request(undefined,'?cursor='+encodeURIComponent(a.next_cursor)),env)).json() as any;expect(a.campaigns.length+b.campaigns.length).toBe(52);expect(new Set([...a.campaigns,...b.campaigns].map((c:any)=>c.id)).size).toBe(52);expect(b.next_cursor).toBe(null);expect((await servicePromos(request(undefined,'?cursor=garbage'),env)).status).toBe(400);expect((await servicePromos(request(undefined,'?extra=bad'),env)).status).toBe(400);expect((await servicePromos(request({...create,label:'x'.repeat(5000)}),env)).status).toBe(413);});
+it('creates and lists monthly Quiddo campaigns independently of legacy week campaigns',async()=>{
+ const {env}=await fixture();expect((await servicePromos(request({...create,sites:['quiddo:mensal']}),env)).status).toBe(200);
+ const data=await (await servicePromos(request(),env)).json() as any;expect(data.campaigns[0].sites).toEqual(['quiddo:mensal']);
+});
+
+it("rejects ambiguous Quiddo benefits",async()=>{const {env}=await fixture();expect((await servicePromos(request({...create,sites:["quiddo","quiddo:mensal"]}),env)).status).toBe(400);});

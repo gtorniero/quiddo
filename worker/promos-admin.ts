@@ -17,7 +17,8 @@ export async function adminPromos(req:Request,env:LoginEnv){
  await env.PROMOS.prepare('UPDATE promo_codes SET active=? WHERE id=?').bind(b.active?1:0,b.id).run();return json({ok:true});
  }
  if(b.action!=='create')return json({erro:'Ação inválida.'},400);
- const label=String(b.label||'').trim().slice(0,80),sites=Array.isArray(b.sites)?[...new Set(b.sites)].filter(x=>['quiddo','retrozap','sportdna','sportdna:surf-report','sportdna:racket-report','sportdna:run-report','sportdna:racket-comparator'].includes(String(x))):[];
+ const label=String(b.label||'').trim().slice(0,80),sites=Array.isArray(b.sites)?[...new Set(b.sites)].filter(x=>['quiddo','quiddo:mensal','retrozap','sportdna','sportdna:surf-report','sportdna:racket-report','sportdna:run-report','sportdna:racket-comparator'].includes(String(x))):[];
+ if(b.sites.includes('quiddo')&&b.sites.includes('quiddo:mensal'))return json({erro:'Escolha apenas um benefício do Quiddo.'},400);
  const expires=b.expires?Date.parse(b.expires):null;
  if(!label||!sites.length||sites.length!==new Set(b.sites).size||(expires!==null&&(!Number.isFinite(expires)||expires<=Date.now())))return json({erro:'Confira nome, sites e validade.'},400);
  const custom=String(b.codigo||'').trim().toUpperCase();

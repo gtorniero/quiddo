@@ -4,7 +4,7 @@ export interface PromoServiceEnv {
 }
 const json=(o:unknown,status=200)=>Response.json(o,{status,headers:{'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex'}});
 const fail=(status:number,message:string):never=>{throw Object.assign(new Error(message),{status});};
-const scopes=['quiddo','retrozap','sportdna','sportdna:surf-report','sportdna:racket-report','sportdna:run-report','sportdna:racket-comparator'];
+const scopes=['quiddo','quiddo:mensal','retrozap','sportdna','sportdna:surf-report','sportdna:racket-report','sportdna:run-report','sportdna:racket-comparator'];
 const idOk=(s:unknown):s is string=>typeof s==='string'&&/^[a-zA-Z0-9_-]{1,80}$/.test(s);
 const cursor=(v:string|null)=>{if(!v)return null;try{const c=JSON.parse(atob(v));if(!Array.isArray(c)||c.length!==2||!Number.isSafeInteger(c[0])||!idOk(c[1]))throw Error();return c as [number,string];}catch{return fail(400,'Página inválida.');}};
 async function identities(env:PromoServiceEnv,grants:any[]){
@@ -59,7 +59,8 @@ async function mutate(db:D1Database,b:any){
  }
  if(b.action!=='create'||!idOk(b.request_id))fail(400,'Pedido inválido.');
  const label=typeof b.label==='string'?b.label.trim():'',codigo=typeof b.codigo==='string'?b.codigo.trim().toUpperCase():'';
- if(!label||label.length>80||!/^[A-Z0-9&_-]{6,80}$/.test(codigo)||!Array.isArray(b.sites)||!b.sites.length||b.sites.length>7||b.sites.some((s:unknown)=>typeof s!=='string'||!scopes.includes(s)))fail(400,'Confira nome, código e produtos.');
+ if(!label||label.length>80||!/^[A-Z0-9&_-]{6,80}$/.test(codigo)||!Array.isArray(b.sites)||!b.sites.length||b.sites.length>8||b.sites.some((s:unknown)=>typeof s!=='string'||!scopes.includes(s)))fail(400,'Confira nome, código e produtos.');
+ if(b.sites.includes('quiddo')&&b.sites.includes('quiddo:mensal'))fail(400,'Escolha apenas um benefício do Quiddo.');
  const sites=[...new Set(b.sites)].sort(),expires=b.expires===null||b.expires===undefined||b.expires===''?null:typeof b.expires==='string'?Date.parse(b.expires):NaN;
  if(expires!==null&&(!Number.isFinite(expires)||expires<=Date.now()))fail(400,'Confira a validade.');
  const hash=await promoHash(codigo),payloadHash=await promoHash(JSON.stringify({label,sites,expires,hash}));

@@ -13,9 +13,9 @@ import { palco } from '../lib/podio';
 import { alternarSom, bipe, fanfarra, ligarMusica, musicaBaixa, pararMusica, reacao, rufar, somLigado } from '../lib/som';
 import { avatarSvg } from '../lib/avatar-art';
 import { abrirPagamento, cobranca, confereVolta, meuAcesso } from '../lib/pagamento';
+import { logado } from '../lib/conta';
 import { eventPlan } from '../lib/offer-context';
 import { LIMITS } from '../../shared/rules';
-import { PRECOS, reais } from '../../shared/precos.mjs';
 import { SUSPENSE_MS, agendaPodio, graficoVotos, novosNoPodio, animateRank, answersStatic, prepare, preparando, brandBar, confete, cortina, errorScreen, fogoFaixa, fotoCabeca, podiumTitle, questionHead, rankColunas, rankList, rankPista, revelacaoTv, tick, top10 } from './jogo-comum';
 import type { RankRow } from '../../shared/protocol';
 
@@ -49,15 +49,8 @@ function mount(main: HTMLElement, code: string) {
   let destaqueEm = 0; // revelação: hora em que a resposta certa ganha o destaque (antes, só os votos)
   let destaqueTimer = 0;
   let ultimaEspera = 0; // quantos esperavam vaga no último estado (para avisar quando chega mais gente)
-  // preços da oferta da sala cheia (o servidor manda; até lá, os padrões)
-  let ofertaPor = reais(PRECOS.oferta);
-  let ofertaDe = reais(PRECOS.semana);
-  cobranca().then((c) => {
-    if (c?.oferta) {
-      ofertaPor = c.oferta.preco;
-      ofertaDe = c.oferta.de;
-    }
-  });
+  // a configuração da cobrança chega cedo, para a janela de pagamento abrir sem espera
+  void cobranca();
   let liberando = false; // já pediu ao servidor para liberar a sala com o código deste navegador
 
   main.classList.add('tv');
@@ -83,7 +76,12 @@ function mount(main: HTMLElement, code: string) {
       fatal = m.type === 'closed' ? (m.motivo === 'inativa' ? 'inativa' : 'closed') : m.code;
       sock.stop();
       banner('');
-      main.innerHTML = errorScreen(fatal, '<a class="btn auto" href="/criar" data-link>Voltar para o editor</a>');
+      // sala parada: pausou com tudo guardado; reabrir conecta de novo e o servidor reabre com o mesmo código
+      main.innerHTML =
+        fatal === 'inativa'
+          ? `<section class="panel center pausada"><h1>A sala pausou</h1><p class="muted">Ficou 20 minutos sem ninguém jogar e sem esta tela aberta. O código ${code} continua valendo: reabra e quem já recebeu o convite entra pelo mesmo link.</p><div class="btnrow"><button type="button" class="btn" data-act="reabrir">Reabrir a sala ${code}</button><a class="btn sec" href="/criar" data-link>Voltar para o editor</a></div></section>`
+          : errorScreen(fatal, '<a class="btn auto" href="/criar" data-link>Voltar para o editor</a>');
+      if (fatal === 'inativa') main.querySelector<HTMLElement>('[data-act="reabrir"]')?.focus();
       return;
     }
     if (m.type !== 'state' || m.role !== 'host') return;
@@ -139,7 +137,7 @@ function mount(main: HTMLElement, code: string) {
     if (!s) return;
     const novos = s.phase === 'lobby' ? s.players.filter((p) => !vistos.has(p.id)) : [];
     const screens = { lobby, question: pergunta, reveal: pergunta, ranking, final };
-    const html = brandBar(s) + screens[s.phase](s);
+    const html = brandBar(s) + ensaioFaixa(s) + screens[s.phase](s);
     // não redesenha se nada mudou: preserva as animações do ranking e do pódio
     if (html !== lastHtml) {
       lastHtml = html;
@@ -151,6 +149,14 @@ function mount(main: HTMLElement, code: string) {
     ultimaEspera = s.esperando;
     if (novos.length) avisoEntrada(novos.length === 1 ? `${novos[0].nick} entrou!` : `${novos.length} pessoas entraram!`);
     tick(s, sock.now());
+  }
+
+  /** Ensaio: faixa no alto da TV, para ninguém confundir os bichos de teste com a turma. */
+  function ensaioFaixa(s: HostState) {
+    if (!s.ensaio || s.phase === 'lobby') return '';
+    return `<p class="ensaio-faixa" role="status"><span><b>Ensaio</b> · os bichos de teste respondem sozinhos. Quando a primeira pessoa entrar, o ensaio para.</span>${
+      s.phase === 'final' ? '' : '<button type="button" class="linkbtn" data-act="fimEnsaio">Parar o ensaio</button>'
+    }</p>`;
   }
 
   /** Aviso grande "Bia entrou!" no alto da TV, por 2 segundos. */
@@ -198,41 +204,56 @@ function mount(main: HTMLElement, code: string) {
   function lobby(s: HostState) {
     const invite = `Bora jogar Quiddo? Entra na sala com o código ${code}: ${link}`;
     const n = s.players.length;
-    // com gente esperando vaga, a oferta vem no topo da tela, antes do código da sala
-    const oferta = s.esperando > 0 && s.maxPlayers < LIMITS.maxPlayers ? `<section class="oferta-topo">${planoSala(s)}</section>` : '';
-    return `${oferta}<section class="stage"><div class="joinbox">
-        <div style="display:grid;gap:12px">
+    const gratis = s.maxPlayers < LIMITS.maxPlayers;
+    // sala de espera da TV em duas colunas: convite à esquerda; contador, "Começar" e os bichos à direita
+    return `<div class="sala-espera"><section class="stage convite"><div class="joinbox">
+        <div class="convite-txt">
           <div class="tag">Entre pelo celular</div>
           <div class="url">${esc(location.host)}/<b>${code}</b></div>
           <div class="bigcode" aria-label="Código da sala: ${code.split('').join(' ')}">${code}</div>
           <p class="muted">Aponte a câmera para o QR ou abra o link e digite seu apelido. ${esc(TEMAS[s.theme].chamada)}.</p>
-          <a class="btn wa auto" href="https://wa.me/?text=${encodeURIComponent(invite)}" target="_blank" rel="noopener">${WHATSAPP}Mandar convite no WhatsApp</a>
         </div>
         <div class="qr">${qrSvg(link)}</div>
+        <a class="btn wa convite-wa" href="https://wa.me/?text=${encodeURIComponent(invite)}" target="_blank" rel="noopener">${WHATSAPP}Mandar convite no WhatsApp</a>
+        <p class="small convite-antes"><b>Pode mandar o convite antes.</b> A sala fica aberta enquanto esta tela estiver ligada, até 12 horas.</p>
       </div></section>
-      <section class="panel"><div class="contador"><b>${n}</b><span>${n === 1 ? 'pessoa na sala' : 'pessoas na sala'}${s.maxPlayers < LIMITS.maxPlayers ? ` <small class="limite-gratis">de ${s.maxPlayers} na sala grátis</small>` : ''}</span></div>${oferta ? '' : planoSala(s)}
+      <section class="panel quem-entrou">
+        <div class="contador-linha"><div class="contador"><b>${n}</b><span>${n === 1 ? 'pessoa na sala' : 'pessoas na sala'}${gratis ? ` <small class="limite-gratis">de ${s.maxPlayers} na sala grátis</small>` : ''}</span></div>
+        ${n ? '<button class="btn comecar" data-act="start" data-focus="start">Começar o quiz</button>' : ''}</div>
+        ${s.esperando > 0 && gratis ? filaSala(s) : planoSala(s)}
         ${
           n
             ? `<div class="jogadores">${s.players
                 .map(
                   (p, i) =>
-                    `<div class="jogador${p.connected ? '' : ' off'}${vistos.has(p.id) ? '' : ' chegou'}"><span class="fig" style="--r:${GIRO[i % GIRO.length]}">${avatarSvg(p.avatar, 72, false, { vivo: true })}</span><b>${esc(p.nick)}</b><button class="linkbtn" data-act="kick" data-v="${p.id}" data-focus="k${p.id}" aria-label="Remover ${esc(p.nick)}">Remover</button></div>`,
+                    `<div class="jogador${p.connected ? '' : ' off'}${vistos.has(p.id) ? '' : ' chegou'}"><span class="fig" style="--r:${GIRO[i % GIRO.length]}">${avatarSvg(p.avatar, 64, false, { vivo: true })}</span><b>${esc(p.nick)}</b><button class="linkbtn" data-act="kick" data-v="${p.id}" data-focus="k${p.id}" aria-label="Remover ${esc(p.nick)}">Remover</button></div>`,
                 )
                 .join('')}</div>`
-            : '<p class="muted esperando">Esperando a turma entrar<span class="dots"></span></p>'
+            : `<div class="ensaio-box"><p class="esperando">Esperando a turma entrar<span class="dots"></span></p>
+              <p class="small">Ainda sem turma? Faça um ensaio: 3 bichos de teste entram e respondem sozinhos, e você vê a rodada inteira, do “Prepare-se” ao pódio. O ensaio não conta como jogo e a sala continua aberta para a turma.</p>
+              <div class="btnrow"><button class="btn" data-act="ensaio" data-focus="ensaio">Ensaiar com 3 bichos de teste</button></div></div>`
         }
-        <div class="btnrow"><button class="btn" data-act="start" data-focus="start">${n ? 'Começar o quiz' : 'Começar sem jogadores (teste)'}</button></div><p class="encerrar"><button class="linkbtn" data-act="close" data-focus="close">Encerrar sala</button></p>
-      </section>`;
+        <p class="encerrar"><button class="linkbtn" data-act="close" data-focus="close">Encerrar sala</button></p>
+      </section></div>`;
+  }
+
+  /**
+   * Sala grátis cheia com gente esperando: a TV mostra só quantos esperam e um QR que abre o pagamento no celular
+   * de quem organiza. O preço não aparece no telão, na frente de todo mundo.
+   */
+  function filaSala(s: HostState) {
+    const url = `${location.origin}/pagar/${code}#c=${encodeURIComponent(s.pagar)}`;
+    return `<div class="plano oferta fila-sala" role="status">
+        <div class="fila-txt"><p class="oferta-fila"><b>${s.esperando}</b> ${s.esperando === 1 ? 'pessoa esperando' : 'pessoas esperando'} para entrar</p>
+        <p>A sala grátis vai até ${s.maxPlayers} pessoas. Quem organiza: aponte a câmera do <b>seu celular</b> para o QR e libere a sala por lá, sem parar o jogo.</p>
+        <button type="button" class="linkbtn" data-act="oferta" data-focus="oferta">Pagar neste aparelho</button></div>
+        <div class="qr qr-pagar" aria-label="QR code para liberar a sala no seu celular">${s.pagar ? qrSvg(url) : ''}</div>
+      </div>`;
   }
 
   /** Sala grátis: mostra o limite e o botão para liberar até 200 pessoas. */
   function planoSala(s: HostState) {
     if (s.maxPlayers >= LIMITS.maxPlayers) return '';
-    // alguém tentou entrar com a sala cheia: oferta para liberar na hora, sem interromper o jogo
-    if (s.esperando > 0)
-      return `<div class="plano oferta" role="status"><p class="oferta-fila"><b>${s.esperando}</b> ${s.esperando === 1 ? 'pessoa esperando' : 'pessoas esperando'} para entrar</p>
-        <p>A sala grátis vai até ${s.maxPlayers} pessoas. <b>Não interrompa o jogo:</b> libere até ${LIMITS.maxPlayers} pessoas com o Passe 7 dias <span class="oferta-preco">de <s>R$ ${esc(ofertaDe)}</s> por <b>R$ ${esc(ofertaPor)}</b></span>. Faça um Pix agora e a sala libera em um minuto.</p>
-        <button type="button" class="btn auto" data-act="oferta" data-focus="oferta">Pagar R$ ${esc(ofertaPor)} com Pix e liberar</button></div>`;
     const cheia = s.players.length >= s.maxPlayers;
     return `<div class="plano${cheia ? ' cheia' : ''}" role="status"><p>${cheia ? `<b>A sala encheu.</b> A sala grátis vai até ${s.maxPlayers} pessoas.` : `Sala grátis: até ${s.maxPlayers} pessoas.`}</p>
       <button type="button" class="btn sec auto" data-act="liberar" data-focus="liberar">Liberar até ${LIMITS.maxPlayers} pessoas</button></div>`;
@@ -296,8 +317,38 @@ function mount(main: HTMLElement, code: string) {
         <div class="btnrow" style="width:100%"><button class="btn" data-act="draw" data-v="all" data-focus="drawall"${anyLeft && !spinning ? '' : ' disabled'}>Sortear entre todos</button><button class="btn sec" data-act="draw" data-v="scored" data-focus="drawpts"${scored && !spinning ? '' : ' disabled'}>Só entre quem pontuou</button></div>
         <p class="small">Cada sorteio tira um nome que ainda não saiu. Sorteie quantos prêmios quiser.</p></section>
       <section class="panel"><h2>Classificação ${s.ranking.length > 10 ? 'completa' : 'final'}</h2>${s.ranking.length ? rankList(s.ranking) : '<p class="small">Ninguém jogou.</p>'}
-        <div class="btnrow"><button class="btn" data-act="restart" data-focus="restart">Jogar de novo</button><button class="btn sec" data-act="close" data-focus="close">Encerrar sala</button></div>
-        <p class="small">Jogar de novo usa as mesmas perguntas e as mesmas pessoas, com os pontos zerados.</p></section>`;
+        ${
+          s.ensaio
+            ? ''
+            : `<div class="btnrow"><button class="btn" data-act="restart" data-focus="restart">Jogar de novo</button><button class="btn sec" data-act="close" data-focus="close">Encerrar sala</button></div>
+        <p class="small">Jogar de novo usa as mesmas perguntas e as mesmas pessoas, com os pontos zerados.</p>`
+        }</section>
+      ${s.ensaio ? fimDoEnsaio() : proximoQuiz(s)}`;
+  }
+
+  /** Fim do ensaio: o anfitrião já viu ranking e pódio; agora é chamar a turma. */
+  function fimDoEnsaio() {
+    const invite = `Bora jogar Quiddo? Entra na sala com o código ${code}: ${link}`;
+    return `<section class="panel fim-ensaio"><h2>Ensaio concluído</h2><p>Foi assim que a turma vai ver. Agora mande o convite: a sala ${code} continua aberta e o ensaio não conta como jogo.</p>
+      <div class="btnrow"><a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(invite)}" target="_blank" rel="noopener">${WHATSAPP}Mandar convite no WhatsApp</a><button type="button" class="btn sec" data-act="fimEnsaio" data-focus="fimEnsaio">Voltar para a sala de espera</button></div></section>`;
+  }
+
+  /**
+   * "E o próximo quiz?": depois da classificação, o melhor momento para guardar o quiz e pensar no próximo.
+   * Na TV não tem preço: só uma linha sobre o Premium, para quem ainda não tem.
+   */
+  function proximoQuiz(s: HostState) {
+    const conta = logado();
+    const premium = s.maxPlayers >= LIMITS.maxPlayers && !!meuAcesso();
+    return `<section class="panel proximo-quiz" aria-labelledby="h-proximo"><h2 id="h-proximo">E o próximo quiz?</h2>
+      <p>${conta ? 'A turma gostou? Este quiz já fica na sua conta: dá para jogar de novo em qualquer computador, ou começar outro a partir de um pronto.' : 'A turma gostou? Guarde este quiz na sua conta para usar de novo em qualquer computador, ou comece outro a partir de um pronto.'}</p>
+      <div class="btnrow">${
+        conta
+          ? '<a class="btn" href="/criar" data-link>Abrir meus quizzes</a>'
+          : '<a class="btn" href="/entrar?volta=/criar" data-link>Salvar este quiz na minha conta</a>'
+      }<a class="btn sec" href="/criar?comecar=1" data-link>Criar outro quiz</a></div>
+      ${premium ? '' : '<p class="small">Evento maior vem aí? O Premium libera salas de até 200 pessoas, a sua marca e o quiz com IA. <a href="/precos" data-link>Ver os planos</a></p>'}
+    </section>`;
   }
 
   /** Roleta de nomes de ~1,5 s antes de mostrar quem foi sorteado. */
@@ -354,6 +405,12 @@ function mount(main: HTMLElement, code: string) {
       // o clique em "Começar" é o gesto que o navegador exige para a tela cheia
       telaCheia(true);
     }
+    else if (a === 'ensaio') {
+      send({ type: 'ensaio' });
+      ligarMusica();
+      telaCheia(true);
+    } else if (a === 'fimEnsaio') send({ type: 'fimEnsaio' });
+    else if (a === 'reabrir') location.reload();
     else if (a === 'mostrar') send({ type: 'mostrar' });
     else if (a === 'reveal') send({ type: 'reveal' });
     else if (a === 'showRanking') send({ type: 'showRanking' });

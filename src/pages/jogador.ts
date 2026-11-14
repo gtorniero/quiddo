@@ -15,6 +15,7 @@ import type { Avatar, Bicho, ItemCabeca, ItemRosto } from '../../shared/avatar';
 const LAPIS =
   '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 20h4L19 9l-4-4L4 16v4Z" fill="#fff" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m13.5 6.5 4 4" stroke="currentColor" stroke-width="2"/></svg>';
 import { avatarSvg, comMoldura } from '../lib/avatar-art';
+import { cartaoResultado, compartilharCartao, tituloCartao } from '../lib/cartao';
 import { simbolo } from '../lib/simbolos';
 import { FOGO, MOEDA, SUSPENSE_MS, tamanhoResposta, agendaPodio, novosNoPodio, answersStatic, aplaude, prepare, preparando, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick, top10 } from './jogo-comum';
 
@@ -132,6 +133,15 @@ function mount(main: HTMLElement, code: string) {
           <p class="muted">Esta sala grátis vai até 10 pessoas. Quem abriu a sala pode liberar mais vagas agora. Fique nesta tela: você entra sozinho assim que liberar<span class="dots"></span></p></section>`;
         return;
       }
+      // sala pausada (ficou parada e a tela do anfitrião fechou): o convite continua valendo; o celular espera
+      if (c === 'pausada') {
+        esperandoVaga = true;
+        s = null;
+        lastHtml = '';
+        main.innerHTML = `<section class="stage center espera-vaga" role="status"><div class="tag">Sala ${code}</div><div class="big">A sala está pausada</div>
+          <p class="muted">Quem abriu a sala precisa abrir a tela do jogo de novo. Fique nesta tela: você entra sozinho assim que a sala voltar<span class="dots"></span></p></section>`;
+        return;
+      }
       if (c !== 'not_found') store.del('jog:' + code);
       main.innerHTML = errorScreen(c, '<a class="btn auto" href="/jogar" data-link>Jogar em outra sala</a>');
       return;
@@ -232,7 +242,12 @@ function mount(main: HTMLElement, code: string) {
         <h1 tabindex="-1" id="ed-h">Seu personagem</h1><div id="avp" class="avpick">${picker()}</div>
         <div class="etapa-acoes"><button type="button" class="btn sec auto" data-act="ed-cancelar">Cancelar</button><button type="button" class="btn" data-act="ed-pronto" data-focus="ed-pronto">Pronto</button></div></section>`;
     return `<section class="stage center"><div class="tag">Você está na sala ${code}</div><span class="fig grande editavel" style="--r:-4deg">${avatarSvg(s.me.avatar, 132, true, { vivo: true })}<button type="button" class="lapis" data-act="editar" data-focus="editar" aria-label="Editar o seu personagem">${LAPIS}</button></span><div class="big">${esc(s.me.nick)}</div>
-      <p class="muted">Prontinho! Olhe para a tela: seu bicho já apareceu lá e o quiz vai começar.</p><div class="contador pequeno"><b>${s.playerCount}</b><span>${s.playerCount === 1 ? 'pessoa na sala' : 'pessoas na sala'}</span></div></section>`;
+      <p class="muted">Prontinho! Olhe para a tela: seu bicho já apareceu lá e o quiz vai começar.</p><div class="contador pequeno"><b>${s.playerCount}</b><span>${s.playerCount === 1 ? 'pessoa na sala' : 'pessoas na sala'}</span></div></section>${selo(s)}`;
+  }
+
+  /** Sala grátis: selo pequeno com o link do site. Na sala paga (Passe ou Premium), nunca aparece. */
+  function selo(s: PlayerState) {
+    return s.selo ? `<p class="selo-gratis"><a href="/?de=jogador" target="_blank" rel="noopener">Crie o seu em <b>quiddo.com.br</b></a></p>` : '';
   }
 
   function question(s: PlayerState) {
@@ -317,7 +332,12 @@ function mount(main: HTMLElement, code: string) {
     const juntos = s.playerCount === 3;
     const novo = novosNoPodio(passo, juntos);
     const palmas = passo >= 4 && s.me.rank > 3 ? `${aplaude(s.me.avatar)}<p class="muted">Palmas para o pódio!</p>` : '';
-    const meu = passo >= 4 ? `${palmas}<div class="big">${s.me.rank}º lugar</div><p class="muted">${fmt(s.me.score)} pontos</p>` : '<p class="muted">Olhe para a tela…</p>';
+    const meu =
+      passo >= 4
+        ? `${palmas}<div class="big">${s.me.rank}º lugar</div><p class="muted">${fmt(s.me.score)} pontos</p>
+          <div class="cartao-acoes"><button type="button" class="btn" data-act="cartao" data-focus="cartao"><span aria-hidden="true">↗</span> Compartilhar meu resultado</button>
+          <p class="small">Gera uma imagem para o Status ou os Stories, com o pódio e a sua posição.</p></div>`
+        : '<p class="muted">Olhe para a tela…</p>';
     // depois do pódio, os 10 primeiros, como na TV
     const lista = passo >= 4 ? top10(s.ranking, s.me.id) : '';
     return `<section class="stage center"><div class="tag">Fim do quiz</div><div class="big pequeno" aria-live="polite">${podiumTitle(s.podium, passo, s.visual, juntos)}</div>${s.podium.length ? palco(s.podium, s.theme, passo, novo, s.code, s.visual) : ''}${meu}</section>${lista}
@@ -327,7 +347,50 @@ function mount(main: HTMLElement, code: string) {
               last.id === s.me.id ? '<p class="muted">Procure o anfitrião para pegar o prêmio.</p>' : `<p class="muted">${euSorteado ? 'Você já foi sorteado antes nesta rodada.' : 'Ganhou o prêmio desta vez.'}</p>`
             }</section>`
           : ''
-      }`;
+      }${passo >= 4 ? selo(s) : ''}`;
+  }
+
+  /** Cartão de resultado: gera a imagem no celular e abre o compartilhamento (ou mostra para baixar). */
+  async function cartao(b: HTMLButtonElement) {
+    if (!s) return;
+    const st = s;
+    b.disabled = true;
+    const rotulo = b.innerHTML;
+    b.textContent = 'Gerando a imagem…';
+    try {
+      const blob = await cartaoResultado({ rank: st.me.rank, total: st.playerCount, score: st.me.score, avatar: st.me.avatar, podium: st.podium, quiz: st.brand.name });
+      const r = await compartilharCartao(blob);
+      if (r === 'sem') previaCartao(blob, st.me.rank);
+    } catch {
+      alert('Não deu para gerar a imagem agora. Tente de novo.');
+    } finally {
+      b.disabled = false;
+      b.innerHTML = rotulo;
+    }
+  }
+
+  /** Sem compartilhamento de arquivo no navegador: mostra a imagem com o botão de baixar. */
+  function previaCartao(blob: Blob, rank: number) {
+    const url = URL.createObjectURL(blob);
+    const dlg = document.createElement('dialog');
+    dlg.className = 'dlg-cartao';
+    dlg.setAttribute('aria-labelledby', 'dlg-cartao-t');
+    dlg.innerHTML = `<h2 id="dlg-cartao-t">Seu cartão</h2><img src="${url}" alt="Cartão do resultado: ${esc(tituloCartao(rank))}" width="270" height="480">
+      <p class="small">Baixe a imagem e poste no Status do WhatsApp ou nos Stories.</p>
+      <div class="btnrow"><a class="btn" href="${url}" download="quiddo-resultado.png">Baixar a imagem</a><button type="button" class="btn sec">Fechar</button></div>`;
+    const fechar = () => {
+      dlg.close();
+      dlg.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      main.querySelector<HTMLElement>('[data-act="cartao"]')?.focus();
+    };
+    dlg.querySelector('button')!.addEventListener('click', fechar);
+    dlg.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      fechar();
+    });
+    document.body.appendChild(dlg);
+    dlg.showModal();
   }
 
   // ---------- ações ----------
@@ -382,6 +445,7 @@ function mount(main: HTMLElement, code: string) {
       main.querySelector<HTMLElement>('[data-focus="editar"]')?.focus({ preventScroll: true });
       return;
     }
+    if (b.dataset.act === 'cartao') return void cartao(b);
     if (b.dataset.act === 'sair') {
       if (confirm('Sair da sala? Você perde a vaga nesta rodada.')) sair();
       return;
@@ -415,6 +479,7 @@ function mount(main: HTMLElement, code: string) {
     clearTimeout(prepTimer);
     pararSuspense();
     clearTimeout(drawTimer);
+    document.querySelector('.dlg-cartao')?.remove();
     main.removeEventListener('submit', onSubmit);
     main.removeEventListener('input', onNome);
     main.removeEventListener('click', onClick);

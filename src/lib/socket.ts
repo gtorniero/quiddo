@@ -20,6 +20,7 @@ export class RoomSocket {
   private anchor: { server: number; mono: number } | null = null;
   private lastMessageAt = 0;
   private watchdogTimer = 0;
+  private pausada = false; // sala pausada: tenta de novo sem pressa, até o anfitrião reabrir
 
   constructor(private o: RoomSocketOpts) {
     this.open();
@@ -59,7 +60,8 @@ export class RoomSocket {
         if (!this.anchor || m.serverNow > this.anchor.server + mono - this.anchor.mono) this.anchor = { server: m.serverNow, mono };
         this.offset = this.now() - Date.now();
       }
-      if (m.type === 'kicked' || m.type === 'closed' || (m.type === 'error' && m.code !== 'bad_key' && m.code !== 'acesso_invalido' && m.code !== 'cheia_gratis')) this.stop();
+      this.pausada = m.type === 'error' && m.code === 'pausada';
+      if (m.type === 'kicked' || m.type === 'closed' || (m.type === 'error' && m.code !== 'bad_key' && m.code !== 'acesso_invalido' && m.code !== 'cheia_gratis' && m.code !== 'pausada')) this.stop();
       this.o.onMessage(m);
     };
     ws.onclose = () => {
@@ -68,7 +70,8 @@ export class RoomSocket {
       clearInterval(this.watchdogTimer);
       this.ws = null;
       this.o.onStatus(false);
-      const wait = Math.min(5000, 500 * Math.pow(1.6, this.tries++));
+      // sala pausada: o celular espera o anfitrião reabrir e tenta a cada 10 segundos
+      const wait = this.pausada ? 10_000 : Math.min(5000, 500 * Math.pow(1.6, this.tries++));
       this.retryTimer = window.setTimeout(() => this.open(), wait);
     };
   }

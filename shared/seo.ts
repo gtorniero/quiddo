@@ -6,6 +6,7 @@ export function naoIndexar(path: string): boolean {
     /^\/medicao(?:\.html|-vendor\.js)?$/.test(p) ||
     ['/conta', '/entrar'].includes(p) ||
     p.startsWith('/host/') ||
+    p.startsWith('/pagar/') ||
     p.startsWith('/promocoes') ||
     /^\/[A-Za-z0-9]{4}$/.test(p)
   );

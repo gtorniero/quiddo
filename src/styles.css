@@ -5814,7 +5814,6 @@ body.modo-foto .btn-som {
   display: block;
   font-size: 0.7em;
   font-weight: 800;
-  opacity: 0.8;
 }
 
 /* Escolhas de medição opcionais. */
@@ -6371,3 +6370,284 @@ body.modo-foto .dica-deitar {
 .pg-beneficios li { display: flex; gap: 10px; align-items: flex-start; line-height: 1.4; }
 .pg-desde { margin: 4px 0 0; text-align: center; }
 .pg-centro { text-align: center; }
+
+/* ---------- jornada da sala (14/11/2026) ---------- */
+/* telas de jogo (TV e celular): o conteúdo ocupa a altura da tela e o rodapé fica abaixo da dobra.
+   Assim ele não pula a cada troca de fase (era a maior parte do CLS da TV e do celular). */
+main.jogo {
+  min-height: calc(100svh - 72px);
+}
+/* sala de espera da TV: convite à esquerda; contador, "Começar" e os bichos à direita */
+.sala-espera {
+  display: grid;
+  gap: 18px;
+  align-items: start;
+}
+.convite .joinbox {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'txt qr' 'wa wa' 'antes antes';
+  gap: 14px 20px;
+}
+.convite .convite-txt {
+  grid-area: txt;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+.convite .qr {
+  grid-area: qr;
+  align-self: start;
+}
+.convite .convite-wa {
+  grid-area: wa;
+}
+.convite .convite-antes {
+  grid-area: antes;
+  margin: 0;
+}
+@media (max-width: 640px) {
+  .convite .joinbox {
+    grid-template-columns: 1fr;
+    grid-template-areas: 'txt' 'qr' 'wa' 'antes';
+  }
+}
+.contador-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 18px;
+  flex-wrap: wrap;
+}
+.contador-linha .comecar {
+  flex: 1 1 260px;
+  max-width: 420px;
+}
+.quem-entrou {
+  display: grid;
+  gap: 14px;
+}
+.quem-entrou .encerrar {
+  margin: 0;
+}
+.ensaio-box {
+  display: grid;
+  gap: 10px;
+}
+.ensaio-box .esperando,
+.ensaio-box .small {
+  margin: 0;
+}
+@media (min-width: 960px) {
+  /* a largura da TV vale desde a primeira pintura (antes, mudar ao desenhar a sala de espera fazia a tela pular) */
+  main.tv {
+    max-width: 1240px;
+  }
+  .tv .sala-espera {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  }
+  .tv .sala-espera .bigcode {
+    font-size: clamp(48px, 5.6vw, 80px);
+    padding: 6px 18px 10px;
+    max-width: 100%;
+  }
+  .tv .sala-espera .qr {
+    width: 168px;
+  }
+  .tv .sala-espera .contador b {
+    font-size: clamp(48px, 5vw, 72px);
+  }
+  .tv .sala-espera .contador span {
+    font-size: clamp(18px, 2vw, 24px);
+  }
+  .tv .sala-espera .jogadores {
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 10px;
+  }
+  .tv .sala-espera .jogador {
+    padding: 8px 4px 2px;
+  }
+  .tv .sala-espera .jogador b {
+    font-size: 16px;
+  }
+  .tv .sala-espera .plano {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 14px;
+    flex-wrap: wrap;
+  }
+  .tv .sala-espera .plano p {
+    margin: 0;
+  }
+  .tv .sala-espera .plano .btn {
+    min-height: 44px;
+    padding: 8px 16px;
+  }
+}
+/* sala cheia: a TV mostra só quantos esperam e o QR que abre o pagamento no celular de quem organiza */
+.fila-sala {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px 16px;
+  align-items: center;
+}
+.tv .sala-espera .plano.fila-sala {
+  display: grid;
+}
+.fila-sala .fila-txt {
+  display: grid;
+  gap: 6px;
+}
+.fila-sala .fila-txt p {
+  margin: 0;
+}
+.fila-sala .linkbtn {
+  justify-self: start;
+  color: #0e2a22;
+}
+.fila-sala .qr-pagar {
+  width: 150px;
+  padding: 8px;
+}
+@media (max-width: 480px) {
+  .fila-sala {
+    grid-template-columns: 1fr;
+  }
+}
+/* ensaio: faixa no alto da TV */
+.ensaio-faixa {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  flex-wrap: wrap;
+  background: var(--amarelo);
+  color: #0e2a22;
+  border: var(--bw) solid var(--line);
+  border-radius: 16px;
+  padding: 8px 16px;
+  font-weight: 700;
+}
+.ensaio-faixa .linkbtn {
+  color: #0e2a22;
+}
+.fim-ensaio,
+.proximo-quiz {
+  display: grid;
+  gap: 12px;
+}
+.fim-ensaio h2,
+.proximo-quiz h2,
+.fim-ensaio p,
+.proximo-quiz p {
+  margin: 0;
+}
+.proximo-quiz .btnrow .btn {
+  flex: 1 1 260px;
+}
+.pausada .btnrow {
+  justify-content: center;
+}
+/* sala grátis: selo pequeno nos celulares, com o link do site */
+.selo-gratis {
+  margin: 0;
+  text-align: center;
+}
+.selo-gratis a {
+  display: inline-block;
+  line-height: 28px;
+  min-height: 44px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 2px dashed var(--soft-line);
+  background: var(--card);
+  color: var(--fg);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.selo-gratis a:hover,
+.selo-gratis a:focus-visible {
+  border-style: solid;
+  border-color: var(--line);
+}
+/* cartão de resultado */
+.cartao-acoes {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  width: 100%;
+}
+.cartao-acoes .btn {
+  width: 100%;
+  max-width: 420px;
+}
+.cartao-acoes .small {
+  margin: 0;
+}
+.dlg-cartao {
+  max-width: min(360px, calc(100vw - 32px));
+  border: var(--bw) solid var(--line);
+  border-radius: 22px;
+  padding: 18px;
+  text-align: center;
+}
+.dlg-cartao img {
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  border: 2px solid var(--soft-line);
+}
+.dlg-cartao h2 {
+  margin: 0 0 10px;
+}
+.dlg-cartao .btnrow {
+  justify-content: center;
+}
+/* pagar a sala cheia no celular */
+.pagar-sala {
+  display: grid;
+  gap: 12px;
+}
+.pagar-sala h1,
+.pagar-sala p {
+  margin: 0;
+}
+/* respostas apagadas: legíveis (contraste 4.5:1), em vez de transparentes */
+.answers .ans.dim,
+.quem-grid button.dim {
+  opacity: 1;
+  background: #ebe6dc;
+  color: #33413b;
+  box-shadow: none;
+}
+.answers .ans.dim .lt {
+  background: #5d6b65;
+  color: #fff;
+}
+.answers .ans.dim .sym {
+  opacity: 0.3;
+}
+/* rodapé na tela da TV: todos os links claros sobre o verde (o de Privacidade sumia no fundo) */
+body:has(main.tv) .foot a,
+body:has(main.tv) .foot button {
+  color: inherit;
+}
+@keyframes afunda {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 0 10px;
+  }
+}
+@media (min-width: 960px) {
+  body:has(main.tv) .top {
+    max-width: 1240px;
+  }
+}
+.pagar-sala .selo {
+  justify-self: start;
+}

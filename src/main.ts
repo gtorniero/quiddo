@@ -18,6 +18,7 @@ import * as jogar from './pages/jogar';
 import * as criar from './pages/criar';
 import * as host from './pages/host';
 import * as jogador from './pages/jogador';
+import * as pagar from './pages/pagar';
 import * as guias from './pages/guias';
 import * as precos from './pages/precos';
 import * as entrar from './pages/entrar';
@@ -48,6 +49,8 @@ function route(path: string): Page {
   if (p === '/precos') return precos.page();
   let m = /^\/guias\/([a-z0-9-]+)$/.exec(p);
   if (m) return guias.artigo(m[1]);
+  m = /^\/pagar\/([A-Za-z0-9]{4})$/.exec(p);
+  if (m && CODE_RE.test(normalizeCode(m[1]))) return pagar.page(normalizeCode(m[1]));
   m = /^\/host\/([A-Za-z0-9]{4})$/.exec(p);
   if (m && CODE_RE.test(normalizeCode(m[1]))) return host.page(normalizeCode(m[1]));
   m = /^\/([A-Za-z0-9]{4})$/.exec(p);
@@ -109,7 +112,8 @@ function render() {
   applyTheme(store.get<Theme>('tema', 'festa'));
   const page = route(location.pathname);
   const main = document.getElementById('conteudo')!;
-  main.className = page.wide ? 'wide' : '';
+  // telas de jogo (TV, celular do jogador, pagar a sala) ocupam a tela toda: o rodapé fica abaixo da dobra
+  main.className = (page.wide ? 'wide' : '') + (page.compact ? ' jogo' : '');
   header(location.pathname, page.compact);
   document.title = page.fullTitle || (page.title === 'Quiddo' ? 'Quiddo · Quizz do seu jeito' : `${page.title} · Quiddo`);
   metas(page);

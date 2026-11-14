@@ -2,6 +2,7 @@ import { prepararBiblioteca, contaDosQuizzes, syncStatus, carregarQuiz, quizCurr
 import { track, trackOnce } from '../lib/measurement';
 // /criar: editor do quiz e configuração do anfitrião (modo, visual, tempo, marca, perguntas) e abertura da sala.
 // O visual só aparece depois do modo e lista apenas os visuais daquele modo. Floresta é o padrão.
+import { logado } from '../lib/conta';
 import { iaAcesso, openPdfQuiz, pdfButton, type PdfResult } from '../lib/pdf-quiz';
 import type { Page } from '../main';
 import type { CreateRoomBody, CreateRoomResult, Theme, Visual } from '../../shared/protocol';
@@ -17,7 +18,7 @@ import { store } from '../lib/storage';
 import { THEME_ACC, applyTheme } from '../lib/theme';
 import { VISUAIS } from '../data/visuais';
 import { miniVisual } from '../lib/visuais-arte';
-import { type Cobranca, abrirPagamento, acessoAte, cobranca, cobrancaValendo, confereVolta, meuAcesso, testeCobranca } from '../lib/pagamento';
+import { type Cobranca, abrirPagamento, iaRetomar, acessoAte, cobranca, cobrancaValendo, confereVolta, meuAcesso, testeCobranca } from '../lib/pagamento';
 
 export function page(): Page {
   return { title: 'Criar meu quiz', mount };
@@ -43,6 +44,45 @@ function mountEditor(main: HTMLElement) {
       if (b) b.outerHTML = pdfButton(iaTrancada);
     });
   void confereIa();
+  const abrirIa = () =>
+    openPdfQuiz(async (resultado: PdfResult) => {
+      if (!vivo || !reviewOwner || contaDosQuizzes() !== reviewOwner) throw new Error('Entre novamente na conta que iniciou esta geração.');
+      persist(true);
+      const existente = listar().find(quiz => quiz.id === resultado.id);
+      if (existente) { q = await carregarQuiz(existente.id); store.set(quizCurrentKey(), q.id); }
+      else {
+        const anterior = q;
+        q = { ...novoQuiz(q.tema), visual: q.visual, tempo: q.tempo, marca: { ...q.marca }, logo: q.logo };
+        q.id = resultado.id; q.titulo = resultado.title;
+        q.perguntas = resultado.items.map(item => ({
+          t:item.t, o:[...item.a], c:item.c, tl:q.tempo,
+          ...(resultado.source !== 'text' && item.page != null && item.evidence ? {
+            pdf:{page:item.page,evidence:item.evidence,answer:item.answer,topic:item.topic,hash:resultado.sourceSHA256},
+          } : {}),
+        }));
+        revisao = {anterior, source:resultado.source ?? 'pdf'}; persist(true);
+      }
+      render(); requestAnimationFrame(focoPerguntas);
+    });
+  // pop-up de venda da IA; depois de pagar ou resgatar um código, confere e já abre a IA
+  const vendeIa = () =>
+    void abrirPagamento('/criar', () => void confereIa().then(() => {
+      if (iaTrancada || !vivo) return;
+      document.getElementById('pagamento')?.remove();
+      abrirIa();
+    }), 'anual', undefined, 'ia');
+  // volta do login ou do cartão começado no pop-up da IA: abre a IA (assinante) ou os planos (logado sem plano)
+  const retomaIa = async () => {
+    const r = iaRetomar();
+    if (!r || !logado() || revisao) return;
+    const a = await iaAcesso();
+    if (!vivo) return;
+    iaTrancada = a === 'trancada';
+    const b = main.querySelector<HTMLElement>('[data-act="pdf-ia"]');
+    if (b) b.outerHTML = pdfButton(iaTrancada);
+    if (a === 'ok') { iaRetomar(null); abrirIa(); }
+    else if (a === 'trancada' && r === 'login') vendeIa();
+  };
   let q: Quiz = atual();
   let revisao: { anterior: Quiz; source: 'pdf' | 'text' } | null = null;
   const reviewOwner = contaDosQuizzes();
@@ -384,27 +424,9 @@ function mountEditor(main: HTMLElement) {
         if (revisao) return focoPerguntas();
         if (iaTrancada || (await iaAcesso()) === 'trancada') {
           iaTrancada = true;
-          return void abrirPagamento('/criar', () => void confereIa(), 'anual', undefined, 'ia');
+          return vendeIa();
         }
-        openPdfQuiz(async (resultado: PdfResult) => {
-          if (!vivo || !reviewOwner || contaDosQuizzes() !== reviewOwner) throw new Error('Entre novamente na conta que iniciou esta geração.');
-          persist(true);
-          const existente = listar().find(quiz => quiz.id === resultado.id);
-          if (existente) { q = await carregarQuiz(existente.id); store.set(quizCurrentKey(), q.id); }
-          else {
-            const anterior = q;
-            q = { ...novoQuiz(q.tema), visual: q.visual, tempo: q.tempo, marca: { ...q.marca }, logo: q.logo };
-            q.id = resultado.id; q.titulo = resultado.title;
-            q.perguntas = resultado.items.map(item => ({
-              t:item.t, o:[...item.a], c:item.c, tl:q.tempo,
-              ...(resultado.source !== 'text' && item.page != null && item.evidence ? {
-                pdf:{page:item.page,evidence:item.evidence,answer:item.answer,topic:item.topic,hash:resultado.sourceSHA256},
-              } : {}),
-            }));
-            revisao = {anterior, source:resultado.source ?? 'pdf'}; persist(true);
-          }
-          render(); requestAnimationFrame(focoPerguntas);
-        });
+        abrirIa();
         return;
       case 'salvar-pdf': {
         if (!revisao) return;
@@ -686,7 +708,7 @@ function mountEditor(main: HTMLElement) {
     cob = c;
     refreshPlano();
   });
-  confereVolta(refreshPlano);
+  confereVolta(refreshPlano).then(() => retomaIa());
   return () => {
     vivo = false;
     window.removeEventListener('pagehide', flushOnLeave);

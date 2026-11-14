@@ -114,6 +114,18 @@ const ICONE_PIX =
  * `aoPagar` recebe o código quando o pagamento é confirmado (ou quando a pessoa usa um código que já tem).
  * `plano` já deixa um plano marcado (a página de preços manda o que a pessoa clicou).
  */
+/** Pop-up da IA deixou um passo pendente: 'login' (foi entrar) ou 'pagar' (foi ao cartão). Vale 30 minutos. */
+export function iaRetomar(v?: 'login' | 'pagar' | null): 'login' | 'pagar' | null {
+  try {
+    if (v === null) sessionStorage.removeItem('qd-ia-retomar');
+    else if (v) sessionStorage.setItem('qd-ia-retomar', JSON.stringify({ v, t: Date.now() }));
+    const x = JSON.parse(sessionStorage.getItem('qd-ia-retomar') || 'null');
+    return x && Date.now() - x.t < 30 * 60_000 ? x.v : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function abrirPagamento(volta: string, aoPagar: (codigo: string) => void, plano: Plano = 'anual', sala?: { codigo: string; hostKey: string }, contexto?: 'ia') {
   const c0 = await cobranca();
   // criar com IA é só da assinatura: o Passe 7 dias sai da lista
@@ -136,6 +148,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
     d.remove();
   };
   d.addEventListener('close', () => {
+    if (contexto === 'ia') iaRetomar(null);
     clearInterval(espera);
     d.remove();
   });
@@ -188,11 +201,30 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
           }</span></label>`,
       )
       .join('');
+    const ok = '<span class="pc-ok" aria-hidden="true">✓</span>';
     const topo = contexto === 'ia'
-      ? `<span class="selo">Assinatura</span><h2 id="pg-t">Crie quizzes com IA</h2>
-      <p class="muted">Com a assinatura, a IA monta o quiz a partir de um tema ou de um PDF: ${SUBSCRIPTION_AI_CREDITS.text} criações por texto e ${SUBSCRIPTION_AI_CREDITS.pdf} por PDF todo mês. E as salas vão até ${c.pago} pessoas.</p>`
+      ? `<span class="selo">Premium</span><h2 id="pg-t">Seu quiz pronto em segundos, com IA</h2>
+      <p class="muted">Conte o tema ou envie um PDF: a IA escreve as perguntas e as respostas, e você só revisa.</p>
+      <ul class="pg-beneficios">
+        <li>${ok}<span><b>Quiz com IA</b>: ${SUBSCRIPTION_AI_CREDITS.text} por tema e ${SUBSCRIPTION_AI_CREDITS.pdf} por PDF todo mês</span></li>
+        <li>${ok}<span><b>Salas com até ${c.pago} pessoas</b> (grátis vai até ${c.gratis})</span></li>
+        <li>${ok}<span><b>Jogos ilimitados</b>, quantas vezes quiser</span></li>
+        <li>${ok}<span><b>Quizzes salvos na sua conta</b>, em qualquer aparelho</span></li>
+      </ul>`
       : `<span class="selo">Quiddo liberado</span><h2 id="pg-t">Salas com até ${c.pago} pessoas</h2>
       <p class="muted">A sala grátis vai até ${c.gratis} pessoas. Liberado, até ${c.pago}, quantos jogos quiser.</p>`;
+    // a IA, os créditos e os cupons ficam na conta: sem login, o primeiro passo é entrar
+    if (contexto === 'ia' && !logado()) {
+      const desde = c.planos.find((x) => x.id === 'anual');
+      d.innerHTML = `${fechar}${topo}
+        ${desde ? `<p class="pg-desde">A partir de <b>R$ ${esc((Number(desde.preco.replace(',', '.')) / 12).toFixed(2).replace('.', ',').replace(/,00$/, ''))}/mês</b> no plano anual</p>` : ''}
+        <a class="btn" href="/entrar?volta=${encodeURIComponent(volta)}" data-pg-entrar>Entrar e assinar</a>
+        <p class="small pg-centro">Sem senha: você recebe um código no e-mail. Já assina ou tem um cupom? Entre com o seu e-mail para liberar.</p>
+        ${gratis}`;
+      d.querySelector<HTMLElement>('[data-pg-entrar]')?.addEventListener('click', () => iaRetomar('login'));
+      d.querySelector<HTMLElement>('[data-pg-entrar]')?.focus();
+      return;
+    }
     d.innerHTML = `${fechar}${topo}
       <form class="pg-form" data-pg-form novalidate>
         <fieldset class="pg-planos"><legend>Escolha o plano</legend>${opcoes}</fieldset>
@@ -249,6 +281,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
   };
 
   const cartao = async (email: string) => {
+    if (contexto === 'ia') iaRetomar('pagar');
     d.innerHTML = `${fechar}<h2 id="pg-t">Abrindo o pagamento…</h2>`;
     const r = await post<{ url?: string; erro?: string; login?: boolean; gerenciar?: boolean }>('/api/cartao', { email, volta, plano: escolhido, sala: sala?.codigo, hostKey: sala?.hostKey, testeCobranca: testeCobranca() });
     if (r?.login) {

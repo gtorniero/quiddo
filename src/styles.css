@@ -6232,3 +6232,7 @@ body.modo-foto .dica-deitar {
     }
   }
 }
+.pg-beneficios { list-style: none; margin: 4px 0 8px; padding: 0; display: grid; gap: 8px; }
+.pg-beneficios li { display: flex; gap: 10px; align-items: flex-start; line-height: 1.4; }
+.pg-desde { margin: 4px 0 0; text-align: center; }
+.pg-centro { text-align: center; }

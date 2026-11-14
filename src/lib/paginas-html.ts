@@ -231,6 +231,7 @@ export function privacidadeHtml() {
   <ul>
     <li><b>Neste navegador:</b> seus quizzes, preferências, sua escolha de cookies e, se você pagou, o código de acesso do plano.</li>
     <li><b>Nas salas:</b> para o jogo funcionar, o servidor guarda as perguntas, as imagens, a marca escolhida, os apelidos, os personagens, as respostas e os pontos. A sala é apagada 2 horas depois do fim do jogo, ou 12 horas depois de aberta.</li>
+    <li><b>Ao mandar o quiz do celular para o computador:</b> uma cópia do quiz (perguntas, respostas, imagens e marca) fica 7 dias no servidor, num link que só quem recebe conhece, e depois é apagada. Para limitar abusos, guardamos um resumo (hash) do endereço de internet, que muda todo dia.</li>
     <li><b>Na sua conta, se você entrar com e-mail:</b> o e-mail, os quizzes que você salvar na conta e a sessão (um cookie que dura 30 dias). Para o login, guardamos um resumo (hash) do código enviado e o endereço de internet de quem pediu, para limitar tentativas; esses pedidos são apagados em 1 dia.</li>
     <li><b>Nos pagamentos:</b> e-mail, plano, valor, datas, código de acesso, a referência do pagamento e, se você chegou por um anúncio, as etiquetas da campanha. Os dados do cartão e do banco ficam com o Stripe e o Mercado Pago, não com a gente.</li>
     <li><b>No Quiz com IA (assinantes):</b> o tema ou o PDF que você envia vai para a OpenAI escrever as perguntas. Guardamos na sua conta o quiz gerado e um resumo (hash) do arquivo, não o arquivo.</li>

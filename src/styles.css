@@ -6050,6 +6050,230 @@ html:has(#qd-consent) {
   border-radius: 16px;
 }
 
+/* ---------- editor: como começar, abrir a sala fixo, mandar para o computador, quantas pessoas (14/11/2026) ---------- */
+.comecar {
+  display: grid;
+  gap: 10px;
+}
+.comecar h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: clamp(26px, 6vw, 34px);
+}
+.comecar-ic {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: var(--bw) solid var(--line);
+  background: var(--amarelo);
+  color: #0e2a22;
+  font: 900 22px var(--text);
+  font-style: normal;
+}
+.comecar > .small {
+  margin: 0;
+}
+.comecar-sub {
+  margin: 6px 0 0;
+  font-size: 16px;
+}
+.comecar .prontos {
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+.comecar .linkbtn {
+  justify-self: start;
+}
+/* "Ou crie o seu": mais destaque que os prontos, num bloco escuro com os dois botões grandes */
+.comecar-outros {
+  display: grid;
+  gap: 12px;
+  margin-top: 6px;
+  padding: 16px;
+  border-radius: var(--r);
+  border: var(--bw) solid var(--line);
+  background: var(--mata);
+  color: #fff6e6;
+}
+@media (min-width: 640px) {
+  .comecar-outros {
+    grid-template-columns: 1fr 1fr;
+  }
+  .comecar-ou,
+  .comecar-ia-txt {
+    grid-column: 1 / -1;
+  }
+}
+.comecar-ou {
+  margin: 0;
+  font: var(--ds) var(--dw) 22px var(--disp);
+  color: #fff6e6;
+}
+.btn.comecar-zero,
+.btn.ia-grande {
+  min-height: 72px;
+  font-size: 20px;
+  border-radius: 20px;
+}
+.btn.comecar-zero {
+  display: grid;
+  justify-items: center;
+  gap: 0;
+  background: #fff6e6;
+  color: #0e2a22;
+}
+.btn.comecar-zero span {
+  font-size: 14px;
+  font-weight: 700;
+}
+.btn.ia-grande {
+  background: var(--amarelo);
+  color: #0e2a22;
+}
+.comecar-ia-txt {
+  margin: 0;
+  color: #fff6e6;
+}
+.meus-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.meus-linha p {
+  margin: 0;
+  color: var(--fg2);
+}
+details.modelos summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+details.modelos[open] summary {
+  margin-bottom: 6px;
+}
+/* celular: "Abrir a sala" sempre à vista embaixo, até o painel de abrir aparecer na tela */
+.abrir-fixo {
+  display: none;
+}
+@media (max-width: 760px) {
+  .abrir-fixo {
+    display: grid;
+    gap: 2px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: var(--aviso-h, 0px);
+    z-index: 40;
+    padding: 10px 16px calc(8px + env(safe-area-inset-bottom));
+    background: var(--bg);
+    border-top: var(--bw) solid var(--line);
+    box-shadow: 0 -6px 18px rgb(14 42 34 / 12%);
+    transition: transform 0.2s ease-out;
+  }
+  .abrir-fixo .btn {
+    width: 100%;
+  }
+  .abrir-fixo .small {
+    margin: 0;
+    text-align: center;
+  }
+  .abrir-fixo.escondida {
+    transform: translateY(110%);
+    visibility: hidden;
+  }
+  main:has(.abrir-fixo) {
+    padding-bottom: 120px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .abrir-fixo {
+    transition: none;
+  }
+}
+/* mandar o quiz para o computador da TV */
+.levar {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 2px solid var(--soft-line);
+  border-radius: var(--r);
+  margin-top: 4px;
+}
+.levar h3,
+.levar p {
+  margin: 0;
+}
+.levar .btn {
+  justify-self: start;
+}
+.levar .btnrow .btn {
+  justify-self: auto;
+}
+.levar-url code {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+/* quantas pessoas vão jogar */
+.quantas {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.quantas legend {
+  font-weight: 900;
+  font-size: 17px;
+  margin-bottom: 8px;
+  padding: 0;
+}
+.quantas .linkbtn {
+  justify-self: start;
+}
+.quantas-ok {
+  margin: 0;
+  color: var(--acc-text);
+  font-weight: 700;
+}
+.quantas-plano {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: var(--bw) solid var(--line);
+  border-radius: var(--r);
+  background: var(--acc-soft);
+}
+.quantas-plano p,
+.quantas-plano ul {
+  margin: 0;
+}
+.quantas-plano ul {
+  padding-left: 20px;
+}
+.quantas-plano .btnrow {
+  align-items: center;
+}
+.aviso-ok {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--acc-soft);
+  color: var(--acc-text);
+  font-weight: 800;
+}
+
 /* prévia dos planos: selo avulso e seletor mensal/anual da assinatura */
 .pc .selo-avulso {
   position: absolute;

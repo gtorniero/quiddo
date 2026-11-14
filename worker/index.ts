@@ -14,6 +14,7 @@ import { naoIndexar } from '../shared/seo';
 //   POST /api/salas/{CODIGO}/liberar         { chave, codigo }: libera a sala com um código pago, pelo celular
 //   /api/cobranca, /api/pix, /api/pix/status, /api/cartao, /api/acesso: cobrança (worker/cobranca.ts)
 // O resto vai para os arquivos estáticos; rotas como /criar e /ABCD caem no index.html.
+// Quiz do celular para o computador: POST /api/levar e GET /api/levar/{id} (worker/levar.ts).
 import {servicePromos} from './promos-service';
 import {adminPromos} from './promos-admin';
 import type { CreateRoomResult } from '../shared/protocol';
@@ -23,6 +24,7 @@ import { anotaUso, rotaUso } from './uso';
 import { rotaLogin } from './login';
 import { canonicalResponse } from './canonical';
 import { rotaQuizzes } from './quizzes';
+import { rotaLevar } from './levar';
 import type { Env } from './room';
 
 export { Room } from './room';
@@ -52,6 +54,9 @@ const app = {
     if (login) return login;
     const quizzes = await rotaQuizzes(req, env, url.pathname);
     if (quizzes) return quizzes;
+    // quiz do celular para o computador da TV (link temporário, sem conta)
+    const levar = await rotaLevar(req, env, url.pathname);
+    if (levar) return levar;
     // cobrança: Pix, cartão/Apple Pay/Google Pay e conferência do código de acesso
     const cob = await rotaCobranca(req, env, url.pathname, async (sala, hostKey) => {
       const code = normalizeCode(sala);

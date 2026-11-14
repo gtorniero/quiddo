@@ -4,6 +4,11 @@
   // A copied staging asset must never send to the production property/pixel.
   if (!['quiddo.com.br','www.quiddo.com.br'].includes(location.hostname || location.origin.replace(/^https?:\/\//,''))) return;
   const GA = 'G-18PBXS3GQZ';
+  // Google Ads (mesma conta das campanhas de busca): só com aceite de análise e de anúncios, sem personalização.
+  const ADS = 'AW-18547334686';
+  // Etapas que o Google Ads recebe. A sala aberta fica de fora: logo depois dela o endereço vira /host/CÓDIGO.
+  const adsEvents = new Set(['begin_checkout','purchase']);
+  let adsConfigured = false;
   const PIXEL = '39663521416595790';
   let initialized = false;
   let analytics = false;
@@ -47,6 +52,14 @@
   }
   function script(src, onload) { const s = document.createElement('script'); s.async = true; s.src = src; s.referrerPolicy = 'no-referrer'; if (onload) s.onload = onload; document.head.appendChild(s); }
   function gtag() { window.dataLayer.push(arguments); }
+  // A tag do Google Ads ignora page_location: ela lê o caminho da página principal (sem a query).
+  // Por isso só roda quando a página principal é pública; nunca em /host/CÓDIGO nem na sala do jogador.
+  function topPublic() { try { const p = parent.location.pathname; return allowedPaths.has(p) || /^\/guias\/[a-z0-9-]+$/.test(p); } catch { return false; } }
+  function ads() {
+    if (!googleLoaded || !adClicks || !topPublic()) return false;
+    if (!adsConfigured) { adsConfigured = true; gtag('config', ADS, { send_page_view: false, page_title: 'Quiddo', allow_ad_personalization_signals: false }); }
+    return true;
+  }
   function meta(name, data, options) {
     if (options) window.fbq('trackSingle', PIXEL, name, data, options);
     else window.fbq('trackSingle', PIXEL, name, data);
@@ -69,6 +82,8 @@
         gtag('js', new Date());
         gtag('config', GA, { send_page_view: false, page_location: 'https://quiddo.com.br/', page_referrer: '', page_title: 'Quiddo', allow_google_signals: false, allow_ad_personalization_signals: false });
         script('https://www.googletagmanager.com/gtag/js?id=' + GA);
+        // Com os dois aceites e a página principal pública, a tag liga o clique do anúncio (gclid) à visita.
+        ads();
       }
       if (marketing) {
         const fbq = function() { fbq.callMethod ? fbq.callMethod.apply(fbq, arguments) : fbq.queue.push(arguments); };
@@ -118,6 +133,8 @@
     const suffix = query.size ? '?' + query.toString() : '';
     const done = () => parent.postMessage({ type: 'qd_done', id: d.id, queued: true }, location.origin);
     if (googleLoaded) gtag('event', d.event, { ...p, send_to: GA, page_location: 'https://www.quiddo.com.br' + path + suffix, page_referrer: safeReferrer(d.referrer), page_title: titles[path] || 'Quiddo', environment:'production', measurement_version:'2026-11-14', transport_type: 'beacon', event_callback: done, event_timeout: 1500 });
+    // Google Ads: só o nome da etapa, o valor e o ID irreversível da compra; nada de plano, itens ou uso do produto.
+    if (adsEvents.has(d.event) && ads()) gtag('event', d.event, { send_to: ADS, page_title: titles[path] || 'Quiddo', ...(p.value ? { value: p.value, currency: 'BRL' } : {}), ...(p.transaction_id ? { transaction_id: p.transaction_id } : {}) });
     if (marketing && funnelEvents.has(d.event)) {
       // page_path leva a página real; content_category, a página ou o produto.
       const where = {page_path: path};

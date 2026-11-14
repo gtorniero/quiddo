@@ -15,6 +15,7 @@ import { avatarSvg } from '../lib/avatar-art';
 import { abrirPagamento, cobranca, confereVolta, meuAcesso } from '../lib/pagamento';
 import { eventPlan } from '../lib/offer-context';
 import { LIMITS } from '../../shared/rules';
+import { PRECOS, reais } from '../../shared/precos.mjs';
 import { SUSPENSE_MS, agendaPodio, graficoVotos, novosNoPodio, animateRank, answersStatic, prepare, preparando, brandBar, confete, cortina, errorScreen, fogoFaixa, fotoCabeca, podiumTitle, questionHead, rankColunas, rankList, rankPista, revelacaoTv, tick, top10 } from './jogo-comum';
 import type { RankRow } from '../../shared/protocol';
 
@@ -49,8 +50,8 @@ function mount(main: HTMLElement, code: string) {
   let destaqueTimer = 0;
   let ultimaEspera = 0; // quantos esperavam vaga no último estado (para avisar quando chega mais gente)
   // preços da oferta da sala cheia (o servidor manda; até lá, os padrões)
-  let ofertaPor = '11,99';
-  let ofertaDe = '15,99';
+  let ofertaPor = reais(PRECOS.oferta);
+  let ofertaDe = reais(PRECOS.semana);
   cobranca().then((c) => {
     if (c?.oferta) {
       ofertaPor = c.oferta.preco;

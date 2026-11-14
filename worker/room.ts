@@ -65,7 +65,8 @@ export class Room extends DurableObject<Env> {
 
   async fetch(req: Request): Promise<Response> {
     const url = new URL(req.url);
-    if (url.pathname.endsWith('/logo')) return this.serveImage('logo', !!(this.room && this.room.logo));
+    // o logo só sai da sala liberada (Passe ou Premium); na sala grátis ele fica guardado e não é servido
+    if (url.pathname.endsWith('/logo')) return this.serveImage('logo', !!(this.room && G.marcaDaSala(this.room).logo));
     const im = /\/img\/(\d{1,2})$/.exec(url.pathname);
     if (im) {
       const q = this.room && this.room.questions[Number(im[1])];
@@ -178,7 +179,7 @@ export class Room extends DurableObject<Env> {
         if (ok && room.phase === 'question' && G.everyoneAnswered(room)) G.reveal(room);
         break;
       case 'liberar': {
-        // o anfitrião pagou com a sala aberta: confere o código e libera até 200 pessoas
+        // o anfitrião pagou com a sala aberta: confere o código e libera até 200 pessoas e a marca (logo e cor)
         if (await codigoValido(this.env, msg.codigo)) {
           room.maxPlayers = LIMITS.maxPlayers;
           ok = true;

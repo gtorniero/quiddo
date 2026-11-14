@@ -1,7 +1,7 @@
 // Motor do jogo: estado da sala e transições de fase, sem rede nem relógio próprio.
 // O Durable Object guarda um `Room`, chama estas funções e manda as visões para cada um.
 import type { Acerto, Brand, Drawn, DrawMode, HostState, Phase, PlayerState, Question, RankRow, Theme, Visual } from './protocol';
-import { LIMITS, cleanNick, points } from './rules';
+import { LIMITS, cleanNick, marcaPropria, points } from './rules';
 import { AVATAR_PADRAO, cleanAvatar, uniqueAvatar } from './avatar';
 
 export interface Player {
@@ -89,6 +89,19 @@ export type JoinResult = { ok: true; player: Player } | { ok: false; code: 'star
 export const esperandoVaga = (room: Room) => (room.barrados || []).filter((id) => !room.players[id] && !room.kicked.includes(id)).length;
 
 export const limiteDe = (room: Room) => room.maxPlayers ?? LIMITS.maxPlayers;
+
+/** Sala liberada: Passe 7 dias, Premium ou cobrança que não vale. Libera junto as 200 pessoas e a marca própria. */
+export const salaLiberada = (room: Room) => limiteDe(room) >= LIMITS.maxPlayers;
+
+/**
+ * O que a sala mostra da marca. O nome do quiz vale sempre; logo e cor só na sala liberada (shared/rules.ts,
+ * marcaPropria). Na sala grátis, logo e cor salvos ficam guardados e aparecem na hora se o anfitrião liberar.
+ */
+export function marcaDaSala(room: Room): Brand & { logo: number } {
+  const b = room.brand || { name: '', color: '' };
+  const pode = marcaPropria(room.theme, salaLiberada(room));
+  return { name: b.name || '', color: pode ? b.color || '' : '', logo: pode ? room.logo || 0 : 0 };
+}
 
 /** Entrada ou volta de um jogador. Quem já estava na sala volta com os pontos e o personagem, mesmo com o jogo andando. */
 export function join(room: Room, playerId: string, rawNick: string, now: number, rawAvatar: unknown = ''): JoinResult {
@@ -307,7 +320,7 @@ function base(room: Room, now: number) {
     code: room.code,
     theme: room.theme,
     visual: room.visual || 'floresta',
-    brand: { ...room.brand, logo: room.logo },
+    brand: marcaDaSala(room),
     phase: room.phase,
     qIndex: room.qIndex,
     total: room.questions.length,

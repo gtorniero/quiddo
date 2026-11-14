@@ -1,6 +1,7 @@
 // Textos e metadados das páginas públicas. Usado pelo site e pelo pré-render (scripts/prerender.mjs),
 // para o robô de busca ver o mesmo conteúdo sem JavaScript. Não pode mexer no DOM: roda também no Node.
 import { SUBSCRIPTION_AI_CREDITS } from '../../shared/ai-credits.mjs';
+import { PRECOS, reais as emReais } from '../../shared/precos.mjs';
 import { GUIAS } from '../data/guias';
 import { TEMAS } from '../data/pacotes';
 import type { Theme } from '../../shared/protocol';
@@ -12,6 +13,9 @@ export interface PaginaSeo {
   descricao: string; // meta description (até ~155 caracteres)
   atualizado: string; // AAAA-MM-DD, vai para o sitemap
 }
+
+// preço curto para texto corrido: sem ",00" no fim
+const curto = (v: string) => emReais(v).replace(/,00$/, '');
 
 /** Atualize a data quando o texto da página mudar. */
 export const PAGINAS: Record<'/' | '/criar' | '/jogar' | '/precos' | '/privacidade', PaginaSeo> = {
@@ -32,7 +36,7 @@ export const PAGINAS: Record<'/' | '/criar' | '/jogar' | '/precos' | '/privacida
   },
   '/precos': {
     titulo: 'Planos e preços do quiz ao vivo · Quiddo',
-    descricao: 'Grátis para salas de até 10 pessoas. Assinatura Premium (Anual R$ 156 ou Mensal R$ 15,99) ou Passe 7 dias de R$ 12,99 para salas de até 200.',
+    descricao: `Grátis até 10 pessoas. Premium (Anual R$ ${curto(PRECOS.anual)} ou Mensal R$ ${curto(PRECOS.mensal)}) ou Passe 7 dias de R$ ${curto(PRECOS.semana)}: até 200 pessoas e a sua marca.`,
     atualizado: '2026-11-14',
   },
   '/privacidade': {
@@ -48,9 +52,9 @@ export const HOME = {
   selo: 'Grátis até 10 pessoas · sem cadastro',
   h1: 'Crie o seu quiz e jogue ao vivo com a turma toda.',
   intro: 'Escreva as suas perguntas, mostre a sala no telão, no projetor ou no computador, e a turma joga pelo celular. Quem acerta mais rápido ganha mais pontos, o ranking sobe a cada rodada e o pódio vira foto.',
-  mini: 'Funciona no celular, sem baixar app. Grátis até 10 pessoas; planos para até 200.',
+  mini: 'Funciona no celular, sem baixar app. Grátis até 10 pessoas; nos planos, até 200 e com a sua marca.',
   passos: [
-    ['Escreva as perguntas', 'Múltipla escolha ou verdadeiro ou falso, com imagem se quiser. Nos temas Corporativo e Escola, com a sua marca.'],
+    ['Escreva as perguntas', 'Múltipla escolha ou verdadeiro ou falso, com imagem se quiser.'],
     ['Abra a sala na tela principal', 'No telão, no projetor ou no computador aparecem um código e um QR. A turma entra pelo celular, escolhe um bicho e um apelido.'],
     ['Joguem juntos', 'A pergunta aparece em todas as telas ao mesmo tempo. Ranking a cada rodada, pódio e sorteio no fim.'],
   ],
@@ -59,7 +63,7 @@ export const HOME = {
     ['A última vale o dobro', 'Chance de virada no fim, para ninguém desistir.'],
     ['Personagens', '20 bichos do Brasil com boné, coroa, óculos e mais. Cada um monta o seu.'],
     ['Sorteio de prêmios', 'Entre todos ou só entre quem pontuou, com roleta no telão.'],
-    ['Sua marca', 'Nome, cor e logo da empresa ou da escola na tela e nos celulares.'],
+    ['Sua marca', 'Logo e cor da empresa ou da escola na tela e nos celulares, no Passe e no Premium.'],
     ['Até 200 pessoas nos planos pagos', 'Até 10 no gratuito. A turma entra pelo navegador, sem cadastro e sem app.'],
   ],
   ocasioes: [
@@ -111,13 +115,14 @@ export function jogarHtml() {
 // ---------- planos ----------
 
 export type PlanoPreco = 'mensal' | 'anual' | 'semana';
-export const PRECOS_PADRAO: Record<PlanoPreco | 'oferta', string> = { mensal: '15,99', anual: '156,00', semana: '12,99', oferta: '9,99' };
+/** Preços de shared/precos.mjs no formato da página, com vírgula. O servidor manda os mesmos em /api/cobranca. */
+export const PRECOS_PADRAO: Record<PlanoPreco | 'oferta', string> = { mensal: emReais(PRECOS.mensal), anual: emReais(PRECOS.anual), semana: emReais(PRECOS.semana), oferta: emReais(PRECOS.oferta) };
 const num = (v: string) => Number(v.replace(',', '.'));
 const reais = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2).replace('.', ','));
 const semCentavos = (v: string) => v.replace(/,00$/, '');
 
 export interface PrecosEstado {
-  preco: (p: PlanoPreco) => string; // "15,99"
+  preco: (p: PlanoPreco) => string; // com vírgula, ex.: "10,50"
   temAnual: boolean;
   periodo: 'anual' | 'mensal';
   ligado: boolean; // cobrança de verdade (texto de "Como eu pago?")
@@ -141,6 +146,8 @@ export function perguntasPlanos(e: PrecosEstado): [string, string][] {
   const m = semCentavos(e.preco('mensal')), a = semCentavos(e.preco('anual')), s = semCentavos(e.preco('semana'));
   return [
     ['O que muda entre Mensal e Anual?', `É a mesma assinatura, com exatamente os mesmos benefícios. Você escolhe pagar R$ ${m} por mês ou R$ ${a} por ano${e.temAnual ? ` (equivale a R$ ${anualPorMes(e)} por mês)` : ''}. Nos dois, os créditos de IA são renovados todo mês.`],
+    ['O que tem no plano grátis?', 'Salas de até 10 pessoas, quizzes e jogos ilimitados, todos os modos e visuais, pódio e sorteio. O jogo usa as cores do Quiddo; em Corporativo e Escola, o nome do quiz aparece na tela.'],
+    ['Posso usar o logo e a cor da minha marca?', 'Sim, no Passe 7 dias e na Assinatura Premium, nos modos Corporativo e Escola. O logo e a cor aparecem na tela principal e nos celulares. Se você liberar com a sala aberta, a marca aparece na hora.'],
     ['Como funcionam os créditos de Quiz com IA?', `Nos dois períodos de pagamento, você tem ${SUBSCRIPTION_AI_CREDITS.text} créditos de texto e ${SUBSCRIPTION_AI_CREDITS.pdf} de PDF por mês, em saldos separados. Cada geração concluída usa 1 crédito do tipo escolhido; editar, salvar e reabrir não gastam crédito. Os créditos não acumulam. No pagamento anual, o saldo renova todo mês a partir da data de início do período pago, sem nova cobrança.`],
     ['Preciso pagar antes de criar o quiz?', 'Não. Crie o quiz e abra a sala de graça. Se aparecerem mais de 10 pessoas, a sala de espera mostra o botão para liberar até 200, sem fechar a sala.'],
     ['Como eu pago?', e.ligado
@@ -179,7 +186,7 @@ export function precosHtml(e: PrecosEstado) {
           ${periodo}
           ${pessoas(200)}
           ${preco}
-          <ul><li>${OK}Jogos ilimitados</li><li>${OK}Use em qualquer aparelho</li><li>${IA}<span><strong>Quiz com IA</strong><br><small>${SUBSCRIPTION_AI_CREDITS.text} créditos para texto e ${SUBSCRIPTION_AI_CREDITS.pdf} para PDF por mês</small></span></li><li>${OK}Novos créditos a cada mês</li><li>${OK}Renova sozinha; cancele quando quiser em Minha conta</li></ul>
+          <ul><li>${OK}Jogos ilimitados</li><li>${OK}Sua marca: logo e cor</li><li>${OK}Use em qualquer aparelho</li><li>${IA}<span><strong>Quiz com IA</strong><br><small>${SUBSCRIPTION_AI_CREDITS.text} créditos para texto e ${SUBSCRIPTION_AI_CREDITS.pdf} para PDF por mês</small></span></li><li>${OK}Novos créditos a cada mês</li><li>${OK}Renova sozinha; cancele quando quiser em Minha conta</li></ul>
           <button type="button" class="btn" data-plano="${per}">Assinar o ${per === 'anual' ? 'Anual' : 'Mensal'}</button>
         </article>
         <article class="pc">
@@ -188,7 +195,7 @@ export function precosHtml(e: PrecosEstado) {
           ${pessoas(200)}
           <p class="pc-preco">R$ ${esc(s)}</p>
           <p class="pc-sub">Pagamento único, sem renovação.</p>
-          <ul><li>${OK}Jogos ilimitados por 7 dias</li><li>${OK}Para um evento, sem assinatura</li><li>${OK}Pix ou cartão</li></ul>
+          <ul><li>${OK}Jogos ilimitados por 7 dias</li><li>${OK}Sua marca: logo e cor</li><li>${OK}Para um evento, sem assinatura</li><li>${OK}Pix ou cartão</li></ul>
           <button type="button" class="btn sec" data-plano="semana">Comprar o Passe</button>
         </article>
         <article class="pc">
@@ -204,7 +211,7 @@ export function precosHtml(e: PrecosEstado) {
         <p class="small">Vendido por Beyond the Work · CNPJ 69.746.447/0001-00.</p>
       </section>`;
 }
-export const precosTopo = () => `<section class="hero"><h1>Planos</h1><p>Comece grátis. Para turmas de mais de 10 pessoas, assine o Premium ou use o Passe 7 dias.</p></section>`;
+export const precosTopo = () => `<section class="hero"><h1>Planos</h1><p>Comece grátis. Para mais de 10 pessoas ou para usar a sua marca, assine o Premium ou use o Passe 7 dias.</p></section>`;
 
 // ---------- privacidade ----------
 

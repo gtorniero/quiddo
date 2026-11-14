@@ -4914,6 +4914,42 @@ svg.av.vivo .corpo {
   font: 700 14px var(--text);
   color: var(--fg2);
 }
+/* bloco da marca no editor: liberada (cor e logo) ou com cadeado (Passe e Premium) */
+.marca-bloco {
+  display: grid;
+  gap: 14px;
+}
+.marca-trava {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--bg);
+  border: 2px dashed var(--soft-line);
+}
+.marca-trava-ic {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--card);
+  border: 2px solid var(--line);
+  color: var(--fg);
+}
+.marca-trava-txt {
+  display: grid;
+  gap: 2px;
+  flex: 1 1 170px;
+  font-size: 16px;
+}
+.marca-trava-txt span {
+  color: var(--fg2);
+  font-size: 15px;
+}
 
 /* Corporativo: a opção escolhida fica cheia, na cor do modo (ou da marca), com texto claro e um ✓ */
 [data-tema='corp'] .tema[aria-pressed='true'],

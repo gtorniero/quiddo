@@ -10,7 +10,7 @@ import { logado } from '../lib/conta';
 import { iaAcesso, openPdfQuiz, pdfButton, type PdfResult } from '../lib/pdf-quiz';
 import type { Page } from '../main';
 import type { CreateRoomBody, CreateRoomResult, Theme, Visual } from '../../shared/protocol';
-import { LIMITS, VISUAIS_DO_MODO, compactQuestion, isReady, visualDoModo } from '../../shared/rules';
+import { LIMITS, VISUAIS_DO_MODO, compactQuestion, isReady, marcaPropria, visualDoModo } from '../../shared/rules';
 import { CORES_MARCA, TEMAS } from '../data/pacotes';
 import { MODELOS, type Modelo } from '../data/modelos';
 import { entryTemplate, eventPlan } from '../lib/offer-context';
@@ -22,7 +22,10 @@ import { store } from '../lib/storage';
 import { THEME_ACC, applyTheme } from '../lib/theme';
 import { VISUAIS } from '../data/visuais';
 import { miniVisual } from '../lib/visuais-arte';
-import { type Cobranca, abrirPagamento, iaRetomar, acessoAte, cobranca, cobrancaValendo, confereVolta, meuAcesso, testeCobranca } from '../lib/pagamento';
+import { type Cobranca, abrirPagamento, iaRetomar, acessoAte, cobranca, cobrancaValendo, confereVolta, meuAcesso, salasLiberadas, testeCobranca } from '../lib/pagamento';
+
+const CADEADO =
+  '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="currentColor" stroke="none"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>';
 
 export function page(): Page {
   return { title: 'Criar meu quiz', fullTitle: PAGINAS['/criar'].titulo, description: PAGINAS['/criar'].descricao, canonical: `${SITE}/criar`, mount };
@@ -131,6 +134,9 @@ function mountEditor(main: HTMLElement) {
   let editPending = false;
   let localSaveFailed = false;
   let cob: Cobranca | null = null; // configuração da cobrança (chega depois)
+  // logo e cor são do Passe e do Premium (shared/rules.ts); o servidor confere de novo ao abrir a sala
+  const marcaLiberada = () => marcaPropria(q.tema, salasLiberadas(cob));
+  let marcaMostrada: boolean | null = null; // como a marca foi desenhada da última vez (liberada ou com cadeado)
 
   const persist = (now = false) => {
     clearTimeout(saveTimer);
@@ -165,10 +171,12 @@ function mountEditor(main: HTMLElement) {
   function render(focusSel?: string) {
     if (!vivo) return;
     const temMarca = q.tema !== 'festa';
-    applyTheme(q.tema, temMarca ? q.marca.color : '');
+    marcaMostrada = marcaLiberada();
+    applyTheme(q.tema, marcaMostrada ? q.marca.color : '');
     store.set('tema', q.tema);
     const y = window.scrollY;
-    // os passos são numerados na ordem em que aparecem; a marca (cor e logo) só existe em Corporativo e Escola
+    // os passos são numerados na ordem em que aparecem; a marca (cor e logo) só existe em Corporativo e Escola,
+    // e só destrava com o Passe ou o Premium
     let n = 0;
     const passo = (titulo: string, id: string) => `<h2 class="passo" id="${id}"><span aria-hidden="true">${++n}</span>${titulo}</h2>`;
     main.innerHTML = [secMeus(), secNome(passo, temMarca), secTema(passo), secVisual(passo), secTempo(passo), secPerguntas(passo), secAbrir()].join('');
@@ -239,7 +247,17 @@ function mountEditor(main: HTMLElement) {
         const t = TEMAS[k];
         return `<button class="tema" data-act="tema" data-v="${k}" aria-pressed="${k === q.tema}"><span class="sw">${t.cores.map((c) => `<i style="background:${c}"></i>`).join('')}</span><b>${esc(t.nome)}</b><span>${esc(t.desc)}</span></button>`;
       })
-      .join('')}</div><p class="small">O modo é o tipo de evento: define as perguntas de modelo e os visuais que aparecem logo abaixo. ${q.tema === 'festa' ? 'Em Amigos & família o jogo fica sem marca.' : 'Neste modo dá para colocar a cor e o logo da empresa ou da escola, no passo 1.'}</p></section>`;
+      .join('')}</div><p class="small" id="modo-dica">${esc(dicaModo())}</p></section>`;
+  }
+
+  function dicaModo() {
+    const marca =
+      q.tema === 'festa'
+        ? 'Em Amigos & família o jogo fica sem marca.'
+        : marcaLiberada()
+          ? 'Neste modo dá para colocar a cor e o logo da empresa ou da escola, no passo 1.'
+          : 'Com o Passe ou o Premium, dá para colocar o logo e a cor da empresa ou da escola, no passo 1.';
+    return `O modo é o tipo de evento: define as perguntas de modelo e os visuais que aparecem logo abaixo. ${marca}`;
   }
 
   function secTempo(passo: Passo) {
@@ -254,8 +272,20 @@ function mountEditor(main: HTMLElement) {
     return `<section class="panel" aria-labelledby="h-nome">${passo('Nome do quiz', 'h-nome')}
       <input type="text" id="titulo" aria-labelledby="h-nome" maxlength="${LIMITS.brandName}" value="${esc(q.titulo)}" placeholder="${ex}" aria-describedby="titulo-dica">
       <p class="small" id="titulo-dica">Junte o nome do quiz com ${q.tema === 'escola' ? 'a escola, a turma ou o evento' : q.tema === 'corp' ? 'a empresa ou o evento' : 'a ocasião'}. Ex.: ${ex}.${temMarca ? ' Aparece na tela principal e nos celulares.' : ''}</p>
-      ${temMarca ? marcaCampos() : ''}
+      ${temMarca ? `<div id="marca" class="marca-bloco">${marcaLiberada() ? marcaCampos() : marcaTrava()}</div>` : ''}
     </section>`;
+  }
+
+  /** Sala grátis: a marca fica com cadeado e leva aos planos. O nome do quiz continua grátis. */
+  function marcaTrava() {
+    const salva = !!(q.marca.color || q.logo);
+    return `<h3 class="sub-marca" id="h-marca">Sua marca</h3>
+      <div class="marca-trava" role="group" aria-labelledby="h-marca">
+        <span class="marca-trava-ic">${CADEADO}</span>
+        <p class="marca-trava-txt"><b>Logo e cor da ${q.tema === 'escola' ? 'escola' : 'empresa'}</b><span>Disponível no Passe e no Premium.</span></p>
+        <a class="btn sec small auto" href="/precos" data-link>Ver os planos</a>
+      </div>
+      <p class="small">No grátis, o jogo usa as cores do Quiddo e mostra o nome do quiz.${salva ? ' O logo e a cor que você já escolheu ficam guardados e voltam quando você liberar.' : ''}</p>`;
   }
 
   function marcaCampos() {
@@ -362,10 +392,15 @@ function mountEditor(main: HTMLElement) {
   }
   function plano() {
     if (!cobrancaValendo(cob) || !cob) return '';
+    const marca = q.tema !== 'festa';
     if (meuAcesso())
-      return `<p class="plano liberado"><span class="selo">Quiddo liberado</span> Salas de até ${cob.pago} pessoas neste navegador${acessoAte() ? `, até ${esc(acessoAte())}` : ''}. Código: <strong>${esc(meuAcesso())}</strong></p>`;
-    const menor = Math.min(...cob.planos.map((p) => Number(p.preco.replace(',', '.'))));
-    return `<div class="plano"><p>Sala grátis: até ${cob.gratis} pessoas. Vai ter mais gente? Libere salas de até ${cob.pago} pessoas, a partir de R$ ${esc(menor.toFixed(2).replace('.', ','))}. Dá para liberar também depois, com a sala aberta.</p>
+      return `<p class="plano liberado"><span class="selo">Quiddo liberado</span> Salas de até ${cob.pago} pessoas${marca ? ' e a sua marca' : ''} neste navegador${acessoAte() ? `, até ${esc(acessoAte())}` : ''}. Código: <strong>${esc(meuAcesso())}</strong></p>`;
+    const menor = esc(Math.min(...cob.planos.map((p) => Number(p.preco.replace(',', '.')))).toFixed(2).replace('.', ','));
+    return `<div class="plano"><p>${
+      marca
+        ? `Sala grátis: até ${cob.gratis} pessoas, com as cores do Quiddo. Com o Passe ou o Premium, até ${cob.pago} pessoas e a sua marca, a partir de R$ ${menor}.`
+        : `Sala grátis: até ${cob.gratis} pessoas. Vai ter mais gente? Libere salas de até ${cob.pago} pessoas, a partir de R$ ${menor}.`
+    } Dá para liberar também depois, com a sala aberta.</p>
       <div class="plano-acoes"><button type="button" class="btn sec auto" data-act="liberar">Liberar até ${cob.pago} pessoas</button><a class="linkbtn" href="/precos" data-link>Ver os planos</a></div></div>`;
   }
 
@@ -379,6 +414,8 @@ function mountEditor(main: HTMLElement) {
       .map((p, i) => compactQuestion({ ...p, tl: q.tempo, dobro: i === ultimaQuiz }))
       .filter((p): p is NonNullable<typeof p> => !!p);
     const festa = q.tema === 'festa';
+    // logo e cor salvos vão mesmo com cadeado: o servidor guarda e só mostra se a sala for liberada (Passe ou Premium),
+    // inclusive quando o anfitrião libera com a sala aberta
     const body: CreateRoomBody = { questions, theme: q.tema, visual: visualDoModo(q.tema, q.visual), brand: festa ? { name: '', color: '' } : { name: q.titulo.trim(), color: q.marca.color }, logo: festa ? '' : q.logo, acesso: meuAcesso() || undefined, testeCobranca: testeCobranca() || undefined };
     abrindo = true;
     erro = '';
@@ -709,10 +746,17 @@ function mountEditor(main: HTMLElement) {
   main.addEventListener('change', onChange);
   render();
   testeCobranca();
-  // a cobrança chega depois; só o quadro do plano é redesenhado, para não tirar o foco de quem digita
+  // a cobrança chega depois; só o quadro do plano (e a marca, se destravou) é redesenhado, para não tirar o foco de quem digita
   const refreshPlano = () => {
     const el = main.querySelector('#plano');
     if (el) el.innerHTML = plano();
+    if (marcaLiberada() === marcaMostrada) return;
+    marcaMostrada = marcaLiberada();
+    const m = main.querySelector('#marca');
+    if (m) m.innerHTML = marcaMostrada ? marcaCampos() : marcaTrava();
+    const d = main.querySelector('#modo-dica');
+    if (d) d.textContent = dicaModo();
+    applyTheme(q.tema, marcaMostrada ? q.marca.color : '');
   };
   cobranca().then((c) => {
     cob = c;

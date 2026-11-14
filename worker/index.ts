@@ -66,7 +66,8 @@ const app = {
         return json({ erro: e instanceof Error ? e.message : 'Pedido inválido.' }, 400);
       }
       const hostKey = crypto.randomUUID();
-      // sala grátis: até 10 pessoas quando a cobrança está valendo; com código pago, até 200
+      // sala grátis: até 10 pessoas e sem logo e cor próprios quando a cobrança está valendo;
+      // com código pago (Passe ou Premium), até 200 e com a marca (shared/game.ts, marcaDaSala)
       const maxPlayers = !cobrancaVale(env, body.testeCobranca) || (await codigoValido(env, body.acesso)) ? LIMITS.maxPlayers : LIMITS.freePlayers;
       for (let i = 0; i < 8; i++) {
         const code = randomCode();

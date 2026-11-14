@@ -396,3 +396,48 @@ describe('leitura da pergunta', () => {
     expect(room.startedAt).toBe(S + G.PREP_MS);
   });
 });
+
+describe('marca própria: logo e cor só no Passe e no Premium', () => {
+  const marca = { name: 'Convenção 2027', color: '#C2410C' };
+  const sala = (o: { theme?: 'corp' | 'festa' | 'escola'; maxPlayers?: number; hasLogo?: boolean } = {}) =>
+    G.newRoom({ code: 'ABCD', hostKey: 'k', theme: o.theme || 'corp', brand: { ...marca }, questions: qs, hasLogo: o.hasLogo ?? true, now: T0, maxPlayers: o.maxPlayers });
+
+  it('sala grátis mostra só o nome do quiz: sem cor e sem logo, para a TV e para os celulares', () => {
+    const r = sala({ maxPlayers: LIMITS.freePlayers });
+    G.join(r, 'p1', 'Ana', T0);
+    expect(G.salaLiberada(r)).toBe(false);
+    expect(G.hostView(r, T0).brand).toEqual({ name: 'Convenção 2027', color: '', logo: 0 });
+    expect(G.playerView(r, 'p1', T0)!.brand).toEqual({ name: 'Convenção 2027', color: '', logo: 0 });
+    // a marca salva fica guardada na sala, só não aparece
+    expect(r.brand.color).toBe('#C2410C');
+    expect(r.logo).toBe(T0);
+  });
+
+  it('sala liberada (Passe ou Premium) mostra logo e cor', () => {
+    const r = sala({ maxPlayers: LIMITS.maxPlayers });
+    expect(G.salaLiberada(r)).toBe(true);
+    expect(G.hostView(r, T0).brand).toEqual({ name: 'Convenção 2027', color: '#C2410C', logo: T0 });
+  });
+
+  it('liberar com a sala aberta faz a marca aparecer na hora', () => {
+    const r = sala({ maxPlayers: LIMITS.freePlayers });
+    expect(G.marcaDaSala(r).logo).toBe(0);
+    r.maxPlayers = LIMITS.maxPlayers; // o que a mensagem "liberar" faz depois de conferir o código
+    expect(G.marcaDaSala(r)).toEqual({ name: 'Convenção 2027', color: '#C2410C', logo: T0 });
+  });
+
+  it('Amigos & família nunca leva cor nem logo, nem liberada', () => {
+    expect(G.marcaDaSala(sala({ theme: 'festa', maxPlayers: LIMITS.maxPlayers }))).toMatchObject({ color: '', logo: 0 });
+    expect(G.marcaDaSala(sala({ theme: 'escola', maxPlayers: LIMITS.maxPlayers }))).toMatchObject({ color: '#C2410C', logo: T0 });
+  });
+
+  it('salas antigas continuam funcionando: sem limite gravado contam como liberadas; sem marca gravada não quebram', () => {
+    const antiga = sala({ hasLogo: true });
+    delete antiga.maxPlayers;
+    expect(G.marcaDaSala(antiga)).toEqual({ name: 'Convenção 2027', color: '#C2410C', logo: T0 });
+    const quebrada = sala({ maxPlayers: LIMITS.freePlayers }) as G.Room & { brand: unknown };
+    (quebrada as { brand: unknown }).brand = undefined;
+    expect(G.marcaDaSala(quebrada)).toEqual({ name: '', color: '', logo: 0 });
+    expect(() => G.hostView(quebrada, T0)).not.toThrow();
+  });
+});

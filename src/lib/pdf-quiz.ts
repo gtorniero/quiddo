@@ -23,7 +23,7 @@ async function api(path:string,init:RequestInit={}) {
 }
 export function openPdfQuiz(onReview:(result:PdfResult)=>void|Promise<void>) {
   const dialog=document.createElement('dialog');dialog.className='qd-pdf-dialog';dialog.setAttribute('aria-labelledby','qd-pdf-title');
-  dialog.innerHTML='<div class="qd-pdf-top"><span class="tag">Premium</span><button class="linkbtn" type="button" data-close aria-label="Fechar">Fechar ×</button></div><h2 id="qd-pdf-title">Criar quiz com IA</h2><p class="qd-pdf-balance"><strong data-balance>Consultando seu saldo…</strong><span class="small" data-cycle></span></p><div class="qd-ia-modos" role="group" aria-label="Como criar o quiz"><button type="button" class="btn sec small auto" data-mode="pdf" aria-pressed="true">PDF</button><button type="button" class="btn sec small auto" data-mode="text" aria-pressed="false">Texto ou tema</button></div><div data-pdf-input><p class="small">Escolha até 50 páginas, inclusive escaneadas. Revise as fontes e respostas antes de salvar.</p><fieldset class="qd-pdf-filebox"><legend>Seu arquivo</legend><div class="qd-pdf-pickrow"><input data-file type="file" accept=".pdf,application/pdf" hidden><button type="button" class="btn sec small auto qd-pdf-pick" data-pick><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 3h7l4 4v13H6V3h1Z"/><path d="M14 3v5h4M12 16v-5m-2 2 2-2 2 2"/></svg><span>Escolher PDF</span></button><span class="small">Até 25 MB</span></div><p data-document class="small" role="status"></p><a data-document-link target="_blank" rel="noopener" hidden>Ver PDF selecionado</a></fieldset><form data-pdf-form hidden><label>Páginas para usar<input data-pages type="text" maxlength="300" required></label><p class="small">Exemplo: 1–3, 5, 8. Somente as páginas escolhidas serão enviadas à IA.</p><button class="btn auto" type="submit">Gerar perguntas</button></form><p class="small">O PDF é processado para esta geração e não é salvo no Quiddo.</p></div><form data-text-form hidden><label for="qd-ia-briefing"><b>Tema ou briefing</b></label><textarea id="qd-ia-briefing" rows="5" maxlength="4000" required aria-describedby="qd-ia-dica" placeholder="Ex.: Encontro de família. Quero 10 perguntas fáceis sobre músicas, comidas e brincadeiras brasileiras."></textarea><p id="qd-ia-dica" class="small">Conte o tema, o público ou cole suas perguntas e respostas. Para usar histórias da família, inclua os fatos que você quer no quiz.</p><button class="btn auto" type="submit">Gerar perguntas</button></form><p class="small">Receba até 10 perguntas para revisar. <span data-shared-balance hidden>PDF e texto usam o mesmo saldo. </span>Editar, salvar e reabrir não gastam crédito.</p><p data-status role="status" aria-live="polite"></p><div data-history></div>';
+  dialog.innerHTML='<div class="qd-pdf-top"><span class="tag">Premium</span><button class="linkbtn" type="button" data-close aria-label="Fechar">Fechar ×</button></div><h2 id="qd-pdf-title">Criar quiz com IA</h2><p class="qd-pdf-balance"><strong data-balance>Consultando seu saldo…</strong><span class="small" data-cycle></span></p><p class="qd-ia-intro">Escolha um jeito: escreva o tema <b>ou</b> envie um PDF. A IA faz até 10 perguntas e você revisa antes de salvar.</p><div class="qd-ia-opcoes"><section class="qd-ia-op" aria-labelledby="qd-ia-t1"><h3 id="qd-ia-t1"><span class="qd-ia-num" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg></span>Escrever o tema</h3><form data-text-form><label for="qd-ia-briefing" class="small">Sobre o que é o quiz? Para quem?</label><textarea id="qd-ia-briefing" rows="5" maxlength="4000" required aria-describedby="qd-ia-dica" placeholder="Ex.: Festa da família. 10 perguntas fáceis sobre músicas, comidas e brincadeiras brasileiras."></textarea><p id="qd-ia-dica" class="small">Pode colar perguntas e respostas prontas. Para histórias da família, conte os fatos.</p><button class="btn" type="submit">Gerar com o tema</button></form></section><div class="qd-ia-ou" aria-hidden="true"><span>ou</span></div><section class="qd-ia-op" data-pdf-input aria-labelledby="qd-ia-t2"><h3 id="qd-ia-t2"><span class="qd-ia-num" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v13H6V3h1Z"/><path d="M14 3v5h4"/></svg></span>Enviar um PDF</h3><input data-file type="file" accept=".pdf,application/pdf" hidden><button type="button" class="qd-ia-drop" data-pick><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5m-4 4 4-4 4 4"/><path d="M4 15v4h16v-4"/></svg><b>Arraste o PDF aqui</b><span>ou toque para escolher</span><small>Até 25 MB e 50 páginas, inclusive escaneadas</small></button><p data-document class="small" role="status"></p><a data-document-link target="_blank" rel="noopener" hidden>Ver PDF selecionado</a><form data-pdf-form hidden><label>Páginas para usar<input data-pages type="text" maxlength="300" required></label><p class="small">Exemplo: 1–3, 5, 8. Só essas páginas vão para a IA.</p><button class="btn" type="submit">Gerar com o PDF</button></form><p class="small">O PDF não fica salvo no Quiddo.</p></section></div><p data-status role="status" aria-live="polite"></p><p class="small"><span data-shared-balance hidden>Tema e PDF usam o mesmo saldo. </span>Editar, salvar e reabrir não gastam crédito.</p><details class="qd-ia-hist" data-history-box hidden><summary>Quizzes que você já gerou <span data-history-n></span></summary><div data-history></div></details>';
   const $=<T extends HTMLElement>(s:string)=>dialog.querySelector<T>(s)!;
   const picker=$<HTMLInputElement>('[data-file]'), form=$<HTMLFormElement>('[data-pdf-form]'), message=$('[data-status]');
   const textForm=$<HTMLFormElement>('[data-text-form]'), briefing=$<HTMLTextAreaElement>('#qd-ia-briefing');
@@ -33,15 +33,15 @@ export function openPdfQuiz(onReview:(result:PdfResult)=>void|Promise<void>) {
     form.querySelector('button[type=submit]')?.toggleAttribute('disabled',busy||!remaining.pdf||!providerReady);
     textForm.querySelector('button[type=submit]')?.toggleAttribute('disabled',busy||!remaining.text||!providerReady);
   };
-  for(const mode of dialog.querySelectorAll<HTMLButtonElement>('[data-mode]')) {
-    mode.onclick=()=>{
-      const showText=mode.dataset.mode==='text';
-      $('[data-pdf-input]').hidden=showText;
-      textForm.hidden=!showText;
-      for(const button of dialog.querySelectorAll('[data-mode]'))button.setAttribute('aria-pressed',String(button===mode));
-      if(showText)briefing.focus();
-    };
-  }
+  // arrastar e soltar o PDF na caixa
+  const drop=$('.qd-ia-drop');
+  drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('sobre');});
+  drop.addEventListener('dragleave',()=>drop.classList.remove('sobre'));
+  drop.addEventListener('drop',e=>{
+    e.preventDefault();drop.classList.remove('sobre');
+    const f=e.dataTransfer?.files?.[0];if(!f||busy)return;
+    const dt=new DataTransfer();dt.items.add(f);picker.files=dt.files;void picker.onchange?.(new Event('change'));
+  });
   const review=async(r:PdfResult)=>{try{await onReview(r);void trackOnce('ai_review_open',r.id,{source:r.source??'pdf'});dialog.close();}catch(error){message.textContent=(error as Error).message;}};
   async function refresh() {
     try {
@@ -51,7 +51,6 @@ export function openPdfQuiz(onReview:(result:PdfResult)=>void|Promise<void>) {
       const sharedRemaining=admin?1:d.remaining;
       remaining=d.balances ? {pdf:d.balances.pdf.remaining,text:d.balances.text.remaining} : {pdf:sharedRemaining,text:sharedRemaining};
       providerReady=d.providerReady===true;
-      $('.qd-ia-modos').hidden=false;
       $('[data-shared-balance]').hidden=admin||!!d.balances;
       $('.tag').textContent=admin?'Administrador':'Premium';
       $('[data-balance]').textContent=admin?'Acesso de administrador':d.balances
@@ -63,7 +62,8 @@ export function openPdfQuiz(onReview:(result:PdfResult)=>void|Promise<void>) {
     }catch(e){remaining={pdf:0,text:0};$('[data-balance]').textContent='Saldo indisponível';message.textContent=(e as Error).message;refreshButtons();}
     try {
       const h=await api('history');
-      $('[data-history]').replaceChildren(...h.results.filter((r:any)=>!r.deleted).map((r:PdfResult)=>{const b=document.createElement('button');b.className='btn sec small auto';b.type='button';b.textContent='Revisar · '+r.title;b.onclick=()=>review(r);return b;}));
+      const lista=h.results.filter((r:any)=>!r.deleted);$('[data-history-box]').hidden=!lista.length;$('[data-history-n]').textContent='('+lista.length+')';
+      $('[data-history]').replaceChildren(...lista.map((r:PdfResult)=>{const b=document.createElement('button');b.className='btn sec small auto';b.type='button';b.textContent='Revisar · '+r.title;b.onclick=()=>review(r);return b;}));
     }catch{/* The main status explains session failures. */}
   }
   picker.onchange=async()=>{
@@ -81,6 +81,7 @@ export function openPdfQuiz(onReview:(result:PdfResult)=>void|Promise<void>) {
       void track('pdf_upload_success',{source:'pdf'});
       const link=$<HTMLAnchorElement>('[data-document-link]');link.href=objectURL;link.hidden=false;
       $('[data-document]').textContent=selected.name+' · '+data.pages+' páginas';
+      drop.classList.add('escolhido');drop.querySelector('b')!.textContent='Trocar o PDF';
       $<HTMLInputElement>('[data-pages]').value=data.pages===1?'1':'1-'+Math.min(data.pages,50);form.hidden=false;
     }catch(e){void track('pdf_upload_error',{source:'pdf',error_category:e instanceof TypeError?'network':'rejected'});$('[data-document]').textContent=(e as Error).message;}
     finally{controls(false);refreshButtons();}

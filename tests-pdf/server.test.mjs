@@ -19,7 +19,7 @@ const status=cookie=>call('/api/pdf/status',{cookie});
 const generate=(cookie,id=crypto.randomUUID(),pages='2-51',bytes=pdf,extra={})=>call('/api/pdf/generate?pages='+encodeURIComponent(pages),{cookie,body:bytes,headers:{'content-type':'application/pdf','idempotency-key':id,...extra}});
 function record(name,details){evidence.cases.push({name,passed:true,...details});}
 function annualFixture(){
-  const annual=fixture(), annualPrice='price_1UXtqY134hMOoEZVGgIdzQ7a';
+  const annual=fixture(), annualPrice='price_1UbiSf134hMOoEZVBWt3slrl';
   const item=annual.billing.subscription.items.data[0],line=annual.billing.invoice.lines.data[0];
   annual.billing.expectedPrice=annualPrice;
   item.price.id=annualPrice;item.price.unit_amount=ANUAL_CENTAVOS;item.price.recurring.interval='year';

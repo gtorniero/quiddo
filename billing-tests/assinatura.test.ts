@@ -13,13 +13,13 @@ const C = { mensal: centavos(PRECOS.mensal), anual: centavos(PRECOS.anual), sema
 const ORIGIN = 'https://www.quiddo.com.br';
 it.each(['mensal','anual'])('signed %s webhook bridges paid identity to current AI credits and renewal without external calls', async (plan) => {
  const f = fixture().billing;
- if(plan==='anual'){const item=f.subscription.items.data[0];item.price.id='price_1UXtqY134hMOoEZVGgIdzQ7a';item.price.unit_amount=C.anual;item.price.recurring.interval='year';item.current_period_end=item.current_period_start+365*86400;f.invoice.amount_paid=C.anual;f.invoice.lines.data[0].amount=C.anual;f.invoice.lines.data[0].period.end=item.current_period_end;f.invoice.lines.data[0].pricing.price_details.price=item.price.id;}
+ if(plan==='anual'){const item=f.subscription.items.data[0];item.price.id='price_1UbiSf134hMOoEZVBWt3slrl';item.price.unit_amount=C.anual;item.price.recurring.interval='year';item.current_period_end=item.current_period_start+365*86400;f.invoice.amount_paid=C.anual;f.invoice.lines.data[0].amount=C.anual;f.invoice.lines.data[0].period.end=item.current_period_end;f.invoice.lines.data[0].pricing.price_details.price=item.price.id;}
  const data = JSON.parse(JSON.stringify(f).replaceAll(f.subscription.id,'sub_quiddo').replaceAll(f.customer,'cus_quiddo'));
  sub = data.subscription; invoice = data.invoice;
  sub.livemode=true; sub.items.data[0].price.livemode=true; invoice.livemode=true;
  sub.latest_invoice=invoice; session.livemode=true;
  const priceId=sub.items.data[0].price.id;
- Object.assign(env,{COBRANCA:'ligada',STRIPE_LIVE_KEY:['rk','live','fixture'].join('_'),STRIPE_PRECO_MENSAL_ID:'price_1UXtp0134hMOoEZV4zpJZiw6',STRIPE_PRECO_ANUAL_ID:'price_1UXtqY134hMOoEZVGgIdzQ7a',STRIPE_LIVE_WEBHOOK_SECRET:SECRET,STRIPE_LIVE_PORTAL_CONFIG:'bpc_fixture'});
+ Object.assign(env,{COBRANCA:'ligada',STRIPE_LIVE_KEY:['rk','live','fixture'].join('_'),STRIPE_PRECO_MENSAL_ID:'price_1UbiSe134hMOoEZVMeKBTuGX',STRIPE_PRECO_ANUAL_ID:'price_1UbiSf134hMOoEZVBWt3slrl',STRIPE_LIVE_WEBHOOK_SECRET:SECRET,STRIPE_LIVE_PORTAL_CONFIG:'bpc_fixture'});
  await seedPurchase();
  sqlite.prepare("UPDATE compras SET modo='ligada',stripe_price=?,plano=?,valor=?").run(priceId,plan,plan==='anual'?PRECOS.anual:PRECOS.mensal);
  sqlite.prepare("UPDATE qd_clientes_stripe SET modo='ligada'").run();

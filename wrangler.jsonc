@@ -20,7 +20,7 @@
   // "ligada" (de verdade, para todos) ou "desligada". Segredos (MP_TOKEN, STRIPE_KEY) ficam só no painel da Cloudflare.
   // Preços: só em shared/precos.mjs. Ids dos preços de produção no Stripe (não são segredo): os mesmos de
   // STRIPE_PRECO_ID em shared/precos.mjs (tests/precos.test.ts confere)
-  "vars": {"PDF_ENABLED":"true","PDF_SPLIT_CREDITS":"true","PDF_ADMIN_ENABLED":"true","PDF_BUDGET_USD":"4","PROMO_ADMIN_EMAIL":"guitorniero@outlook.com","STRIPE_PRECO_MENSAL_ID":"price_1UXtp0134hMOoEZV4zpJZiw6","STRIPE_PRECO_ANUAL_ID":"price_1UXtqY134hMOoEZVGgIdzQ7a"},
+  "vars": {"PDF_ENABLED":"true","PDF_SPLIT_CREDITS":"true","PDF_ADMIN_ENABLED":"true","PDF_BUDGET_USD":"4","PROMO_ADMIN_EMAIL":"guitorniero@outlook.com","STRIPE_PRECO_MENSAL_ID":"price_1UbiSe134hMOoEZVMeKBTuGX","STRIPE_PRECO_ANUAL_ID":"price_1UbiSf134hMOoEZVBWt3slrl"},
   // Previews have their own database and automatically isolated Durable Objects.
   // Do not copy production secrets, payment prices, promotion databases or service bindings here.
   "previews": {

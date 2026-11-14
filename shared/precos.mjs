@@ -14,13 +14,12 @@ export const PRECOS = Object.freeze({
 
 /**
  * Ids dos preços de produção no Stripe (não são segredo). O valor de cada um tem que ser igual ao de PRECOS.
- * PENDENTE (14/11/2026): os ids abaixo ainda são os de R$ 15,99/mês e R$ 156/ano. Antes do merge, criar no Stripe,
- * nos mesmos produtos, os preços novos (BRL 12,90 por mês e BRL 99 por ano) e trocar aqui e no wrangler.jsonc.
- * Sem a troca, o servidor recusa o checkout da assinatura (o preço do Stripe não bate) e nada é cobrado errado.
+ * Criados em 14/11/2026 nos mesmos produtos (quiddo_mensal: BRL 12,90/mês; quiddo_anual: BRL 99/ano). Os preços antigos
+ * (R$ 15,99 e R$ 156) continuam ativos no Stripe para quem já assinava.
  */
 export const STRIPE_PRECO_ID = Object.freeze({
-  mensal: 'price_1UXtp0134hMOoEZV4zpJZiw6',
-  anual: 'price_1UXtqY134hMOoEZVGgIdzQ7a',
+  mensal: 'price_1UbiSe134hMOoEZVMeKBTuGX',
+  anual: 'price_1UbiSf134hMOoEZVBWt3slrl',
 });
 
 /** "15.99" → 1599 */

@@ -25,6 +25,7 @@ Para testar com o celular na mesma rede Wi-Fi: `npm run dev -- --host` e abra no
 | `/` | Home: o que é, como funciona, os três modos |
 | `/criar` | Editor do quiz: Meus quizzes, nome do quiz (em Corporativo e Escola, logo e cor da marca no Passe e no Premium; no grátis, um cadeado leva aos planos), modo (Corporativo, Amigos & família, Escola), visual do jogo, tempo de cada pergunta, perguntas (2 de modelo: verdadeiro ou falso e múltipla escolha), abrir a sala |
 | `/host/{CODIGO}` | Tela do anfitrião, para a TV ou o projetor |
+| `/pagar/{CODIGO}` | Aberta pelo QR que a TV mostra quando a sala grátis enche: quem organiza libera a sala no próprio celular |
 | `/{CODIGO}` | Entrada e tela do jogador |
 | `/jogar` | Digitar o código da sala |
 | `/entrar` | Login sem senha (código por e-mail) |
@@ -41,6 +42,8 @@ Cada jogador escolhe um bicho do Brasil com até dois itens (cabeça e rosto) e 
 
 - **Site**: Vite + TypeScript, sem framework. `src/`
 - **Servidor**: um Cloudflare Worker (`worker/index.ts`) serve o site e a API. Cada sala é um Durable Object (`worker/room.ts`) que guarda perguntas, jogadores, respostas e pontos, mede o tempo das respostas e manda o estado por WebSocket. A sala é apagada 2 horas depois do fim, ou 12 horas depois de aberta.
+- **Sala aberta com a TV ligada**: a tela do anfitrião manda um ping a cada 25 segundos e ele conta como atividade, sem acordar a sala (`getWebSocketAutoResponseTimestamp`). Só depois de 20 minutos sem mensagem e sem a tela do anfitrião aberta a sala **pausa** (`G.salaParada`): perguntas, pessoas e pontos ficam guardados, a TV mostra "A sala pausou" com "Reabrir a sala", e o celular de quem chega espera ("A sala está pausada") e entra sozinho quando o anfitrião volta. O código e o convite continuam valendo até o limite de 12 horas.
+- **Ensaio**: na sala de espera vazia, "Ensaiar com 3 bichos de teste" coloca três jogadores de teste (`ENSAIO_BICHOS`) que respondem sozinhos no servidor (acertam 70%, entre 1,2 s e 60% do tempo). O anfitrião vê pergunta, ranking e pódio. O ensaio não conta como jogo, e a primeira pessoa de verdade que entra encerra o ensaio e volta a sala para a espera.
 - **Regras do jogo**: `shared/game.ts` (fases, pontos, ranking, sorteio) e `shared/rules.ts` (limites, códigos, validação). São usadas pelo servidor e testadas em `tests/`.
 - **Protocolo**: `shared/protocol.ts`. Mensagens JSON com `type`. O servidor manda sempre o estado completo, e o jogador nunca recebe a resposta certa antes da revelação.
 
@@ -124,7 +127,11 @@ Na assinatura, o período pago vale até o fim: cancelar só impede a próxima r
 
 **Janela de pagamento:** só os planos, o e-mail, os botões de pagar, "Continuar grátis, até 10 pessoas" (fecha a janela) e o link "Dúvidas? Veja as perguntas frequentes" (abre `/precos#perguntas` em outra aba). Regras de renovação e devolução ficam nas perguntas frequentes, não na janela.
 
-**Oferta da sala cheia:** quando alguém tenta entrar na sala grátis cheia, o celular dessa pessoa fica esperando (e entra sozinho quando liberar) e a tela do anfitrião mostra no topo quantos estão esperando, com o Passe 7 dias de R$ 12,99 por R$ 9,99 (`PRECOS.oferta`), só no Pix. O servidor confere na própria sala: chave do anfitrião, sala grátis e gente esperando.
+**Oferta da sala cheia:** quando alguém tenta entrar na sala grátis cheia, o celular dessa pessoa fica esperando (e entra sozinho quando liberar). A TV mostra só quantos estão esperando e um QR, sem preço na frente de todo mundo. O QR abre `/pagar/{CODIGO}` no celular de quem organiza, com a oferta do Passe 7 dias (`PRECOS.oferta`). A chave do QR (`pagar`, diferente da chave do anfitrião) só serve para pagar e liberar aquela sala: depois do pagamento, o celular pede `POST /api/salas/{CODIGO}/liberar` e o servidor confere o código. O servidor também confere na própria sala: chave certa, sala grátis e gente esperando. Na TV, "Pagar neste aparelho" abre a mesma janela ali.
+
+**Sala grátis:** os celulares mostram um selo pequeno "Crie o seu em quiddo.com.br" (`selo` no estado, decidido pelo servidor). Na sala liberada (Passe ou Premium), nunca.
+
+**Fim do jogo:** a TV mostra "E o próximo quiz?" (salvar na conta, criar outro e uma linha sobre o Premium, sem preço). O celular de cada jogador tem "Compartilhar meu resultado", que gera no aparelho uma imagem 9:16 com o pódio, a posição e quiddo.com.br (`src/lib/cartao.ts`) para o Status ou os Stories.
 
 O quiz é criado e a sala abre de graça; o pagamento só aparece quando a pessoa quer mais de 10 (no editor, na sala de espera ou na página de preços). Mensal e Anual são assinaturas no cartão, com renovação automática e cancelamento em Minha conta; o Passe de 7 dias é avulso.
 
@@ -191,7 +198,9 @@ Como o pixel roda no iframe, a Meta registra a URL `/medicao`; o caminho real va
 
 `GET /api/uso` mostra, por dia (UTC), as salas abertas, os jogos começados, os jogadores e a maior sala dos últimos 14 dias. O plano grátis da Cloudflare dá cerca de 100 jogos de 15 minutos por dia; o campo `alerta` liga aos 70%. Um lembrete agendado confere isso todo dia e avisa quando for hora de assinar o plano de US$ 5.
 
-Cada sala aguenta 200 pessoas com folga (testado no site no ar). Sala em que ninguém mexe por 20 minutos (nem o anfitrião, nem os jogadores) fecha sozinha e avisa as telas. Com 1000, hoje não: as entradas e as atualizações durante a pergunta vão para todos de uma vez e o servidor atrasa.
+Desde 14/11/2026 também mostra se o jogo foi de verdade (só números, sem nomes): `ensaios`, `jogos_com_turma` (3 pessoas ou mais), `jogos_concluidos`, `tamanho_0`, `tamanho_1`, `tamanho_2a4`, `tamanho_5a10`, `tamanho_11mais`, `fechadas_por_inatividade`, `reabertas`, `entradas_recusadas` (com o motivo em `recusa_nao_encontrada`, `recusa_comecou`, `recusa_cheia`, `recusa_pausada` e `recusa_removido`), `sala_cheia`, `oferta_paga`, `liberadas` e `internas`. Os bichos de teste não contam como pessoas. Salas abertas com o cookie `btw_interno=1` (equipe) só entram em `internas`. A lista fica em `worker/uso.ts` (`CONTADORES`).
+
+Cada sala aguenta 200 pessoas com folga (testado no site no ar). Sala em que ninguém mexe por 20 minutos e sem a tela do anfitrião aberta pausa e avisa as telas; o anfitrião reabre com o mesmo código. Com 1000, hoje não: as entradas e as atualizações durante a pergunta vão para todos de uma vez e o servidor atrasa.
 
 ## Referência
 

@@ -14,6 +14,7 @@ export interface Player {
   streak?: number; // acertos seguidos nas perguntas que valem ponto (salas antigas não tinham)
   joinedAt: number;
   connected: boolean;
+  bot?: boolean; // bicho de teste do ensaio: o servidor responde por ele
 }
 
 /** Opção de "Quem é mais provável…": uma pessoa da sala. */
@@ -28,6 +29,16 @@ export interface Pessoa {
 export const PREP_MS = 10_000;
 /** Contagem final antes das respostas: 3, 2, 1. */
 export const CONTAGEM_MS = 3000;
+/** Sala parada fecha (pausa) depois de 20 minutos sem ninguém mexer e sem a tela do anfitrião aberta. */
+export const INATIVA_MS = 20 * 60 * 1000;
+/** Bichos de teste do ensaio: o anfitrião vê ranking e pódio antes de chamar a turma. */
+export const ENSAIO_BICHOS: { id: string; nick: string; avatar: string }[] = [
+  { id: 'bot:1', nick: 'Capivara (teste)', avatar: 'capivara.bone.-.5' },
+  { id: 'bot:2', nick: 'Arara (teste)', avatar: 'arara.-.escuros.2' },
+  { id: 'bot:3', nick: 'Tatu (teste)', avatar: 'tatu.festa.-.8' },
+];
+/** Chance de cada bicho de teste acertar. */
+const ENSAIO_ACERTO = 0.7;
 
 export interface Answer {
   choice: number;
@@ -55,14 +66,23 @@ export interface Room {
   drawn: Drawn[];
   createdAt: number;
   mexeu?: number; // última mensagem de alguém na sala (para fechar a sala parada)
+  hostVisto?: number; // último sinal da tela do anfitrião aberta (o ping que ela manda a cada 25 s)
+  pausada?: number; // a sala pausou por inatividade: guarda tudo e reabre com o mesmo código
   barrados?: string[]; // quem tentou entrar com a sala grátis cheia (esperando vaga)
   endedAt: number; // 0 enquanto o jogo não acabou
+  ensaio?: boolean; // jogo de ensaio com os bichos de teste (não conta como jogo)
+  botPlano?: { id: string; choice: number; ms: number }[]; // respostas dos bichos de teste na pergunta atual
+  pagar?: string; // chave que só serve para pagar a oferta desta sala (o QR da TV abre no celular do anfitrião)
+  interno?: boolean; // sala de teste da equipe (?btw_interno=1): fica fora dos contadores de uso
+  cheiaVista?: boolean; // já contou a sala grátis cheia uma vez
 }
 
-export function newRoom(o: { code: string; hostKey: string; theme: Theme; visual?: Visual; brand: Brand; questions: Question[]; hasLogo: boolean; now: number; maxPlayers?: number }): Room {
+export function newRoom(o: { code: string; hostKey: string; theme: Theme; visual?: Visual; brand: Brand; questions: Question[]; hasLogo: boolean; now: number; maxPlayers?: number; pagar?: string; interno?: boolean }): Room {
   return {
     code: o.code,
     hostKey: o.hostKey,
+    ...(o.pagar ? { pagar: o.pagar } : {}),
+    ...(o.interno ? { interno: true } : {}),
     maxPlayers: o.maxPlayers ?? LIMITS.maxPlayers,
     theme: o.theme,
     visual: o.visual || 'floresta',
@@ -115,6 +135,8 @@ export function join(room: Room, playerId: string, rawNick: string, now: number,
   }
   const nick = cleanNick(rawNick);
   if (!nick) return { ok: false, code: 'bad_nick' };
+  // a primeira pessoa de verdade encerra o ensaio: os bichos de teste saem e a sala volta para a espera
+  if (room.ensaio) fimEnsaio(room);
   if (room.phase !== 'lobby') return { ok: false, code: 'started' };
   if (Object.keys(room.players).length >= limiteDe(room)) {
     if (limiteDe(room) >= LIMITS.maxPlayers) return { ok: false, code: 'full' };
@@ -161,7 +183,7 @@ export function mostrarRespostas(room: Room, now: number): boolean {
   return true;
 }
 
-function openQuestion(room: Room, qIndex: number, now: number) {
+function openQuestion(room: Room, qIndex: number, now: number, rand: () => number = Math.random) {
   const q = room.questions[qIndex];
   room.qIndex = qIndex;
   room.phase = 'question';
@@ -176,6 +198,116 @@ function openQuestion(room: Room, qIndex: number, now: number) {
           .sort((a, b) => a.nick.localeCompare(b.nick, 'pt-BR'))
           .map((p) => ({ id: p.id, nick: p.nick, avatar: avatarOf(p) }))
       : undefined;
+  room.botPlano = room.ensaio ? planoDosBots(room, rand) : undefined;
+}
+
+/**
+ * Ensaio: cada bicho de teste escolhe uma resposta (acerta 70% das vezes) e um momento para responder,
+ * entre 1,2 s e 60% do tempo da pergunta (no máximo 7 s), contado do fim do "Prepare-se".
+ */
+function planoDosBots(room: Room, rand: () => number) {
+  const q = room.questions[room.qIndex];
+  const n = nOpcoes(room);
+  const max = Math.max(1500, Math.min(7000, q.tl * 1000 * 0.6));
+  return Object.values(room.players)
+    .filter((p) => p.bot)
+    .map((p) => {
+      const valePonto = (!q.tipo || q.tipo === 'quiz') && q.c >= 0;
+      const erradas = Array.from({ length: n }, (_, k) => k).filter((k) => k !== q.c);
+      const choice = valePonto && (rand() < ENSAIO_ACERTO || !erradas.length) ? q.c : erradas.length && valePonto ? erradas[Math.floor(rand() * erradas.length)] : Math.floor(rand() * n);
+      return { id: p.id, choice, ms: Math.round(1200 + rand() * (max - 1200)) };
+    });
+}
+
+/** Começa o ensaio: só na sala de espera vazia. Três bichos de teste entram e a primeira pergunta abre. */
+export function comecarEnsaio(room: Room, now: number, rand: () => number = Math.random): boolean {
+  if (room.phase !== 'lobby' || Object.keys(room.players).length) return false;
+  ENSAIO_BICHOS.forEach((b, i) => {
+    room.players[b.id] = { id: b.id, nick: b.nick, avatar: b.avatar, score: 0, delta: 0, prevRank: 0, joinedAt: now + i, connected: true, bot: true };
+  });
+  room.ensaio = true;
+  resetScores(room);
+  room.drawn = [];
+  room.endedAt = 0;
+  openQuestion(room, 0, now, rand);
+  return true;
+}
+
+/** Fim do ensaio: os bichos de teste saem e a sala volta para a espera, pronta para a turma. */
+export function fimEnsaio(room: Room): boolean {
+  if (!room.ensaio) return false;
+  for (const p of Object.values(room.players)) if (p.bot) delete room.players[p.id];
+  room.ensaio = false;
+  room.botPlano = undefined;
+  room.phase = 'lobby';
+  room.qIndex = 0;
+  room.answers = {};
+  room.counts = [];
+  room.opts = undefined;
+  room.startedAt = 0;
+  room.endsAt = 0;
+  room.drawn = [];
+  room.endedAt = 0;
+  resetScores(room);
+  return true;
+}
+
+/** Quando o próximo bicho de teste responde (relógio do servidor), ou 0 se não tem mais ninguém para responder. */
+export function proximoBot(room: Room): number {
+  if (room.phase !== 'question' || !room.botPlano) return 0;
+  const falta = room.botPlano.filter((b) => !room.answers[b.id] && room.players[b.id]);
+  return falta.length ? room.startedAt + Math.min(...falta.map((b) => b.ms)) : 0;
+}
+
+/** Registra as respostas dos bichos de teste que já deviam ter respondido. Devolve quantas entraram. */
+export function respondeBots(room: Room, now: number): number {
+  if (room.phase !== 'question' || !room.botPlano) return 0;
+  let n = 0;
+  for (const b of room.botPlano) {
+    if (room.answers[b.id] || now < room.startedAt + b.ms) continue;
+    if (answer(room, b.id, room.qIndex, b.choice, Math.min(now, room.startedAt + b.ms))) n++;
+  }
+  return n;
+}
+
+/** Pessoas de verdade na sala (sem os bichos de teste). */
+export const pessoas = (room: Room) => Object.values(room.players).filter((p) => !p.bot).length;
+
+/** Faixa do tamanho do jogo para o contador de uso (sem nomes, só a quantidade). */
+export function faixaTamanho(n: number): 'tamanho_0' | 'tamanho_1' | 'tamanho_2a4' | 'tamanho_5a10' | 'tamanho_11mais' {
+  return n <= 0 ? 'tamanho_0' : n === 1 ? 'tamanho_1' : n <= 4 ? 'tamanho_2a4' : n <= 10 ? 'tamanho_5a10' : 'tamanho_11mais';
+}
+
+// ---------- sala parada ----------
+
+/**
+ * A sala está parada? Ninguém mexeu nela e a tela do anfitrião não deu sinal por 20 minutos.
+ * Enquanto a tela do anfitrião está aberta, o ping dela (a cada 25 s) conta como atividade, até o limite de 12 horas.
+ */
+export function salaParada(room: Room, now: number, hostVisto = 0): boolean {
+  if (room.pausada) return false;
+  return now >= ultimaAtividade(room, hostVisto) + INATIVA_MS;
+}
+
+/** Último sinal de vida da sala: uma mensagem de alguém ou o ping da tela do anfitrião. */
+export const ultimaAtividade = (room: Room, hostVisto = 0) => Math.max(room.mexeu || room.createdAt, room.hostVisto || 0, hostVisto);
+
+/** Pausa a sala parada: guarda tudo (perguntas, quem entrou, pontos) para reabrir com o mesmo código. */
+export function pausar(room: Room, now: number): boolean {
+  if (room.pausada) return false;
+  room.pausada = now;
+  for (const p of Object.values(room.players)) if (!p.bot) p.connected = false;
+  return true;
+}
+
+/** O anfitrião voltou: a sala reabre com o mesmo código, e o convite já enviado volta a valer. */
+export function retomar(room: Room, now: number): boolean {
+  if (!room.pausada) return false;
+  room.pausada = undefined;
+  room.mexeu = now;
+  // pergunta que estava aberta quando a sala pausou: revela, para o jogo seguir do ponto em que parou
+  if (room.phase === 'question' && now > room.endsAt) reveal(room);
+  return true;
 }
 
 /** Quantas opções a pergunta atual tem. */
@@ -184,20 +316,20 @@ function nOpcoes(room: Room): number {
   return q.tipo === 'quem' ? (room.opts || []).length : q.o.length;
 }
 
-export function start(room: Room, now: number): boolean {
+export function start(room: Room, now: number, rand: () => number = Math.random): boolean {
   if (room.phase !== 'lobby') return false;
   resetScores(room);
-  openQuestion(room, 0, now);
+  openQuestion(room, 0, now, rand);
   return true;
 }
 
 /** Jogar de novo com as mesmas pessoas: zera os pontos e volta para a primeira pergunta. */
-export function restart(room: Room, now: number): boolean {
+export function restart(room: Room, now: number, rand: () => number = Math.random): boolean {
   if (room.phase !== 'final') return false;
   resetScores(room);
   room.drawn = [];
   room.endedAt = 0;
-  openQuestion(room, 0, now);
+  openQuestion(room, 0, now, rand);
   return true;
 }
 
@@ -261,13 +393,14 @@ export function showRanking(room: Room): boolean {
 }
 
 /** Próxima pergunta ou, depois da última, o pódio. */
-export function next(room: Room, now: number): boolean {
+export function next(room: Room, now: number, rand: () => number = Math.random): boolean {
   if (room.phase !== 'ranking' && room.phase !== 'reveal') return false;
   if (room.qIndex >= room.questions.length - 1) {
     room.phase = 'final';
     room.endedAt = now;
+    room.botPlano = undefined;
   } else {
-    openQuestion(room, room.qIndex + 1, now);
+    openQuestion(room, room.qIndex + 1, now, rand);
   }
   return true;
 }
@@ -343,6 +476,8 @@ function base(room: Room, now: number) {
     correct: revealed && q && q.c >= 0 ? q.c : null,
     counts: revealed ? room.counts : null,
     drawn: room.drawn,
+    // sala grátis: os celulares mostram o selo "Crie o seu em quiddo.com.br"; sala paga, nunca
+    selo: !salaLiberada(room),
   };
 }
 
@@ -352,10 +487,12 @@ export function hostView(room: Room, now: number, rk: RankRow[] = ranking(room))
     role: 'host',
     maxPlayers: limiteDe(room),
     esperando: esperandoVaga(room),
+    ensaio: !!room.ensaio,
+    pagar: room.pagar || '',
     podium: room.phase === 'final' ? rk.slice(0, 3) : [],
     players: Object.values(room.players)
       .sort((a, b) => a.joinedAt - b.joinedAt)
-      .map((p) => ({ id: p.id, nick: p.nick, avatar: avatarOf(p), connected: p.connected, answered: !!room.answers[p.id] })),
+      .map((p) => ({ id: p.id, nick: p.nick, avatar: avatarOf(p), connected: p.connected, answered: !!room.answers[p.id], ...(p.bot ? { bot: true } : {}) })),
     ranking: room.phase === 'final' ? rk : room.phase === 'ranking' || room.phase === 'reveal' ? rk.slice(0, 8) : [],
     acertaram: acertaram(room).slice(0, 12),
   };

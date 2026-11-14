@@ -48,7 +48,8 @@ export function publicPath(path: string): string | null {
 
 /** Checkout in a host room uses a fixed aggregate category, never the room URL. */
 export function paymentPath(path: string): string | null {
-  const match = /^\/host\/([^/]+)\/?$/.exec(path);
+  // a TV (/host/X) e o celular que paga a sala cheia pelo QR da TV (/pagar/X)
+  const match = /^\/(?:host|pagar)\/([^/]+)\/?$/.exec(path);
   return match && CODE_RE.test(match[1]) ? '/pagamento' : null;
 }
 /** Categories only: room codes and account identifiers never leave the app. */

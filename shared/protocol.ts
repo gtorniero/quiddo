@@ -48,6 +48,8 @@ export type ClientMsg =
   | { type: 'answer'; qIndex: number; choice: number }
   | { type: 'avatar'; avatar: string } // jogador troca o personagem depois de entrar
   | { type: 'start' }
+  | { type: 'ensaio' } // anfitrião, na sala de espera vazia: ensaio com 3 bichos de teste
+  | { type: 'fimEnsaio' } // anfitrião: tira os bichos de teste e volta para a sala de espera
   | { type: 'mostrar' } // anfitrião encerra a leitura: contagem de 3 s e as respostas aparecem
   | { type: 'reveal' }
   | { type: 'showRanking' }
@@ -114,13 +116,16 @@ export interface BaseState {
   counts: number[] | null; // só depois da revelação
   podium: RankRow[]; // só no fim
   drawn: Drawn[];
+  selo: boolean; // sala grátis: os celulares mostram "Crie o seu em quiddo.com.br"
 }
 
 export interface HostState extends BaseState {
   role: 'host';
   maxPlayers: number; // 10 na sala grátis, 200 com acesso pago
   esperando: number; // sala grátis cheia: quantas pessoas tentaram entrar e estão esperando vaga
-  players: { id: string; nick: string; avatar: string; connected: boolean; answered: boolean }[];
+  ensaio: boolean; // jogo de ensaio com os bichos de teste
+  pagar: string; // chave do QR que abre o pagamento da oferta no celular do anfitrião (só serve para pagar)
+  players: { id: string; nick: string; avatar: string; connected: boolean; answered: boolean; bot?: boolean }[];
   ranking: RankRow[]; // completo na fase final; top 8 na fase de ranking
   acertaram: Acerto[]; // depois da revelação: os 12 primeiros que acertaram, do mais rápido ao mais lento
 }
@@ -143,7 +148,7 @@ export interface PlayerState extends BaseState {
   ranking: RankRow[]; // top 5 durante o jogo, top 10 no fim
 }
 
-export type ErrorCode = 'not_found' | 'started' | 'full' | 'cheia_gratis' | 'kicked' | 'bad_key' | 'bad_nick' | 'closed' | 'inativa' | 'acesso_invalido';
+export type ErrorCode = 'not_found' | 'started' | 'full' | 'cheia_gratis' | 'kicked' | 'bad_key' | 'bad_nick' | 'closed' | 'inativa' | 'acesso_invalido' | 'pausada';
 
 export type ServerMsg =
   | HostState

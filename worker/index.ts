@@ -10,6 +10,8 @@ import { naoIndexar } from '../shared/seo';
 //   GET  /api/salas/{CODIGO}/ws  WebSocket da sala (anfitrião e jogadores)
 //   GET  /api/salas/{CODIGO}/logo logo do anfitrião
 //   GET  /api/salas/{CODIGO}/img/{N} imagem da pergunta N
+//   GET  /api/salas/{CODIGO}/pagar?c=CHAVE   resumo para pagar a sala cheia no celular (QR da TV)
+//   POST /api/salas/{CODIGO}/liberar         { chave, codigo }: libera a sala com um código pago, pelo celular
 //   /api/cobranca, /api/pix, /api/pix/status, /api/cartao, /api/acesso: cobrança (worker/cobranca.ts)
 // O resto vai para os arquivos estáticos; rotas como /criar e /ABCD caem no index.html.
 import {servicePromos} from './promos-service';
@@ -69,17 +71,35 @@ const app = {
       // sala grátis: até 10 pessoas e sem logo e cor próprios quando a cobrança está valendo;
       // com código pago (Passe ou Premium), até 200 e com a marca (shared/game.ts, marcaDaSala)
       const maxPlayers = !cobrancaVale(env, body.testeCobranca) || (await codigoValido(env, body.acesso)) ? LIMITS.maxPlayers : LIMITS.freePlayers;
+      // sala da equipe (cookie btw_interno=1, gravado por ?btw_interno=1): fica fora dos contadores de uso
+      const interno = /(?:^|;\s*)btw_interno=1(?:;|$)/.test(req.headers.get('Cookie') || '');
       for (let i = 0; i < 8; i++) {
         const code = randomCode();
         const stub = env.ROOMS.get(env.ROOMS.idFromName(code));
-        if (await stub.create(code, hostKey, body, maxPlayers)) {
-          ctx.waitUntil(anotaUso(env, { salas: 1 }));
+        if (await stub.create(code, hostKey, body, maxPlayers, interno)) {
+          ctx.waitUntil(anotaUso(env, interno ? { internas: 1 } : { salas: 1 }));
           // Lead pela Conversions API: só com as variáveis ligadas e consentimento de anúncios (meta-adapter).
           if (raw?.lead) ctx.waitUntil(captureLead(env, raw.lead, raw.meta, body.theme));
           return json({ code, hostKey, maxPlayers } satisfies CreateRoomResult);
         }
       }
       return json({ erro: 'Não deu para abrir a sala agora. Tente de novo.' }, 503);
+    }
+
+    // pagamento da sala cheia pelo celular do anfitrião (QR da TV): a chave só serve para pagar e liberar
+    if (parts[1] === 'salas' && CODE_RE.test(parts[2] || '') && parts.length === 4 && (parts[3] === 'pagar' || parts[3] === 'liberar')) {
+      const stub = env.ROOMS.get(env.ROOMS.idFromName(parts[2]));
+      if (parts[3] === 'pagar' && req.method === 'GET') {
+        const r = await stub.resumoParaPagar(String(url.searchParams.get('c') || '').slice(0, 64));
+        return r ? json(r) : json({ erro: 'Sala não encontrada.' }, 404);
+      }
+      if (parts[3] === 'liberar' && req.method === 'POST') {
+        if (req.headers.get('Origin') !== url.origin) return json({ erro: 'origem' }, 403);
+        const b = (await req.json().catch(() => ({}))) as { chave?: unknown; codigo?: unknown };
+        const r = await stub.liberarCom(String(b.chave || '').slice(0, 64), String(b.codigo || '').slice(0, 40));
+        return r === 'ok' ? json({ ok: true }) : json({ erro: r }, r === 'chave' ? 404 : 403);
+      }
+      return json({ erro: 'Não encontrado.' }, 404);
     }
 
     const isImg = parts.length === 5 && parts[3] === 'img' && /^\d{1,2}$/.test(parts[4]);

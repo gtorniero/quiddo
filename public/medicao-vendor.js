@@ -89,7 +89,7 @@
     if (!path) return;
     const p = {};
     const raw = d.params || {};
-    const enums = {role:['host','player'],source:['manual','template','import','pdf'],storage:['local','cloud'],method:['promo','existing_code'],modo:modes,error_category:['network','rejected','invalid_input','quota','provider','pending','conflict','storage','unknown','login_required','already_subscribed']};
+    const enums = {role:['host','player'],source:['manual','template','import','pdf'],storage:['local','cloud'],method:['promo','existing_code'],modo:modes,error_category:['network','rejected','invalid_input','quota','provider','pending','conflict','storage','unknown','login_required','already_subscribed','room_not_found','game_started','room_full','removed','room_paused','room_closed','invalid_nick','connection']};
     for (const [key, values] of Object.entries(enums)) if (values.includes(raw[key])) p[key === 'source' ? 'quiz_source' : key] = raw[key];
     if (typeof raw.destination === 'string' && safePath(raw.destination)) p.destination = safePath(raw.destination);
     if (Number.isInteger(raw.question_count) && raw.question_count >= 0 && raw.question_count <= 200) p.question_count = raw.question_count;

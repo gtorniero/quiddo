@@ -57,6 +57,26 @@ export function gamePath(path: string): string | null {
   const m = /^\/([^/]+)\/?$/.exec(path);
   return m && CODE_RE.test(m[1]) ? '/partida/jogador' : null;
 }
+/**
+ * Tráfego interno (equipe): ?btw_interno=1 grava o cookie btw_interno=1 por 1 ano e ?btw_interno=0 apaga.
+ * Com ele, não carrega GA4 nem o pixel e a Conversions API não recebe consentimento (mesma regra do Retrozap).
+ * As salas abertas com o cookie ficam fora dos contadores de uso (worker/uso.ts, "internas").
+ */
+export const INTERNO_COOKIE = 'btw_interno';
+export const interno = (cookie: string) => /(?:^|;\s*)btw_interno=1(?:;|$)/.test(cookie || '');
+/** O que fazer com o cookie interno a partir do endereço: gravar, apagar ou nada. */
+export function pedidoInterno(search: string): 'ligar' | 'desligar' | null {
+  const v = new URLSearchParams(search).get(INTERNO_COOKIE);
+  return v === '1' ? 'ligar' : v === '0' ? 'desligar' : null;
+}
+
+/** Erro ao entrar na sala, em categorias fixas para a medição (nunca o código da sala). */
+export type ErroEntrada = 'room_not_found' | 'game_started' | 'room_full' | 'removed' | 'room_paused' | 'room_closed' | 'invalid_nick' | 'connection' | 'unknown';
+export function categoriaErroEntrada(codigo: string): ErroEntrada {
+  const m: Record<string, ErroEntrada> = { not_found: 'room_not_found', started: 'game_started', full: 'room_full', cheia_gratis: 'room_full', kicked: 'removed', pausada: 'room_paused', inativa: 'room_paused', closed: 'room_closed', bad_nick: 'invalid_nick', connection: 'connection' };
+  return m[codigo] || 'unknown';
+}
+
 export function measurementHost(host: string): boolean {
   return ['quiddo.com.br', 'www.quiddo.com.br'].includes(host);
 }

@@ -13,9 +13,21 @@ export function utmValueOk(value: string): boolean {
   return !(value.match(/\d+/g) || []).some((run) => run.length >= 7 && run.length <= 14);
 }
 
+/**
+ * Links que o próprio Quiddo espalha (?de=cartao no cartão de resultado, ?de=jogador no selo da sala grátis)
+ * viram etiquetas de campanha fixas, para medir quem chega pelo jogo: utm_source=quiddo, utm_medium=<de>.
+ */
+export const ORIGENS_DO_JOGO = ['cartao', 'jogador'] as const;
+
 /** Só rótulos de campanha e IDs de clique; nunca propaga a query original. */
 export function campaignQuery(search: string, allowAdClicks = true): string {
   const input = new URLSearchParams(search), out = new URLSearchParams();
+  const de = input.get('de');
+  if (de && (ORIGENS_DO_JOGO as readonly string[]).includes(de) && !input.get('utm_source')) {
+    input.set('utm_source', 'quiddo');
+    input.set('utm_medium', de);
+    input.set('utm_campaign', 'jogo');
+  }
   for (const key of [...UTM_KEYS, ...CLICK_KEYS]) {
     const value = input.get(key);
     const click = (CLICK_KEYS as readonly string[]).includes(key);

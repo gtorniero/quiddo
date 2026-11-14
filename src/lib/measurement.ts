@@ -1,5 +1,5 @@
 import {revokeMeta,metaContext} from './meta-consent';
-import { CONSENT_KEY, publicPath, paymentPath, gamePath, measurementHost, safeReferrer, productUsageAllowed, needsUsageChoice, readConsent, campaignQuery, googleAdsAllowed, needsAdsChoice, consentLabel, googleConsent, GOOGLE_SINAIS_SEM_ACEITE, LEAD_KEY, leadState, type Consent, type ModoEvento } from './measurement-policy';
+import { CONSENT_KEY, interno, pedidoInterno, type ErroEntrada, publicPath, paymentPath, gamePath, measurementHost, safeReferrer, productUsageAllowed, needsUsageChoice, readConsent, campaignQuery, googleAdsAllowed, needsAdsChoice, consentLabel, googleConsent, GOOGLE_SINAIS_SEM_ACEITE, LEAD_KEY, leadState, type Consent, type ModoEvento } from './measurement-policy';
 
 let consent: Consent | null = null;
 let frame: HTMLIFrameElement | null = null;
@@ -17,7 +17,7 @@ const EVENTS = ['create_room','begin_checkout','purchase','view_item','navigatio
 export type MeasureEvent = typeof EVENTS[number];
 let campaign = campaignQuery(typeof location === 'undefined' ? '' : location.search);
 export type Sale = { transaction_id: string; value: number; currency: 'BRL'; plano: 'mensal' | 'anual' | 'semana' | 'oferta' };
-export type MeasureParams = Partial<Sale> & { modo?: ModoEvento; lead_id?: string; precos?: Partial<Record<'anual' | 'mensal' | 'semana', number>>; payment_type?: 'pix' | 'card'; role?: 'host' | 'player'; source?: 'manual' | 'template' | 'import' | 'pdf' | 'text'; storage?: 'local' | 'cloud'; method?: 'promo' | 'existing_code'; destination?: string; question_count?: number; error_category?: 'network' | 'rejected' | 'invalid_input' | 'quota' | 'provider' | 'pending' | 'conflict' | 'storage' | 'unknown' | 'login_required' | 'already_subscribed' };
+export type MeasureParams = Partial<Sale> & { modo?: ModoEvento; lead_id?: string; precos?: Partial<Record<'anual' | 'mensal' | 'semana', number>>; payment_type?: 'pix' | 'card'; role?: 'host' | 'player'; source?: 'manual' | 'template' | 'import' | 'pdf' | 'text'; storage?: 'local' | 'cloud'; method?: 'promo' | 'existing_code'; destination?: string; question_count?: number; error_category?: 'network' | 'rejected' | 'invalid_input' | 'quota' | 'provider' | 'pending' | 'conflict' | 'storage' | 'unknown' | 'login_required' | 'already_subscribed' | ErroEntrada };
 let sequence = 0;
 const callbacks = new Map<number, (queued: boolean) => void>();
 const purchasesInFlight = new Set<string>();
@@ -26,7 +26,16 @@ const optionalCampaign = () => campaignQuery(campaign, googleAdsAllowed(consent)
 /** Funil de aquisição: o único medido sem a medição de uso detalhado. */
 const FUNNEL: MeasureEvent[] = ['create_room', 'view_item', 'begin_checkout', 'purchase'];
 // Sem aceite, o iframe só existe se os sinais sem cookie do Google estiverem ligados (desligados por padrão).
-const permitted = () => typeof location !== 'undefined' && measurementHost(location.hostname) && !!(consent?.analytics || consent?.marketing || GOOGLE_SINAIS_SEM_ACEITE);
+const permitted = () => typeof location !== 'undefined' && measurementHost(location.hostname) && !equipe() && !!(consent?.analytics || consent?.marketing || GOOGLE_SINAIS_SEM_ACEITE);
+/** Navegador da equipe (?btw_interno=1): nada de GA4, pixel ou Conversions API. */
+export const equipe = () => typeof document !== 'undefined' && interno(document.cookie);
+/** Grava ou apaga o cookie da equipe a partir do endereço (?btw_interno=1 ou 0). */
+export function marcaEquipe(search = location.search) {
+  const pedido = pedidoInterno(search);
+  if (!pedido) return;
+  const dominio = /(?:^|\.)quiddo\.com\.br$/.test(location.hostname) ? '; Domain=.quiddo.com.br; Secure' : '';
+  document.cookie = `btw_interno=${pedido === 'ligar' ? '1; Max-Age=31536000' : '; Max-Age=0'}; Path=/; SameSite=Lax${dominio}`;
+}
 
 function removeFrame() {
   frame?.remove(); frame = null; ready = false; lastPage = ''; for (const done of pending.splice(0)) done(false);
@@ -49,12 +58,12 @@ function sync() {
   }
   if (ready && currentPath && lastPage !== currentPath) { send('page_view'); lastPage = currentPath; }
 }
-function bridgeReady(): Promise<boolean> {
+function bridgeReady(espera = 2000): Promise<boolean> {
   if (ready) return Promise.resolve(true);
   if (!(currentPath || (currentGamePath && productUsageAllowed(consent)) || transientPath) || !permitted()) return Promise.resolve(false);
   return new Promise(resolve => {
     const done = (ok: boolean) => { clearTimeout(timer); const i = pending.indexOf(done); if (i >= 0) pending.splice(i, 1); resolve(ok); };
-    const timer = window.setTimeout(() => done(false), 2000);
+    const timer = window.setTimeout(() => done(false), espera);
     pending.push(done);
   });
 }
@@ -67,14 +76,14 @@ function cleanTransient() {
   // A timed-out vendor may still finish loading. Payment/access never waits indefinitely.
   transientTimer = window.setTimeout(() => { transientPath = null; sync(); }, 3000);
 }
-export async function track(event: typeof EVENTS[number], params: MeasureParams = {}): Promise<boolean> {
+export async function track(event: typeof EVENTS[number], params: MeasureParams = {}, espera = 2000): Promise<boolean> {
   const path = eventPath(event);
   const referrer = pageReferrer;
   if (!path || !permitted()) return false;
   // Detailed product use is analytics only. Existing Meta commerce events stay unchanged.
   if (!productUsageAllowed(consent) && !FUNNEL.includes(event)) return false;
   if (!currentPath) { transientPath = path; clearTimeout(transientTimer); sync(); }
-  if (!await bridgeReady()) { if (transientPath) cleanTransient(); return false; }
+  if (!await bridgeReady(espera)) { if (transientPath) cleanTransient(); return false; }
   return new Promise<boolean>(resolve => {
     const id = ++sequence;
     const done = (queued: boolean) => { clearTimeout(timer); callbacks.delete(id); if (transientPath) cleanTransient(); resolve(queued); };
@@ -95,7 +104,10 @@ export function measurePage(path: string) {
   currentPaymentPath = paymentPath(path);
   currentGamePath = nextGame;
   sync();
+  // compra confirmada que não chegou à medição (página fechou, celular lento): tenta de novo na primeira página que mede
+  if (!pendentesVistos && (currentPath || currentPaymentPath)) { pendentesVistos = true; void comprasPendentes(); }
 }
+let pendentesVistos = false;
 /** Local keys only; IDs used to avoid duplicate saves are never sent to vendors. */
 export async function trackOnce(event: MeasureEvent, localKey: string, params: MeasureParams = {}) {
   const key = event + ':' + localKey;
@@ -117,7 +129,7 @@ function clearOptionalCookies() {
 function updateLabel() {
   const b = document.getElementById('privacy-preferences');
   // o estado aparece no rodapé; o complemento só para leitor de tela
-  if (b) b.innerHTML = `${consentLabel(consent)}<span class="sr">: mudar a escolha de cookies</span>`;
+  if (b) b.innerHTML = `${equipe() ? 'Medição desligada (equipe)' : consentLabel(consent)}<span class="sr">: mudar a escolha de cookies</span>`;
 }
 let opener: HTMLElement | null = null;
 function closeConsent() {
@@ -164,6 +176,7 @@ export function showConsent() {
   box.querySelector<HTMLElement>('[data-consent="accept"]')?.focus({ preventScroll: true });
 }
 export function initMeasurement() {
+  marcaEquipe();
   if (!measurementHost(location.hostname)) return;
   try { consent = readConsent(localStorage.getItem(CONSENT_KEY)); } catch { consent = null; }
   window.addEventListener('message', e => {
@@ -182,21 +195,43 @@ export function initMeasurement() {
   });
   document.getElementById('privacy-preferences')?.addEventListener('click', showConsent);
   updateLabel();
-  if (!consent || !localStorage.getItem('btw_capi_choice_v1') || needsAdsChoice(consent) || needsUsageChoice(consent)) showConsent();
+  // a equipe não vê o aviso: com o cookie interno nada é medido
+  if (!equipe() && (!consent || !localStorage.getItem('btw_capi_choice_v1') || needsAdsChoice(consent) || needsUsageChoice(consent))) showConsent();
 }
 
 /** Somente metadados retornados pelo status pago do servidor, nunca código de acesso. */
 export async function trackPurchase(sale?: Sale) {
-  if (!sale || !/^[a-f0-9]{64}$/.test(sale.transaction_id) || !Number.isFinite(sale.value) || sale.value <= 0 || sale.currency !== 'BRL' || !permitted() || !eventPath('purchase') || purchasesInFlight.has(sale.transaction_id)) return;
+  if (!sale || !/^[a-f0-9]{64}$/.test(sale.transaction_id) || !Number.isFinite(sale.value) || sale.value <= 0 || sale.currency !== 'BRL' || !permitted() || purchasesInFlight.has(sale.transaction_id)) return;
   try {
     const key = 'qd_sale_' + sale.transaction_id;
     if (localStorage.getItem(key)) return;
     purchasesInFlight.add(sale.transaction_id);
-    const queued = await track('purchase', sale);
+    // Página sem caminho de medição (ou a ponte não respondeu a tempo no celular lento): a compra fica guardada
+    // neste navegador e vai na próxima página que puder medir. Antes ela se perdia (venda de 06/11 sem purchase no GA4).
+    const queued = eventPath('purchase') ? await track('purchase', sale, 8000) : false;
     // This confirms SDK queuing, not a receipt from GA4. Stable transaction/event IDs remain the final dedup keys.
-    if (queued && permitted()) localStorage.setItem(key, '1');
+    if (queued && permitted()) { localStorage.setItem(key, '1'); guardaPendente(sale, true); }
+    else guardaPendente(sale);
   } catch { /* Measurement failures never block payment or access. */ }
   finally { purchasesInFlight.delete(sale.transaction_id); }
+}
+
+const PENDENTES = 'qd_compras_pendentes_v1';
+/** Compras confirmadas que ainda não chegaram à medição, por até 48 horas. Só os metadados da venda. */
+function guardaPendente(sale: Sale, enviada = false) {
+  try {
+    const agora = Date.now();
+    const lista = (JSON.parse(localStorage.getItem(PENDENTES) || '[]') as (Sale & { at: number })[]).filter((x) => x.transaction_id !== sale.transaction_id && agora - x.at < 48 * 3600e3);
+    if (!enviada) lista.push({ ...sale, at: agora });
+    if (lista.length) localStorage.setItem(PENDENTES, JSON.stringify(lista.slice(-5)));
+    else localStorage.removeItem(PENDENTES);
+  } catch { /* sem armazenamento: segue sem repetir */ }
+}
+async function comprasPendentes() {
+  try {
+    const lista = JSON.parse(localStorage.getItem(PENDENTES) || '[]') as (Sale & { at: number })[];
+    for (const x of lista) { const { at: _at, ...sale } = x; await trackPurchase(sale); }
+  } catch { /* nada a repetir */ }
 }
 
 async function sha256Hex(text: string) {

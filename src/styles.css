@@ -2684,7 +2684,8 @@ main.home {
 }
 .h-demo .ans {
   min-height: 60px;
-  font-size: 18px;
+  /* 19px em negrito conta como texto grande (3:1): branco sobre as cores das respostas passa, como no jogo */
+  font-size: 19px;
 }
 .demo-topo {
   display: flex;
@@ -3012,7 +3013,7 @@ main.home {
   }
   .h-demo .ans {
     min-height: 54px;
-    font-size: 17px;
+    font-size: 19px;
   }
 }
 @media (max-width: 480px) {

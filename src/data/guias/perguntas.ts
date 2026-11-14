@@ -88,7 +88,7 @@ export const PERGUNTAS: Guia[] = [
 <li><strong>Embaralhe a letra certa.</strong> Se você trocar a ordem das alternativas, confira de novo qual ficou marcada como certa no editor.</li>
 <li><strong>Tempo:</strong> com perguntas curtas assim, 15 segundos funcionam bem. Para conta de cabeça, prefira 20.</li>
 </ul>
-<p>Para jogar, o botão abaixo abre o editor com 10 destas perguntas, uma de cada assunto, já com a resposta certa marcada. Acrescente outras, abra a sala e a turma entra pelo celular com o código de 4 letras, sem cadastro.</p>
+<p>Para jogar, o botão abaixo abre o editor com 10 destas perguntas, de vários assuntos, já com a resposta certa marcada. Acrescente outras, abra a sala e a turma entra pelo celular com o código de 4 letras, sem cadastro.</p>
 <p><a class="btn auto" href="/criar?modelo=conhecimentos-gerais" data-link>Criar meu quiz grátis</a></p>
 <p>Quer variar? Veja as <a href="/guias/perguntas-de-verdadeiro-ou-falso" data-link>50 perguntas de verdadeiro ou falso</a>, as <a href="/guias/perguntas-sobre-o-brasil" data-link>50 perguntas sobre o Brasil</a> e o <a href="/guias/quiz-para-criancas" data-link>quiz para crianças</a>, com perguntas separadas por idade.</p>`,
     faq: [

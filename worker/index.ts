@@ -10,9 +10,9 @@ import { naoIndexar } from '../shared/seo';
 //   GET  /api/salas/{CODIGO}/ws  WebSocket da sala (anfitrião e jogadores)
 //   GET  /api/salas/{CODIGO}/logo logo do anfitrião
 //   GET  /api/salas/{CODIGO}/img/{N} imagem da pergunta N
-//   POST /api/levar, GET /api/levar/{id}: manda o quiz do celular para o computador (worker/levar.ts)
 //   /api/cobranca, /api/pix, /api/pix/status, /api/cartao, /api/acesso: cobrança (worker/cobranca.ts)
 // O resto vai para os arquivos estáticos; rotas como /criar e /ABCD caem no index.html.
+// Quiz do celular para o computador: POST /api/levar e GET /api/levar/{id} (worker/levar.ts).
 import {servicePromos} from './promos-service';
 import {adminPromos} from './promos-admin';
 import type { CreateRoomResult } from '../shared/protocol';

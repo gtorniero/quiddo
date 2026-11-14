@@ -10,16 +10,17 @@ function bridge(file, brand, path) {
  const prefix=brand==='quiddo'?'qd':'sd';
  send({type:prefix+'_init',analytics:true,marketing:true,productUsageMeasurement:true},'https://evil.invalid');assert.equal(scripts.length,0,'forged message initializes nothing');
  send({type:prefix+'_init',analytics:true,marketing:true,productUsageMeasurement:true});assert.equal(scripts.length,2);
- send({type:prefix+'_measure',event:'page_view',path:'/host/ABCD',params:{email:'secret@example.com'}});assert.equal(window.dataLayer.length,3,'private path rejected');
+ const initial=window.dataLayer.length;assert.deepEqual(Array.from(window.dataLayer[0]).slice(0,2),['consent','default'],'Consent Mode default comes first');assert.equal(window.dataLayer[0][2].analytics_storage,'denied');
+ send({type:prefix+'_measure',event:'page_view',path:'/host/ABCD',params:{email:'secret@example.com'}});assert.equal(window.dataLayer.length,initial,'private path rejected');
  send({type:prefix+'_measure',event:'page_view',path,params:{email:'secret@example.com',nome:'Private Name'},campaign:'?utm_source=instagram&token=secret&utm_term=secret%40example.com'});
  const event=Array.from(window.dataLayer.at(-1));assert.equal(event[0],'event');assert.equal(event[1],'page_view');const text=JSON.stringify(event);assert(!text.includes('secret'));assert(!text.includes('Private Name'));assert(text.includes('utm_source=instagram'));
- send({type:prefix+'_measure',event:'purchase',path,params:{transaction_id:'QD-SECRET',value:25,currency:'BRL',plano:'mensal'}});assert.equal(window.dataLayer.length,4,'access code cannot become transaction id');
+ send({type:prefix+'_measure',event:'purchase',path,params:{transaction_id:'QD-SECRET',value:25,currency:'BRL',plano:'mensal'}});assert.equal(window.dataLayer.length,initial+1,'access code cannot become transaction id');
  for(const plano of ['mensal','anual','semana','oferta']) {
   const before=window.dataLayer.length;
   send({type:prefix+'_measure',event:'purchase',path,params:{transaction_id:'a'.repeat(64),value:156,currency:'BRL',plano,email:'secret@example.com'}});
   assert.equal(window.dataLayer.length,before+1,'confirmed '+plano+' sale reaches GA');
   const sale=Array.from(window.dataLayer.at(-1))[2];assert.equal(sale.plano,plano);assert.equal(sale.value,156);assert(!JSON.stringify(sale).includes('secret'));
-  assert.equal(window.fbq.queue.at(-1)[2],'Purchase');
+  const last=window.fbq.queue.filter(x=>x[0]==='trackSingle').map(x=>x[2]);assert(last.includes('Purchase'));if(['mensal','anual'].includes(plano))assert.equal(last.at(-1),'Subscribe');
  }
  const beforeInvalid=window.dataLayer.length;
  send({type:prefix+'_measure',event:'purchase',path,params:{transaction_id:'a'.repeat(64),value:156,currency:'BRL',plano:'unrecognized'}});

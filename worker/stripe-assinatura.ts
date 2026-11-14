@@ -2,6 +2,7 @@ import {captureCheckout} from './meta-adapter.mjs';
 // Stripe Billing da Quiddo. Nenhum dado das salas ou dos jogadores passa por este modulo.
 import StripeClient from 'stripe';
 import type { CobrancaEnv } from './cobranca';
+import { campaignOrigin } from '../shared/campaign';
 
 export interface CompraStripe {
   ref: string; ordem: string; email: string; valor: string; modo: string;
@@ -34,6 +35,8 @@ export async function tabelasStripe(db: D1Database) {
     db.prepare('CREATE INDEX IF NOT EXISTS qd_assinaturas_customer ON qd_assinaturas(customer, modo)'),
     // email e a identidade verificada da conta Quiddo, nao uma copia editavel do perfil Stripe.
     db.prepare('CREATE TABLE IF NOT EXISTS qd_clientes_stripe (email TEXT NOT NULL, modo TEXT NOT NULL, customer TEXT NOT NULL UNIQUE, PRIMARY KEY(email, modo))'),
+    // Renovações pagas, para relatório (receita recorrente). Sem e-mail: liga à compra original pela ref.
+    db.prepare('CREATE TABLE IF NOT EXISTS qd_renovacoes (invoice TEXT PRIMARY KEY, assinatura TEXT NOT NULL, ref TEXT NOT NULL, plano TEXT NOT NULL, valor_centavos INTEGER NOT NULL, pago INTEGER NOT NULL, modo TEXT NOT NULL)'),
   ]);
 }
 function validatePrice(price: StripeClient.Price, value: number, mode: string, plano: PlanoAssinatura = 'mensal') {
@@ -76,8 +79,8 @@ export async function checkoutMensal(req: Request, env: CobrancaEnv, email: stri
       success_url: `${origin}${volta}?pagamento=ok&ref=${ref}`, cancel_url: `${origin}${volta}?pagamento=volta`,
     }, { idempotencyKey: ref });
     if (session.livemode !== (mode === 'ligada') || !session.url?.startsWith('https://checkout.stripe.com/')) return json({ erro: 'stripe' }, 502);
-    await db.prepare("INSERT INTO compras(ref,ordem,email,status,criado,valor,modo,plano,tipo,stripe_price) VALUES (?,?,?,'pendente',?,?,?,?,'assinatura',?)")
-      .bind(ref, 'stripe:' + session.id, email, new Date().toISOString(), (amount / 100).toFixed(2), mode, plano, price.id).run();
+    await db.prepare("INSERT INTO compras(ref,ordem,email,status,criado,valor,modo,plano,tipo,stripe_price,origem) VALUES (?,?,?,'pendente',?,?,?,?,'assinatura',?,?)")
+      .bind(ref, 'stripe:' + session.id, email, new Date().toISOString(), (amount / 100).toFixed(2), mode, plano, price.id, campaignOrigin(pedido.origem) || null).run();
     return json({ ref, url: session.url, recorrente: true });
   } catch { return json({ erro: 'stripe' }, 502); }
 }
@@ -200,6 +203,18 @@ async function riscoDaCobranca(env: CobrancaEnv, chargeId: string, risk: string)
     await env.DB!.prepare("UPDATE compras SET status='suspenso' WHERE ref=?").bind(state.ref).run();
   }
 }
+/**
+ * Renovação paga (não a primeira cobrança, que já é a compra). Só para relatório: não libera acesso
+ * (quem libera é reconciliarAssinatura) e não vai para a Meta.
+ */
+export async function registrarRenovacao(env: CobrancaEnv, invoice: StripeClient.Invoice, state: Pick<AssinaturaDB, 'id' | 'ref' | 'modo'>): Promise<boolean> {
+  if (invoice.billing_reason !== 'subscription_cycle' || invoice.status !== 'paid' || invoice.currency !== 'brl' || !(invoice.amount_paid > 0) || invoice.livemode !== (state.modo === 'ligada')) return false;
+  const compra = await env.DB!.prepare('SELECT plano FROM compras WHERE ref=?').bind(state.ref).first<{ plano: string | null }>();
+  const pago = invoice.status_transitions?.paid_at || invoice.created;
+  const r = await env.DB!.prepare('INSERT OR IGNORE INTO qd_renovacoes(invoice,assinatura,ref,plano,valor_centavos,pago,modo) VALUES (?,?,?,?,?,?,?)')
+    .bind(invoice.id, state.id, state.ref, compra?.plano === 'anual' ? 'anual' : 'mensal', invoice.amount_paid, pago * 1000, state.modo).run();
+  return !!r.meta?.changes;
+}
 /** Assinaturas exigem webhook assinado: renovacao, falha e cancelamento independem da pagina de retorno. */
 export async function webhookStripe(req: Request, env: CobrancaEnv, confirmarAvulso: (ref: string) => Promise<unknown>): Promise<Response> {
   if (!env.DB || !env.STRIPE_WEBHOOK_SECRET || !stripeAmbiente(env)) return json({ erro: 'indisponivel' }, 503);
@@ -222,7 +237,8 @@ export async function webhookStripe(req: Request, env: CobrancaEnv, confirmarAvu
     } else if (['invoice.paid', 'invoice.payment_failed', 'invoice.payment_action_required'].includes(event.type)) {
       const invoice = object as StripeClient.Invoice;
       const subscription = idOf(invoice.parent?.subscription_details?.subscription);
-      if (subscription) await reconciliarAssinatura(env, subscription, true);
+      const state = subscription ? await reconciliarAssinatura(env, subscription, true) : null;
+      if (state && event.type === 'invoice.paid') await registrarRenovacao(env, invoice, state);
     } else if (event.type === 'charge.refunded') {
       const charge = object as StripeClient.Charge;
       if (charge.refunded || charge.amount_refunded > 0) await riscoDaCobranca(env, charge.id, 'reembolso');

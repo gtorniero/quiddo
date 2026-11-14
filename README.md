@@ -112,7 +112,7 @@ Mesmo modelo do Retrozap. Os planos estão em `/precos`:
 | Grátis | R$ 0 | Salas de até 10 pessoas |
 | Passe 7 dias (avulso) | R$ 12,99 (`PRECO_SEMANA`) | Salas de até 200 pessoas, jogos ilimitados por 7 dias; Pix ou cartão |
 | Assinatura Mensal | R$ 15,99/mês (`PRECO_MENSAL`, id do Stripe em `STRIPE_PRECO_MENSAL_ID` no wrangler.jsonc) | Salas de até 200, renova a cada mês; só cartão |
-| Assinatura Anual | R$ 156/ano, mostrado como R$ 13/mês (`PRECO_ANUAL`, id do Stripe em `STRIPE_PRECO_ANUAL_ID` no wrangler.jsonc) | Salas de até 200, renova a cada ano; só cartão. Só aparece com o preço anual configurado |
+| Assinatura Anual | R$ 156/ano, mostrado como R$ 156/ano com "equivale a R$ 13 por mês" (`PRECO_ANUAL`, id do Stripe em `STRIPE_PRECO_ANUAL_ID` no wrangler.jsonc) | Salas de até 200, renova a cada ano; só cartão. Só aparece com o preço anual configurado |
 
 Na assinatura, o período pago vale até o fim: cancelar só impede a próxima renovação. O preço no Stripe tem que ser igual ao do site (o servidor confere e recusa se não bater).
 
@@ -164,6 +164,24 @@ A pessoa digita o e-mail, recebe um código de 6 dígitos (vale 10 minutos) e en
 2. Em **API Keys → Create**, crie uma chave só com permissão de envio.
 3. No Cloudflare, em **Workers & Pages → quiddo → Settings → Variables and Secrets**: `RESEND_KEY` como **Secret** e `EMAIL_DE` como texto, por exemplo `Quiddo <entrar@seudominio.com.br>`.
 4. Para o site e o cookie ficarem no seu domínio: **Settings → Domains & Routes → Add → Custom domain** (ex.: `quiddo.com.br`).
+
+**Ordem na página de planos e na janela de pagamento:** a Assinatura Premium vem primeiro (Anual marcado, Mensal ao lado), o Passe 7 dias aparece como alternativa avulsa e o Grátis fecha a lista. O preço sempre leva o período escrito: Anual R$ 156/ano (equivale a R$ 13/mês), Mensal R$ 15,99/mês. O texto dos planos fica em `src/lib/paginas-html.ts`, o mesmo do pré-render.
+
+## Medição e anúncios
+
+Aviso de cookies em uma linha, com "Saiba mais" para `/privacidade#medicao`, "Recusar" (contorno) e "Aceitar" (principal, com foco inicial), do mesmo tamanho. O rodapé mostra "Medição ligada" ou "Medição desligada" e reabre o aviso. Sem aceite, nenhum script de terceiros carrega (`GOOGLE_SINAIS_SEM_ACEITE = false` em `src/lib/measurement-policy.ts`; ligar exige reescrever a seção "O que medimos").
+
+Com aceite, Google Analytics e o Pixel da Meta rodam no iframe `/medicao` (`public/medicao-vendor.js`). Consent Mode v2: cada iframe começa com tudo `denied` e recebe o `update` da escolha salva; a personalização de anúncios fica sempre negada.
+
+| Etapa | GA4 | Meta (navegador) | Meta (servidor) |
+| --- | --- | --- | --- |
+| Página pública | `page_view` | `PageView` (com `page_path` e `content_category`) | |
+| Sala aberta | `create_room` (com `modo`) | `CreateRoom` (a cada sala, não mexer: otimiza anúncios) e `Lead` (só na 1ª sala do navegador, com `eventID`) | `Lead` com `META_CAPI_LEAD=true` |
+| Página de planos | `view_item` | `ViewContent` (`qd-anual`, `qd-mensal`, `qd-passe7`) | |
+| Pagamento aberto | `begin_checkout` | `InitiateCheckout` | |
+| Compra confirmada | `purchase` | `Purchase` e, na assinatura, `Subscribe` (mesmo `eventID`) | `Purchase` (e `Subscribe` com `META_CAPI_SUBSCRIBE=true`) |
+
+Como o pixel roda no iframe, a Meta registra a URL `/medicao`; o caminho real vai em `page_path`. A Conversions API está em `worker/meta-capi.mjs` e `worker/meta-adapter.mjs` (ver `docs/META-CAPI.md`). As etiquetas UTM da primeira visita ficam no navegador (`qd_origem_v1`, 90 dias) e vão para a coluna `origem` da compra. Renovações pagas da assinatura ficam na tabela `qd_renovacoes`, só para relatório.
 
 ## Uso e limites do plano grátis
 

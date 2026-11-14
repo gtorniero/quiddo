@@ -4,7 +4,6 @@
 import type { Page } from '../main';
 import type { RankRow } from '../../shared/protocol';
 import { points } from '../../shared/rules';
-import { GUIAS } from '../data/guias';
 import { TEMAS } from '../data/pacotes';
 import type { Theme } from '../../shared/protocol';
 import { store } from '../lib/storage';
@@ -16,6 +15,7 @@ import { simbolo, OLHO } from '../lib/simbolos';
 import { palco } from '../lib/podio';
 import { MOEDA, coins, countUp } from './jogo-comum';
 import { codeForm, bindCodeForm } from './jogar';
+import { HOME, PAGINAS, beneficiosHtml, ocasioesHtml, passosHtml } from '../lib/paginas-html';
 
 // pergunta de demonstração: a certa é a B
 const DEMO = { t: 'Qual destes bichos é o símbolo do Quiddo?', o: ['Arara', 'Tucano', 'Capivara', 'Onça'], c: 1, tl: 10 };
@@ -32,32 +32,22 @@ const NOMES = ['Ana', 'Leo', 'Duda', 'Bia', 'Caio', 'Gabi', 'Rafa', 'Teo', 'Lu',
 export function page(): Page {
   return {
     title: 'Quiddo',
+    fullTitle: PAGINAS['/'].titulo,
+    description: PAGINAS['/'].descricao,
     canonical: 'https://www.quiddo.com.br/',
     wide: true,
     mount(main) {
       // a home sempre usa o visual colorido do Quiddo
       applyTheme('festa');
-      const guias = [
-        ['festas', 'Festa e aniversário', 'Quem conhece melhor o aniversariante, Natal em família, churrasco.'],
-        ['empresas', 'Empresa e evento', 'Convenção, integração, treinamento e o fim da palestra chata.'],
-        ['escola', 'Sala de aula', 'Revisão para prova que a turma pede para repetir.'],
-        ['casamento', 'Chá bar e despedida', 'Quem conhece melhor o casal, com pódio para a foto.'],
-      ]
-        .map(([pub, t, d]) => {
-          const g = GUIAS.find((x) => x.publico === pub && x.corpo);
-          return `<a class="caso" href="${g ? '/guias/' + g.slug : '/guias'}" data-link><b>${esc(t)}</b><span>${esc(d)}</span><em>Ver ideias →</em></a>`;
-        })
-        .join('');
-
       main.classList.add('home');
       main.innerHTML = `
         <section class="h-hero">
           <div class="h-texto">
-            <span class="selo">Grátis até 10 pessoas · sem cadastro</span>
-            <h1>Crie o seu quiz e jogue ao vivo com a turma toda.</h1>
-            <p>Escreva as suas perguntas, mostre a sala no telão, no projetor ou no computador, e a turma joga pelo celular. Quem acerta mais rápido ganha mais pontos, o ranking sobe a cada rodada e o pódio vira foto.</p>
+            <span class="selo">${esc(HOME.selo)}</span>
+            <h1>${esc(HOME.h1)}</h1>
+            <p>${esc(HOME.intro)}</p>
             <a class="btn cta" href="/criar" data-link>Criar meu quiz grátis <span aria-hidden="true">→</span></a>
-            <p class="h-mini">Funciona no celular, sem baixar app. Grátis até 10 pessoas; planos para até 200.</p>
+            <p class="h-mini">${esc(HOME.mini)}</p>
           </div>
           <div class="h-demo" id="demo" aria-labelledby="demo-t">
             <div class="demo-topo"><span class="pill">Experimente agora</span><span class="timer" aria-hidden="true">${OLHO}<b id="demo-tempo">10</b></span></div>
@@ -76,11 +66,7 @@ export function page(): Page {
 
         <section class="h-bloco">
           <h2>Como funciona</h2>
-          <ol class="h-passos">
-            <li><span class="n">1</span><b>Escreva as perguntas</b><p>Múltipla escolha ou verdadeiro ou falso, com imagem se quiser. Nos temas Corporativo e Escola, com a sua marca.</p></li>
-            <li><span class="n">2</span><b>Abra a sala na tela principal</b><p>No telão, no projetor ou no computador aparecem um código e um QR. A turma entra pelo celular, escolhe um bicho e um apelido.</p></li>
-            <li><span class="n">3</span><b>Joguem juntos</b><p>A pergunta aparece em todas as telas ao mesmo tempo. Ranking a cada rodada, pódio e sorteio no fim.</p></li>
-          </ol>
+          <ol class="h-passos">${passosHtml()}</ol>
           <a class="btn cta" href="/criar" data-link>Criar meu quiz grátis <span aria-hidden="true">→</span></a>
         </section>
 
@@ -123,24 +109,17 @@ export function page(): Page {
 
         <section class="h-bloco">
           <h2>Por que a turma pede outra rodada</h2>
-          <div class="h-beneficios">
-            <div><b>Rapidez vale ponto</b><p>De 500 a 1.000 por acerto. Quem responde primeiro sobe no ranking.</p></div>
-            <div><b>A última vale o dobro</b><p>Chance de virada no fim, para ninguém desistir.</p></div>
-            <div><b>Personagens</b><p>20 bichos do Brasil com boné, coroa, óculos e mais. Cada um monta o seu.</p></div>
-            <div><b>Sorteio de prêmios</b><p>Entre todos ou só entre quem pontuou, com roleta no telão.</p></div>
-            <div><b>Sua marca</b><p>Nome, cor e logo da empresa ou da escola na tela e nos celulares.</p></div>
-            <div><b>Até 200 pessoas nos planos pagos</b><p>Até 10 no gratuito. A turma entra pelo navegador, sem cadastro e sem app.</p></div>
-          </div>
+          <div class="h-beneficios">${beneficiosHtml()}</div>
         </section>
 
         <section class="h-bloco">
           <h2>Para qualquer ocasião</h2>
-          <div class="h-casos">${guias}</div>
+          <div class="h-casos">${ocasioesHtml()}</div>
         </section>
 
         <section class="h-final">
-          <h2>Seu primeiro quiz fica pronto antes do café esfriar.</h2>
-          <p>Já vem com perguntas de exemplo para você trocar pelas suas.</p>
+          <h2>${esc(HOME.final[0])}</h2>
+          <p>${esc(HOME.final[1])}</p>
           <a class="btn cta claro" href="/criar" data-link>Criar meu quiz grátis <span aria-hidden="true">→</span></a>
           <div class="h-entrar"><p><b>Vai jogar?</b> Digite o código que aparece na tela.</p>${codeForm('home')}</div>
         </section>`;

@@ -1,6 +1,8 @@
 import type { Page } from '../main';
 import { CODE_RE, normalizeCode } from '../../shared/rules';
 import { navigate } from '../lib/nav';
+import { PAGINAS } from '../lib/paginas-html';
+import { SITE } from '../lib/guias-html';
 
 /** Campo de código + botão, usado na home e em /jogar. */
 export function codeForm(id: string) {
@@ -40,6 +42,9 @@ export function bindCodeForm(root: HTMLElement, go: (code: string) => void) {
 export function page(): Page {
   return {
     title: 'Jogar com código',
+    fullTitle: PAGINAS['/jogar'].titulo,
+    description: PAGINAS['/jogar'].descricao,
+    canonical: `${SITE}/jogar`,
     mount(main) {
       main.innerHTML = `<section class="panel"><h1>Jogar</h1><p class="muted">Digite o código que aparece na tela do anfitrião.</p>${codeForm('jogar')}</section>`;
       main.querySelector<HTMLInputElement>('input.code')!.focus();

@@ -13,6 +13,7 @@ import {captureCheckout} from './meta-adapter.mjs';
 // Só passam por aqui o e-mail de quem paga, o identificador da compra e o código. Nada do quiz.
 
 import {redeemPromo} from './promos.mjs';
+import { campaignOrigin } from '../shared/campaign';
 import { emailDaSessao } from './login';
 import { anualConfigurado, checkoutMensal, confirmarAssinatura, mensalConfigurado, portalAssinatura, situacaoAssinatura, stripeAmbiente, webhookStripe } from './stripe-assinatura';
 
@@ -84,15 +85,17 @@ const pixSimulado = (env: CobrancaEnv) => modo(env) === 'simulacao' || (modo(env
 const cartaoPronto = (env: CobrancaEnv, teste = false) => !!stripeAmbiente(env) && (modo(env) !== 'simulacao' || teste);
 const aleatorio = (n: number) => [...crypto.getRandomValues(new Uint8Array(n))].map((b) => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('');
 
-let colunas = false;
+// colunas novas já conferidas, por banco (um isolate pode atender mais de um banco, como nos testes)
+const colunas = new WeakSet<D1Database>();
 async function tabela(db: D1Database) {
   await db
     .prepare('CREATE TABLE IF NOT EXISTS compras (ref TEXT PRIMARY KEY, ordem TEXT, email TEXT, status TEXT, codigo TEXT, criado TEXT, pago TEXT, valor TEXT, modo TEXT)')
     .run();
-  if (colunas) return;
+  if (colunas.has(db)) return;
   // plano e validade entraram depois: em bancos antigos, acrescenta as colunas (se já existem, dá erro e segue)
-  for (const c of ['plano TEXT', 'expira TEXT', 'tipo TEXT', 'stripe_price TEXT']) await db.prepare(`ALTER TABLE compras ADD COLUMN ${c}`).run().catch(() => {});
-  colunas = true;
+  // origem: etiquetas UTM da primeira visita (dados do anúncio, não da pessoa), para medir o retorno das campanhas
+  for (const c of ['plano TEXT', 'expira TEXT', 'tipo TEXT', 'stripe_price TEXT', 'origem TEXT']) await db.prepare(`ALTER TABLE compras ADD COLUMN ${c}`).run().catch(() => {});
+  colunas.add(db);
 }
 
 interface Ordem {
@@ -291,9 +294,10 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
     const ref = crypto.randomUUID(); await captureCheckout(env,ref,pedido?.meta);
     const valor = preco(env, plano);
     const agora = new Date().toISOString();
-    const inserir = 'INSERT INTO compras (ref, ordem, email, status, criado, valor, modo, plano) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+    const inserir = 'INSERT INTO compras (ref, ordem, email, status, criado, valor, modo, plano, origem) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    const origem = campaignOrigin(pedido?.origem) || null;
     if (pixSimulado(env)) {
-      await db.prepare(inserir).bind(ref, 'sim:' + ref, email, 'pendente', agora, valor, modo(env) === 'simulacao' ? 'simulacao' : 'teste', plano).run();
+      await db.prepare(inserir).bind(ref, 'sim:' + ref, email, 'pendente', agora, valor, modo(env) === 'simulacao' ? 'simulacao' : 'teste', plano, origem).run();
       return json({ ref, qr: '00020126580014BR.GOV.BCB.PIX0136quiddo-pix-de-teste-nao-pague5204000053039865802BR5906QUIDDO6009SAO PAULO', qr64: '', link: '', simulado: true });
     }
     const corpo = {
@@ -334,7 +338,7 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
       console.log('mercado pago erro', r.status, JSON.stringify(o).slice(0, 300));
       return json({ erro: 'mp' }, 502);
     }
-    await db.prepare(inserir).bind(ref, ordem, email, 'pendente', agora, valor, modo(env), plano).run();
+    await db.prepare(inserir).bind(ref, ordem, email, 'pendente', agora, valor, modo(env), plano, origem).run();
     return json({ ref, qr: pm.qr_code || '', qr64: pm.qr_code_base64 || '', link: pm.ticket_url || '' });
   }
 
@@ -406,8 +410,8 @@ export async function rotaCobranca(req: Request, env: CobrancaEnv, caminho: stri
       return json({ erro: 'stripe', detalhe: stripeTeste(env) ? s?.error?.message : undefined }, 502);
     }
     await db
-      .prepare('INSERT INTO compras (ref, ordem, email, status, criado, valor, modo, plano) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-      .bind(ref, 'stripe:' + s.id, email, 'pendente', new Date().toISOString(), valor, stripeTeste(env) ? 'teste' : modo(env), plano)
+      .prepare('INSERT INTO compras (ref, ordem, email, status, criado, valor, modo, plano, origem) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(ref, 'stripe:' + s.id, email, 'pendente', new Date().toISOString(), valor, stripeTeste(env) ? 'teste' : modo(env), plano, campaignOrigin(c?.origem) || null)
       .run();
     return json({ ref, url: s.url });
   }

@@ -1,4 +1,5 @@
 import {metaContext} from './meta-consent';
+import { origem } from './origem';
 // Pagamento no site, no mesmo modelo do Retrozap: Pix (Mercado Pago) ou cartão, Apple Pay e Google Pay
 // (Stripe Checkout). Planos: Mensal (30 dias) e Passe 7 dias, os dois com salas de até 200 pessoas e jogos
 // ilimitados. Quem paga recebe um código QD-XXXX-XXXX, guardado neste navegador, que também vale em outro
@@ -76,7 +77,7 @@ export function guardaAcesso(a: Acesso) {
 
 async function post<T>(url: string, corpo: unknown): Promise<T | null> {
   try {
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(['/api/pix','/api/cartao'].includes(url)?{...(corpo as object),meta:metaContext()}:corpo) });
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(['/api/pix','/api/cartao'].includes(url)?{...(corpo as object),meta:metaContext(),origem:origem()||undefined}:corpo) });
     const data=await r.json().catch(()=>null);return data as T|null;
   } catch {
     return null;
@@ -187,17 +188,20 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
       d.querySelector<HTMLInputElement>('input[type="email"]#pg-email, .pg-pix')?.focus();
       return;
     }
-    const opcoes = c.planos
+    // A assinatura vem primeiro (Anual em destaque, depois Mensal); o Passe 7 dias é a alternativa avulsa.
+    const ordem: Plano[] = ['anual', 'mensal', 'semana'];
+    const opcoes = [...c.planos]
+      .sort((a, b) => ordem.indexOf(a.id) - ordem.indexOf(b.id))
       .map(
         (p) => `<label class="pg-plano${p.id === 'anual' ? ' melhor' : ''}"><input type="radio" name="pg-plano" value="${p.id}"${p.id === escolhido ? ' checked' : ''}>
-          <span class="pg-plano-nome">${esc(p.nome)}</span>
+          <span class="pg-plano-nome">${p.id === 'anual' || p.id === 'mensal' ? `Assinatura ${esc(p.nome.toLowerCase())}` : esc(p.nome)}</span>
           <span class="pg-plano-preco">R$ ${esc(p.preco.replace(/,00$/, ''))}${p.id === 'mensal' ? '<small>/mês</small>' : p.id === 'anual' ? '<small>/ano</small>' : ''}</span>
           <span class="pg-plano-txt">${
             p.id === 'anual'
-              ? `<small class="pg-vantagem">economia anual</small> Sai por R$ ${esc((Number(p.preco.replace(',', '.')) / 12).toFixed(2).replace('.', ',').replace(/,00$/, ''))} por mês.`
+              ? `<small class="pg-vantagem">mais vantagem</small> Cobrança anual. Equivale a R$ ${esc((Number(p.preco.replace(',', '.')) / 12).toFixed(2).replace('.', ',').replace(/,00$/, ''))} por mês.`
               : p.id === 'mensal'
                 ? 'Cobrança mensal, renova a cada mês.'
-                : '<small class="pg-avulso">avulso</small> Para um evento: 7 dias.'
+                : '<small class="pg-avulso">avulso</small> Pagamento único, para um evento: 7 dias.'
           }</span></label>`,
       )
       .join('');

@@ -3,6 +3,7 @@ import './styles.css';
 import { initMeasurement, measurePage, track } from './lib/measurement';
 import { publicPath } from './lib/measurement-policy';
 import * as privacidade from './pages/privacidade';
+import { lembraOrigem } from './lib/origem';
 
 // o endereço provisório da Cloudflare leva para o domínio oficial, no mesmo caminho
 if (location.hostname.endsWith('.workers.dev')) location.replace(`https://www.quiddo.com.br${location.pathname}${location.search}`);
@@ -28,8 +29,10 @@ export interface Page {
   title: string;
   wide?: boolean;
   compact?: boolean; // cabeçalho sem navegação (tela da TV e do jogador)
+  fullTitle?: string; // <title> completo para buscadores (senão, "título · Quiddo")
   description?: string; // meta description da página (senão, a do site)
   canonical?: string; // endereço oficial da página, para buscadores
+  noindex?: boolean; // conta, login, telas de partida e páginas inexistentes ficam fora da busca
   mount(main: HTMLElement): Cleanup;
 }
 
@@ -55,6 +58,7 @@ function route(path: string): Page {
 function naoEncontrada(): Page {
   return {
     title: 'Página não encontrada',
+    noindex: true,
     mount(main) {
       main.innerHTML =
         '<section class="panel center"><h1>Ops</h1><p class="muted">Essa página não existe. Se você recebeu um código de sala, digite em “Jogar com código”.</p><a class="btn auto" href="/jogar" data-link>Jogar com código</a></section>';
@@ -70,6 +74,15 @@ function metas(page: Page) {
   const desc = page.description ?? DESCRICAO_PADRAO;
   for (const sel of ['meta[name="description"]', 'meta[property="og:description"]']) document.querySelector<HTMLMetaElement>(sel)?.setAttribute('content', desc);
   document.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.setAttribute('content', document.title);
+  let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
+  if (page.noindex) {
+    if (!robots) {
+      robots = document.createElement('meta');
+      robots.name = 'robots';
+      document.head.appendChild(robots);
+    }
+    robots.content = 'noindex';
+  } else robots?.remove();
   let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
   if (page.canonical) {
     if (!link) {
@@ -98,7 +111,7 @@ function render() {
   const main = document.getElementById('conteudo')!;
   main.className = page.wide ? 'wide' : '';
   header(location.pathname, page.compact);
-  document.title = page.title === 'Quiddo' ? 'Quiddo · Quizz do seu jeito' : `${page.title} · Quiddo`;
+  document.title = page.fullTitle || (page.title === 'Quiddo' ? 'Quiddo · Quizz do seu jeito' : `${page.title} · Quiddo`);
   metas(page);
   main.innerHTML = '';
   measurePage(location.pathname);
@@ -121,6 +134,7 @@ document.addEventListener('click', (e) => {
   navigate(a.getAttribute('href')!);
 });
 window.addEventListener('popstate', render);
+lembraOrigem();
 initMeasurement();
 render();
 // quem entrou na conta traz o plano comprado em outro aparelho (a página de conta faz isso sozinha)

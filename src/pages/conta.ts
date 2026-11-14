@@ -4,7 +4,7 @@ import { esc } from '../lib/dom';
 import { navigate } from '../lib/nav';
 import { sair, sincronizaConta } from '../lib/conta';
 
-export function page(): Page { return { title: 'Minha conta', mount }; }
+export function page(): Page { return { title: 'Minha conta', noindex: true, mount }; }
 const NOMES: Record<string, string> = { mensal: 'Mensal', anual: 'Anual', semana: 'Passe 7 dias', oferta: 'Passe 7 dias' };
 const data = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 

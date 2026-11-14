@@ -25,7 +25,7 @@ interface Seat {
 }
 
 export function page(code: string): Page {
-  return { title: `Sala ${code}`, compact: true, mount: (main) => mount(main, code) };
+  return { title: `Sala ${code}`, compact: true, noindex: true, mount: (main) => mount(main, code) };
 }
 
 function mount(main: HTMLElement, code: string) {

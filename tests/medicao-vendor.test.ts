@@ -6,9 +6,9 @@ import vendor from '../public/medicao-vendor.js?raw';
 type Init = { analytics?: boolean; marketing?: boolean; googleAdsMeasurement?: boolean; productUsageMeasurement?: boolean; googleSignals?: boolean; google?: Record<string, string> };
 const ORIGIN = 'https://www.quiddo.com.br';
 
-function carregar(init: Init) {
+function carregar(init: Init, paginaPrincipal = '/') {
   const scripts: string[] = [], handlers: Record<string, (e: unknown) => void> = {}, done: unknown[] = [];
-  const parent = { postMessage: (data: unknown) => done.push(data) };
+  const parent = { postMessage: (data: unknown) => done.push(data), location: { pathname: paginaPrincipal } };
   const win: Record<string, any> = { addEventListener: (n: string, f: (e: unknown) => void) => (handlers[n] = f) };
   const location = { origin: ORIGIN, hostname: 'www.quiddo.com.br' };
   const document = { head: { appendChild: (s: { src: string }) => scripts.push(s.src) }, createElement: () => ({}) };
@@ -18,7 +18,7 @@ function carregar(init: Init) {
   const medir = (event: string, path: string, params: Record<string, unknown> = {}, campaign = '') => send({ type: 'qd_measure', event, path, id: 1, params, campaign });
   const meta = () => (win.fbq?.queue || []).filter((x: unknown[]) => x[0] === 'trackSingle' || x[0] === 'trackSingleCustom').map((x: unknown[]) => ({ tipo: x[0], nome: x[2], dados: x[3], opcoes: x[4] }));
   const ga = (): any[][] => (win.dataLayer || []).map((x: IArguments) => Array.from(x));
-  return { win, scripts, medir, meta, ga };
+  return { win, scripts, medir, meta, ga, parent };
 }
 const tudo: Init = { analytics: true, marketing: true, googleAdsMeasurement: true, productUsageMeasurement: true, google: { analytics_storage: 'granted', ad_storage: 'granted', ad_user_data: 'granted', ad_personalization: 'granted' } };
 const tx = 'c'.repeat(64);
@@ -55,6 +55,53 @@ describe('Consent Mode v2 do Google', () => {
     const eventos = x.ga().filter((c) => c[0] === 'event');
     expect(eventos.map((c) => c[1])).toEqual(['create_room']);
     expect(eventos[0][2].page_location).toBe('https://www.quiddo.com.br/criar?utm_source=meta');
+  });
+});
+
+describe('Google Ads', () => {
+  const ADS = 'AW-18547334686';
+  const paraAds = (x: ReturnType<typeof carregar>) => x.ga().filter((c) => c[0] === 'event' && c[2]?.send_to === ADS);
+  const compra = { transaction_id: tx, plano: 'anual', value: 156, currency: 'BRL' };
+  it('com os dois aceites: configura a conta depois do consentimento, sem personalização', () => {
+    const x = carregar(tudo, '/precos');
+    const cmds = x.ga();
+    const config = cmds.findIndex((c) => c[0] === 'config' && c[1] === ADS);
+    expect(config).toBeGreaterThan(cmds.findIndex((c) => c[0] === 'consent' && c[1] === 'update'));
+    expect(cmds[config][2]).toEqual({ send_page_view: false, page_title: 'Quiddo', allow_ad_personalization_signals: false });
+  });
+  it('recebe só o início do pagamento e a compra, com valor e o ID irreversível', () => {
+    const x = carregar(tudo, '/precos');
+    x.medir('page_view', '/precos', {}, '?utm_source=google&gclid=CLIQUE1');
+    x.medir('quiz_save', '/criar', { storage: 'local' });
+    x.medir('create_room', '/criar', { modo: 'escola', question_count: 5, lead_id: tx });
+    x.medir('begin_checkout', '/precos', { plano: 'anual', value: 156, currency: 'BRL', payment_type: 'card' });
+    x.medir('purchase', '/precos', compra);
+    const ads = paraAds(x);
+    expect(ads.map((c) => c[1])).toEqual(['begin_checkout', 'purchase']);
+    expect(ads[0][2]).toEqual({ send_to: ADS, page_title: 'Preços · Quiddo', value: 156, currency: 'BRL' });
+    expect(ads[1][2]).toEqual({ send_to: ADS, page_title: 'Preços · Quiddo', value: 156, currency: 'BRL', transaction_id: tx });
+  });
+  it('a tag lê o endereço da página principal: na sala (/host/CÓDIGO ou /CÓDIGO) ela não roda', () => {
+    for (const sala of ['/host/ABCD', '/ABCD', '/criar/']) {
+      const x = carregar(tudo, sala);
+      x.medir('purchase', '/pagamento', compra);
+      expect(x.ga().some((c) => c[1] === ADS)).toBe(false);
+      // GA4 continua recebendo a compra no caminho genérico
+      expect(x.ga().some((c) => c[0] === 'event' && c[1] === 'purchase' && c[2].send_to === 'G-18PBXS3GQZ')).toBe(true);
+    }
+    // começou numa página pública e foi para a sala: a compra lá dentro não vai ao Google Ads
+    const y = carregar(tudo, '/criar');
+    y.parent.location.pathname = '/host/ABCD';
+    y.medir('purchase', '/pagamento', compra);
+    expect(paraAds(y)).toEqual([]);
+  });
+  it('sem o aceite de anúncios ou sem aceite nenhum, o Google Ads não carrega nem recebe nada', () => {
+    for (const init of [{ ...tudo, googleAdsMeasurement: false }, { ...tudo, marketing: false, googleAdsMeasurement: false }, { analytics: false, marketing: false, googleSignals: true }, { analytics: false, marketing: false }]) {
+      const x = carregar(init, '/precos');
+      x.medir('purchase', '/precos', compra);
+      expect(x.ga().some((c) => c[1] === ADS)).toBe(false);
+      expect(paraAds(x)).toEqual([]);
+    }
   });
 });
 

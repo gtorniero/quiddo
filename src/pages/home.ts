@@ -102,7 +102,7 @@ export function page(): Page {
           <div class="h-temas">${(Object.keys(TEMAS) as Theme[])
             .map(
               (k) =>
-                `<a class="h-tema h-tema-${k}" href="/criar" data-link data-tema-novo="${k}"><span class="sw">${TEMAS[k].cores.map((c) => `<i style="background:${c}"></i>`).join('')}</span><b>${esc(TEMAS[k].nome)}</b><span>${esc(TEMAS[k].desc)}</span><em>${k === 'festa' ? 'Sem marca, com as cores do Quiddo' : 'Com nome, cor e logo da sua ' + (k === 'corp' ? 'empresa' : 'escola')}</em><strong>Criar neste modo →</strong></a>`,
+                `<a class="h-tema h-tema-${k}" href="/criar" data-link data-tema-novo="${k}"><span class="sw">${TEMAS[k].cores.map((c) => `<i style="background:${c}"></i>`).join('')}</span><b>${esc(TEMAS[k].nome)}</b><span>${esc(TEMAS[k].desc)}</span><em>${k === 'festa' ? 'Sem marca, com as cores do Quiddo' : 'Logo e cor da sua ' + (k === 'corp' ? 'empresa' : 'escola') + ' no Passe e no Premium'}</em><strong>Criar neste modo →</strong></a>`,
             )
             .join('')}</div>
         </section>

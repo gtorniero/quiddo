@@ -3,6 +3,7 @@ import {captureCheckout} from './meta-adapter.mjs';
 import StripeClient from 'stripe';
 import type { CobrancaEnv } from './cobranca';
 import { campaignOrigin } from '../shared/campaign';
+import { PRECOS, centavos } from '../shared/precos.mjs';
 
 export interface CompraStripe {
   ref: string; ordem: string; email: string; valor: string; modo: string;
@@ -61,7 +62,7 @@ export async function checkoutMensal(req: Request, env: CobrancaEnv, email: stri
   if (req.headers.get('Origin') !== new URL(req.url).origin) return json({ erro: 'origem' }, 403);
   const db = env.DB, mode = stripeAmbiente(env)!;
   await tabelasStripe(db);
-  const stripe = client(env), amount = Math.round(Number(plano === 'anual' ? env.PRECO_ANUAL || '156.00' : env.PRECO_MENSAL || '15.99') * 100);
+  const stripe = client(env), amount = centavos(PRECOS[plano]);
   if (!Number.isSafeInteger(amount) || amount < 100) return json({ erro: 'preco' }, 503);
   try {
     const price = await stripe.prices.retrieve((plano === 'anual' ? env.STRIPE_PRICE_ANUAL : env.STRIPE_PRICE_MENSAL)!);

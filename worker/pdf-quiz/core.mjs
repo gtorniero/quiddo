@@ -1,10 +1,12 @@
+import {PRECOS,STRIPE_PRECO_ID,centavos} from '../../shared/precos.mjs';
 export const MODEL = 'gpt-6-luna';
 export const TEXT_PROMPT_VERSION = 'quiddo-texto-2026-11-10-v3';
 export const TEXT_REASONING = 'low';
 export const MAX_BRIEFING = 4000;
 export const PROMPT_VERSION = 'quiddo-pdf-2026-11-10-v4';
-export const MONTHLY_PRICE = 'price_1UXtp0134hMOoEZV4zpJZiw6';
-export const ANNUAL_PRICE = 'price_1UXtqY134hMOoEZVGgIdzQ7a';
+// Preços e ids do Stripe vêm de shared/precos.mjs, a mesma fonte do site e da cobrança.
+export const MONTHLY_PRICE = STRIPE_PRECO_ID.mensal;
+export const ANNUAL_PRICE = STRIPE_PRECO_ID.anual;
 export const MAX_PAGES = 50;
 // Deliberately below the provider's 50 MB ceiling: PDF decoding also uses memory.
 export const MAX_BYTES = 25 * 1024 * 1024;
@@ -51,7 +53,7 @@ export function annualCreditPeriod(start,end,now) {
 
 /** A real paid invoice line defines the cycle. The browser supplies none of these values. */
 export function paidEntitlement({subscription: s, invoice: i, customer, risk = '', expectedPrice = MONTHLY_PRICE, live = true}, now) {
-  const annual=expectedPrice===ANNUAL_PRICE,amount=annual?15600:1599;
+  const annual=expectedPrice===ANNUAL_PRICE,amount=centavos(annual?PRECOS.anual:PRECOS.mensal);
   const deny = () => { throw new PdfError('monthly_required','Disponível para assinaturas Mensal e Anual pagas durante o período vigente.',403); };
   if (![MONTHLY_PRICE,ANNUAL_PRICE].includes(expectedPrice) || risk || !s || !i || !customer || s.livemode !== live || i.livemode !== live || !['active','past_due'].includes(s.status)) return deny();
   const items = s.items?.data;

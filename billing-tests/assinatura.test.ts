@@ -94,6 +94,7 @@ async function api(input: string | URL | Request, options?: RequestInit) {
  apiCalls.push({ path: url.pathname, method, body });
  if (url.pathname === '/v1/prices/price_qd_month_test') return response(price());
  if (url.pathname === '/v1/prices/price_qd_year_test') return response({ ...price(), id: 'price_qd_year_test', unit_amount: 15600, recurring: { interval: 'year', interval_count: 1, usage_type: 'licensed' } });
+ if (url.pathname === '/v1/prices/price_qd_year_outro') return response({ ...price(), id: 'price_qd_year_outro', unit_amount: 12000, recurring: { interval: 'year', interval_count: 1, usage_type: 'licensed' } });
  if (url.pathname === '/v1/customers' && method === 'POST') return response({ id: 'cus_quiddo', object: 'customer', livemode: false });
  if (url.pathname === '/v1/checkout/sessions' && method === 'POST') return response({ ...session, client_reference_id: body.get('client_reference_id'), mode: body.get('mode'), url: 'https://checkout.stripe.com/c/pay/unit' });
  if (url.pathname === '/v1/checkout/sessions' && method === 'GET') return response({ object: 'list', data: [session], has_more: false });
@@ -363,7 +364,8 @@ describe('Quiddo Stripe anual', () => {
  it('recusa o Anual no Pix e quando o preço do Stripe não bate', async () => {
   env.STRIPE_PRICE_ANUAL = 'price_qd_year_test';
   expect((await rotaCobranca(request('/api/pix', { email: EMAIL, plano: 'anual' }), env, '/api/pix'))!.status).toBe(400);
-  env.PRECO_ANUAL = '120.00';
+  // preço do Stripe diferente do site (shared/precos.mjs): recusa
+  env.STRIPE_PRICE_ANUAL = 'price_qd_year_outro';
   expect((await rotaCobranca(request('/api/cartao', { plano: 'anual', testeCobranca: true }), env, '/api/cartao'))!.status).toBe(503);
  });
 });

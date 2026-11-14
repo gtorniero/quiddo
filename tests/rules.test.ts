@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CODE_RE, VISUAIS_DO_MODO, compactQuestion, normalizeCode, points, randomCode, validateCreate, visualDoModo } from '../shared/rules';
+import { CODE_RE, VISUAIS_DO_MODO, compactQuestion, marcaPropria, normalizeCode, points, randomCode, validateCreate, visualDoModo } from '../shared/rules';
 
 describe('pontos', () => {
   it('vale 1000 na hora e 500 no último instante', () => {
@@ -81,7 +81,8 @@ describe('perguntas', () => {
     const img = 'data:image/jpeg;base64,' + 'A'.repeat(250_000);
     const questions = Array.from({ length: 40 }, () => ({ t: 'Q', o: ['1', '2'], c: 0, tl: 10, img }));
     expect(() => validateCreate({ questions })).toThrow(/Imagens demais/);
-    expect(() => validateCreate({ questions: [{ t: 'a', o: ['1', '2'], c: 0, tl: 10 }], logo: 'javascript:1' })).toThrow();
+    // logo fora do formato não impede a sala: é ignorado (shared/rules.ts)
+    expect(validateCreate({ questions: [{ t: 'a', o: ['1', '2'], c: 0, tl: 10 }], logo: 'javascript:1' }).logo).toBe('');
   });
 });
 
@@ -104,5 +105,23 @@ describe('modos e visuais', () => {
   });
   it('Entretenimento está em todos os modos, sem senha', () => {
     for (const m of ['corp', 'festa', 'escola'] as const) expect(visualDoModo(m, 'entretenimento')).toBe('entretenimento');
+  });
+});
+
+describe('marca própria', () => {
+  it('logo e cor são do Passe e do Premium, só em Corporativo e Escola', () => {
+    expect(marcaPropria('corp', true)).toBe(true);
+    expect(marcaPropria('escola', true)).toBe(true);
+    expect(marcaPropria('corp', false)).toBe(false);
+    expect(marcaPropria('escola', false)).toBe(false);
+    expect(marcaPropria('festa', true)).toBe(false);
+  });
+  it('o nome do quiz passa sempre; logo inválido ou grande demais é ignorado sem impedir a sala', () => {
+    const q = [{ t: 'a', o: ['1', '2'], c: 0, tl: 10 }];
+    const logo = 'data:image/png;base64,AAAA';
+    expect(validateCreate({ theme: 'corp', questions: q, brand: { name: 'Feira', color: '#123456' }, logo })).toMatchObject({ brand: { name: 'Feira', color: '#123456' }, logo });
+    expect(validateCreate({ theme: 'corp', questions: q, brand: { name: 'Feira', color: '' }, logo: 'data:image/svg+xml;base64,AAAA' }).logo).toBe('');
+    expect(validateCreate({ theme: 'corp', questions: q, brand: { name: 'Feira', color: '' }, logo: 'data:image/png;base64,' + 'A'.repeat(500_000) }).logo).toBe('');
+    expect(validateCreate({ theme: 'corp', questions: q, brand: { name: 'Feira', color: '' }, logo: 42 }).logo).toBe('');
   });
 });

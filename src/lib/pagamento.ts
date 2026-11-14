@@ -1,9 +1,9 @@
 import {metaContext} from './meta-consent';
 import { origem } from './origem';
 // Pagamento no site, no mesmo modelo do Retrozap: Pix (Mercado Pago) ou cartão, Apple Pay e Google Pay
-// (Stripe Checkout). Planos: Mensal (30 dias) e Passe 7 dias, os dois com salas de até 200 pessoas e jogos
-// ilimitados. Quem paga recebe um código QD-XXXX-XXXX, guardado neste navegador, que também vale em outro
-// aparelho até o fim do plano. A sala grátis vai até 10.
+// (Stripe Checkout). Planos: Assinatura Premium (Mensal ou Anual) e Passe 7 dias, todos com salas de até 200
+// pessoas, jogos ilimitados e a marca própria (logo e cor). Quem paga recebe um código QD-XXXX-XXXX, guardado
+// neste navegador, que também vale em outro aparelho até o fim do plano. A sala grátis vai até 10, sem logo e cor.
 import { track, trackPurchase, type Sale } from './measurement';
 import { esc } from './dom';
 import { qrSvg } from './qr';
@@ -58,6 +58,16 @@ export function testeCobranca(): boolean {
 /** A cobrança vale aqui? (ligada, simulação, ou teste com ?teste_cobranca=1, e com algum meio de pagamento pronto) */
 export const cobrancaValendo = (c: Cobranca | null) =>
   !!c && (c.modo === 'ligada' || c.modo === 'simulacao' || (c.modo === 'teste' && testeCobranca())) && (c.pix || c.cartao);
+
+/** O servidor limita as salas grátis? O mesmo critério do cobrancaVale do servidor (worker/cobranca.ts). */
+const limitaGratis = (c: Cobranca) => c.modo === 'ligada' || c.modo === 'simulacao' || (c.modo === 'teste' && testeCobranca());
+
+/**
+ * Salas liberadas neste navegador: Passe ou Premium guardado aqui, ou servidor sem limite para as salas grátis.
+ * Liberadas, as salas vão até 200 pessoas e mostram a marca própria. Sem a resposta do servidor, conta como grátis.
+ * Quem decide de verdade é o servidor, ao abrir e ao liberar a sala.
+ */
+export const salasLiberadas = (c: Cobranca | null) => !!meuAcesso() || (!!c && !limitaGratis(c));
 
 /** Código deste navegador, se o plano ainda não venceu. */
 export function meuAcesso(): string {
@@ -212,11 +222,12 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
       <ul class="pg-beneficios">
         <li>${ok}<span><b>Quiz com IA</b>: ${SUBSCRIPTION_AI_CREDITS.text} por tema e ${SUBSCRIPTION_AI_CREDITS.pdf} por PDF todo mês</span></li>
         <li>${ok}<span><b>Salas com até ${c.pago} pessoas</b> (grátis vai até ${c.gratis})</span></li>
+        <li>${ok}<span><b>Sua marca</b>: logo e cor na tela e nos celulares</span></li>
         <li>${ok}<span><b>Jogos ilimitados</b>, quantas vezes quiser</span></li>
         <li>${ok}<span><b>Quizzes salvos na sua conta</b>, em qualquer aparelho</span></li>
       </ul>`
       : `<span class="selo">Quiddo liberado</span><h2 id="pg-t">Salas com até ${c.pago} pessoas</h2>
-      <p class="muted">A sala grátis vai até ${c.gratis} pessoas. Liberado, até ${c.pago}, quantos jogos quiser.</p>`;
+      <p class="muted">A sala grátis vai até ${c.gratis} pessoas. Liberado: até ${c.pago}, quantos jogos quiser e a sua marca (logo e cor).</p>`;
     // a IA, os créditos e os cupons ficam na conta: sem login, o primeiro passo é entrar
     if (contexto === 'ia' && !logado()) {
       const desde = c.planos.find((x) => x.id === 'anual');
@@ -253,7 +264,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
     clearInterval(espera);
     guardaAcesso(a);
     const ate = acessoAte();
-    d.innerHTML = `${fechar}<span class="selo">Pronto!</span><h2 id="pg-t">Quiddo liberado</h2><p>Suas salas agora vão até ${c?.pago || 200} pessoas${ate ? `, até ${esc(ate)}` : ''}.</p>
+    d.innerHTML = `${fechar}<span class="selo">Pronto!</span><h2 id="pg-t">Quiddo liberado</h2><p>Suas salas agora vão até ${c?.pago || 200} pessoas, com a sua marca${ate ? `, até ${esc(ate)}` : ''}.</p>
       <p class="small">Guarde o seu código para usar em outro aparelho:</p><p class="pg-codigo">${esc(a.codigo)}</p>
       <button type="button" class="btn" data-pg="continuar">Continuar</button>`;
     d.querySelector<HTMLElement>('[data-pg="continuar"]')?.focus();

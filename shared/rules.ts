@@ -93,6 +93,13 @@ export function visualDoModo(theme: Theme, v: unknown): Visual {
   return VISUAIS_DO_MODO[theme].includes(v as Visual) ? (v as Visual) : 'floresta';
 }
 
+/**
+ * Marca própria (logo e cor) é benefício do Passe 7 dias e da Assinatura Premium, e só existe em Corporativo e
+ * Escola. O nome do quiz (o do evento) continua grátis. `liberada`: a sala ou o navegador tem Passe ou Premium,
+ * ou a cobrança não vale (aí tudo fica liberado, como as 200 pessoas).
+ */
+export const marcaPropria = (theme: Theme, liberada: boolean): boolean => theme !== 'festa' && liberada;
+
 /** Valida o que o anfitrião manda para abrir a sala. Lança Error com mensagem em português. */
 export function validateCreate(body: unknown): CreateRoomBody {
   const b = (body || {}) as Partial<CreateRoomBody>;
@@ -116,15 +123,14 @@ export function validateCreate(body: unknown): CreateRoomBody {
     name: cleanText(rb.name, LIMITS.brandName),
     color: HEX.test(String(rb.color || '')) ? String(rb.color) : '',
   };
-  let logo = typeof b.logo === 'string' ? b.logo : '';
+  // logo fora do formato ou grande demais é ignorado: a sala abre sem ele (o editor já reduz a imagem).
+  // Na sala grátis, logo e cor ficam guardados, mas só aparecem se o anfitrião liberar (shared/game.ts, marcaDaSala).
+  let logo = typeof b.logo === 'string' && IMG_RE.test(b.logo) && b.logo.length <= LIMITS.logoBytes ? b.logo : '';
   // Amigos & família não leva marca: nem nome, nem cor, nem logo
   if (theme === 'festa') {
     brand.name = '';
     brand.color = '';
     logo = '';
-  }
-  if (logo && (!IMG_RE.test(logo) || logo.length > LIMITS.logoBytes)) {
-    throw new Error('Logo inválido ou grande demais.');
   }
   const acesso = String(b.acesso || '').trim().toUpperCase().slice(0, 40);
   return { questions, theme, visual: visualDoModo(theme, b.visual), brand, logo, acesso, testeCobranca: b.testeCobranca === true };

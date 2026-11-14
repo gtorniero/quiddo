@@ -1,5 +1,5 @@
 // /precos: os planos do Quiddo. A Assinatura Premium (Anual em destaque, Mensal ao lado) vem primeiro;
-// o Passe 7 dias é a alternativa avulsa; o Grátis vai até 10 pessoas.
+// o Passe 7 dias é a alternativa avulsa; o Grátis vai até 10 pessoas. Passe e Premium liberam a marca (logo e cor).
 // Os preços vêm do servidor (/api/cobranca); enquanto não chegam, mostra os padrões.
 // O HTML dos planos fica em lib/paginas-html.ts, o mesmo do pré-render para buscadores.
 import type { Page } from '../main';
@@ -26,7 +26,7 @@ function mount(main: HTMLElement) {
   function render() {
     const ate = acessoAte();
     const meu = meuAcesso()
-      ? `<p class="plano liberado"><span class="selo">Quiddo liberado</span> Salas de até 200 pessoas neste navegador${ate ? `, até ${esc(ate)}` : ''}. Código: <strong>${esc(meuAcesso())}</strong></p>`
+      ? `<p class="plano liberado"><span class="selo">Quiddo liberado</span> Salas de até 200 pessoas e a sua marca neste navegador${ate ? `, até ${esc(ate)}` : ''}. Código: <strong>${esc(meuAcesso())}</strong></p>`
       : '';
     const aviso =
       cob && (cob.modo === 'simulacao' || cob.modo === 'teste')

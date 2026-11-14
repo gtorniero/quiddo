@@ -1,14 +1,21 @@
-// Quizzes prontos do modo Amigos & família: 10 perguntas cada, que valem para qualquer turma.
-// A resposta certa é `c` (índice em `o`); o editor embaralha as respostas ao carregar.
+// Quizzes prontos: 10 perguntas cada, que valem para qualquer turma.
+// A resposta certa é `c` (índice em `o`); o editor embaralha as respostas ao carregar (menos as de duas opções).
 // Despedida é um modelo sobre o casal: quem organiza troca as opções e marca a certa.
+// Os primeiros aparecem no editor, em Amigos & família. Os marcados com `soLink` abrem só pelo link
+// /criar?modelo=<id>, usado nos guias para começar o quiz com as perguntas do guia.
+import type { Theme } from '../../shared/protocol';
 
 export interface Modelo {
   id: string;
   nome: string;
   desc: string;
   titulo: string; // nome sugerido para o quiz
-  perguntas: { t: string; o: string[]; c: number }[];
+  tema?: Theme; // modo do quiz ao carregar (padrão: Amigos & família)
+  soLink?: boolean; // não aparece na lista do editor
+  perguntas: { t: string; o: string[]; c: number; vf?: boolean }[];
 }
+
+const VF = ['Verdadeiro', 'Falso'];
 
 export const MODELOS: Modelo[] = [
   {
@@ -99,6 +106,143 @@ export const MODELOS: Modelo[] = [
       { t: 'Que fruto dá o sabor principal do gim?', o: ['Limão', 'Zimbro', 'Laranja', 'Uva'], c: 1 },
       { t: 'Qual destes objetos serve para misturar drinques?', o: ['Fouet', 'Coqueteleira', 'Concha', 'Rolo'], c: 1 },
       { t: 'Em que taça se serve espumante?', o: ['Taça flute', 'Copo baixo', 'Caneca', 'Copo americano'], c: 0 },
+    ],
+  },
+  {
+    id: 'verdadeiro-ou-falso',
+    nome: 'Verdadeiro ou falso',
+    desc: 'Mitos e verdades',
+    titulo: 'Quiz de verdadeiro ou falso',
+    soLink: true,
+    perguntas: [
+      { t: 'O Sol é uma estrela.', o: VF, c: 0, vf: true },
+      { t: 'A Lua tem luz própria.', o: VF, c: 1, vf: true },
+      { t: 'Os morcegos são cegos.', o: VF, c: 1, vf: true },
+      { t: 'O camelo guarda água na corcova.', o: VF, c: 1, vf: true },
+      { t: 'Golfinhos são mamíferos.', o: VF, c: 0, vf: true },
+      { t: 'O polvo tem três corações.', o: VF, c: 0, vf: true },
+      { t: 'A gente usa só 10% do cérebro.', o: VF, c: 1, vf: true },
+      { t: 'Salvador foi a primeira capital do Brasil.', o: VF, c: 0, vf: true },
+      { t: 'Na botânica, o tomate é um fruto.', o: VF, c: 0, vf: true },
+      { t: 'O chiclete engolido fica sete anos no estômago.', o: VF, c: 1, vf: true },
+    ],
+  },
+  {
+    id: 'conhecimentos-gerais',
+    nome: 'Conhecimentos gerais',
+    desc: 'Geografia, ciências e mais',
+    titulo: 'Quiz de conhecimentos gerais',
+    soLink: true,
+    perguntas: [
+      { t: 'Qual é a capital da Austrália?', o: ['Sydney', 'Camberra', 'Melbourne', 'Perth'], c: 1 },
+      { t: 'Qual é o maior oceano do planeta?', o: ['Atlântico', 'Índico', 'Pacífico', 'Ártico'], c: 2 },
+      { t: 'Qual é o símbolo químico do ouro?', o: ['Ag', 'Au', 'Or', 'Go'], c: 1 },
+      { t: 'Qual planeta fica mais perto do Sol?', o: ['Vênus', 'Terra', 'Marte', 'Mercúrio'], c: 3 },
+      { t: 'Quantos ossos tem o corpo de um adulto?', o: ['186', '206', '226', '306'], c: 1 },
+      { t: 'Qual é o menor país do mundo?', o: ['Mônaco', 'San Marino', 'Vaticano', 'Malta'], c: 2 },
+      { t: 'Em que país ficam as pirâmides de Gizé?', o: ['México', 'Egito', 'Peru', 'Sudão'], c: 1 },
+      { t: 'Qual é o maior animal do planeta?', o: ['Elefante-africano', 'Tubarão-baleia', 'Baleia-azul', 'Lula-gigante'], c: 2 },
+      { t: 'Quantos anéis tem o símbolo dos Jogos Olímpicos?', o: ['4', '5', '6', '7'], c: 1 },
+      { t: 'Qual é a moeda do Japão?', o: ['Yuan', 'Won', 'Iene', 'Rupia'], c: 2 },
+    ],
+  },
+  {
+    id: 'brasil',
+    nome: 'Brasil',
+    desc: 'História, geografia e cultura',
+    titulo: 'Quiz sobre o Brasil',
+    soLink: true,
+    perguntas: [
+      { t: 'Qual é o maior estado do Brasil em área?', o: ['Pará', 'Mato Grosso', 'Amazonas', 'Minas Gerais'], c: 2 },
+      { t: 'Quantos estados tem o Brasil, sem contar o Distrito Federal?', o: ['24', '25', '26', '27'], c: 2 },
+      { t: 'Qual foi a primeira capital do Brasil?', o: ['Rio de Janeiro', 'Salvador', 'São Vicente', 'Olinda'], c: 1 },
+      { t: 'Em que ano Brasília foi inaugurada?', o: ['1950', '1955', '1960', '1964'], c: 2 },
+      { t: 'Quem assinou a Lei Áurea?', o: ['D. Pedro II', 'Princesa Isabel', 'D. Pedro I', 'Deodoro da Fonseca'], c: 1 },
+      { t: 'Qual é o lema escrito na bandeira do Brasil?', o: ['Paz e Amor', 'Ordem e Progresso', 'Liberdade e União', 'Independência ou Morte'], c: 1 },
+      { t: 'Quantas estrelas tem a bandeira do Brasil?', o: ['21', '26', '27', '30'], c: 2 },
+      { t: 'Em que estado acontece o Festival de Parintins?', o: ['Pará', 'Maranhão', 'Amazonas', 'Acre'], c: 2 },
+      { t: 'Em que morro fica o Cristo Redentor?', o: ['Pão de Açúcar', 'Corcovado', 'Morro da Urca', 'Dois Irmãos'], c: 1 },
+      { t: 'Quem foi o primeiro presidente do Brasil?', o: ['Deodoro da Fonseca', 'Floriano Peixoto', 'Prudente de Morais', 'Campos Sales'], c: 0 },
+    ],
+  },
+  {
+    id: 'sipat',
+    nome: 'SIPAT',
+    desc: 'Segurança do trabalho',
+    titulo: 'Quiz da SIPAT',
+    tema: 'corp',
+    soLink: true,
+    perguntas: [
+      { t: 'O que significa EPI?', o: ['Equipamento de Proteção Individual', 'Equipamento de Prevenção Interna', 'Exame Periódico Individual', 'Equipe de Proteção Interna'], c: 0 },
+      { t: 'Qual norma regulamentadora trata da CIPA?', o: ['NR-5', 'NR-6', 'NR-12', 'NR-17'], c: 0 },
+      { t: 'Qual NR trata do trabalho em altura?', o: ['NR-10', 'NR-12', 'NR-33', 'NR-35'], c: 3 },
+      { t: 'Quem deve fornecer o EPI ao trabalhador?', o: ['O próprio trabalhador', 'O sindicato', 'A empresa, de graça', 'A CIPA, mediante pagamento'], c: 2 },
+      { t: 'Quais são os três elementos do triângulo do fogo?', o: ['Combustível, oxigênio e calor', 'Água, ar e calor', 'Gás, faísca e papel', 'Madeira, vento e sol'], c: 0 },
+      { t: 'Qual extintor nunca deve ser usado em equipamento elétrico ligado?', o: ['Pó químico', 'Gás carbônico (CO2)', 'Água', 'Pó ABC'], c: 2 },
+      { t: 'Qual é o telefone do Corpo de Bombeiros?', o: ['190', '192', '193', '199'], c: 2 },
+      { t: 'Qual é o telefone do SAMU?', o: ['190', '192', '193', '199'], c: 1 },
+      { t: 'No mapa de riscos, qual cor representa os riscos químicos?', o: ['Verde', 'Vermelho', 'Marrom', 'Azul'], c: 1 },
+      { t: 'Qual é o jeito certo de levantar uma caixa pesada do chão?', o: ['Dobrar a coluna com as pernas retas', 'Dobrar os joelhos e manter a coluna reta', 'Puxar com um braço só', 'Girar o tronco enquanto levanta'], c: 1 },
+    ],
+  },
+  {
+    id: 'confraternizacao',
+    nome: 'Confraternização',
+    desc: 'Fim de ano na empresa',
+    titulo: 'Quiz de fim de ano da equipe',
+    tema: 'corp',
+    soLink: true,
+    perguntas: [
+      { t: 'Como a lei que criou o 13º salário chama esse pagamento?', o: ['Abono anual', 'Gratificação de Natal', 'Bônus de dezembro', 'Salário extra'], c: 1 },
+      { t: 'Em que ano foi criado o 13º salário?', o: ['1943', '1962', '1988', '1994'], c: 1 },
+      { t: 'Até que dia deve ser paga a segunda parcela do 13º?', o: ['30 de novembro', '10 de dezembro', '20 de dezembro', '31 de dezembro'], c: 2 },
+      { t: 'O que significa a sigla CLT?', o: ['Consolidação das Leis do Trabalho', 'Código Legal do Trabalhador', 'Carteira de Livre Trabalho', 'Contrato de Longo Termo'], c: 0 },
+      { t: 'Em que ano a CLT foi criada?', o: ['1930', '1943', '1962', '1988'], c: 1 },
+      { t: 'Que atalho desfaz a última ação na maioria dos programas no Windows?', o: ['Ctrl+Z', 'Ctrl+X', 'Ctrl+V', 'Ctrl+P'], c: 0 },
+      { t: 'Em uma planilha, que símbolo começa uma fórmula?', o: ['=', '#', '@', '&'], c: 0 },
+      { t: 'No horóscopo chinês, que animal começa em fevereiro de 2027?', o: ['Cavalo', 'Cabra', 'Macaco', 'Dragão'], c: 1 },
+      { t: 'Quantos dias terá o ano de 2028?', o: ['364', '365', '366', '367'], c: 2 },
+      { t: 'Em que dia da semana cai o Natal de 2026?', o: ['Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'], c: 1 },
+    ],
+  },
+  {
+    id: 'escola-fim-de-ano',
+    nome: 'Fim de ano na escola',
+    desc: 'Revisão e férias',
+    titulo: 'Quiz de fim de ano da turma',
+    tema: 'escola',
+    soLink: true,
+    perguntas: [
+      { t: 'Quantos dias letivos, no mínimo, a lei pede por ano na educação básica?', o: ['180', '200', '220', '250'], c: 1 },
+      { t: 'Qual destas palavras está escrita do jeito certo?', o: ['Exceção', 'Excessão', 'Exeção', 'Esceção'], c: 0 },
+      { t: 'Qual é o plural de "pastel"?', o: ['Pastels', 'Pastéis', 'Pasteles', 'Pastéus'], c: 1 },
+      { t: 'Quanto é 12 × 12?', o: ['124', '132', '144', '154'], c: 2 },
+      { t: 'Quantos lados tem um hexágono?', o: ['5', '6', '7', '8'], c: 1 },
+      { t: 'Quantos planetas tem o Sistema Solar?', o: ['7', '8', '9', '10'], c: 1 },
+      { t: 'Qual é o maior bioma do Brasil?', o: ['Cerrado', 'Mata Atlântica', 'Amazônia', 'Caatinga'], c: 2 },
+      { t: 'Em que mês começa o verão no Brasil?', o: ['Novembro', 'Dezembro', 'Janeiro', 'Fevereiro'], c: 1 },
+      { t: 'O que quer dizer a sigla FPS no protetor solar?', o: ['Fator de Proteção Solar', 'Filtro para Sol', 'Força da Pele Seca', 'Fórmula de Proteção Simples'], c: 0 },
+      { t: 'Fernando de Noronha pertence a qual estado?', o: ['Pernambuco', 'Rio Grande do Norte', 'Paraíba', 'Bahia'], c: 0 },
+    ],
+  },
+  {
+    id: 'quebra-gelo',
+    nome: 'Quebra-gelo',
+    desc: 'Curiosidades leves',
+    titulo: 'Quebra-gelo da reunião',
+    tema: 'corp',
+    soLink: true,
+    perguntas: [
+      { t: 'Quantos minutos tem um dia?', o: ['1.040', '1.240', '1.440', '1.640'], c: 2 },
+      { t: 'Quantas teclas tem um piano padrão?', o: ['66', '76', '88', '98'], c: 2 },
+      { t: 'O que significa a sigla PDF?', o: ['Portable Document Format', 'Printed Data File', 'Public Document Folder', 'Personal Digital Form'], c: 0 },
+      { t: 'Que atalho copia um texto no Windows?', o: ['Ctrl+C', 'Ctrl+V', 'Ctrl+X', 'Ctrl+Z'], c: 0 },
+      { t: 'Qual destes animais dorme mais horas por dia?', o: ['Coala', 'Cavalo', 'Girafa', 'Elefante'], c: 0 },
+      { t: 'De que país é a pizza margherita?', o: ['Itália', 'Estados Unidos', 'França', 'Grécia'], c: 0 },
+      { t: 'Quantos segundos tem uma hora?', o: ['360', '600', '3.600', '6.000'], c: 2 },
+      { t: 'Qual língua tem mais falantes nativos no mundo?', o: ['Inglês', 'Espanhol', 'Mandarim', 'Hindi'], c: 2 },
+      { t: 'Que cor sai da mistura de azul com amarelo?', o: ['Verde', 'Roxo', 'Laranja', 'Marrom'], c: 0 },
+      { t: 'Quantos dias tem um ano bissexto?', o: ['364', '365', '366', '367'], c: 2 },
     ],
   },
 ];

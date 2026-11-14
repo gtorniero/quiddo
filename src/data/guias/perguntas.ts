@@ -7,7 +7,7 @@ export const PERGUNTAS: Guia[] = [
   {
     slug: 'perguntas-de-conhecimentos-gerais',
     titulo: '50 perguntas de conhecimentos gerais com respostas',
-    resumo: 'Geografia, ciências, história, artes, matemática e natureza, com alternativas e a resposta certa',
+    resumo: 'Geografia, ciências, história, artes, matemática, natureza e esportes, com quatro alternativas e a resposta certa, para jogar com qualquer turma',
     publico: 'perguntas',
     corpo: `
 <p>Conhecimentos gerais é o tema mais seguro para um quiz ao vivo: todo mundo tem chance, ninguém precisa ser especialista e a sala inteira participa. Aqui estão 50 perguntas prontas, separadas por assunto, com quatro alternativas e a resposta certa no fim de cada uma. Copie as que quiser para o seu quiz.</p>
@@ -88,15 +88,23 @@ export const PERGUNTAS: Guia[] = [
 <li><strong>Embaralhe a letra certa.</strong> Se você trocar a ordem das alternativas, confira de novo qual ficou marcada como certa no editor.</li>
 <li><strong>Tempo:</strong> com perguntas curtas assim, 15 segundos funcionam bem. Para conta de cabeça, prefira 20.</li>
 </ul>
-<p>Para jogar, crie o quiz no Quiddo, cole as perguntas, marque a resposta certa e abra a sala. A turma entra pelo celular com o código de 4 letras, sem cadastro.</p>`,
+<p>Para jogar, o botão abaixo abre o editor com 10 destas perguntas, de vários assuntos, já com a resposta certa marcada. Acrescente outras, abra a sala e a turma entra pelo celular com o código de 4 letras, sem cadastro.</p>
+<p><a class="btn auto" href="/criar?modelo=conhecimentos-gerais" data-link>Criar meu quiz grátis</a></p>
+<p>Quer variar? Veja as <a href="/guias/perguntas-de-verdadeiro-ou-falso" data-link>50 perguntas de verdadeiro ou falso</a>, as <a href="/guias/perguntas-sobre-o-brasil" data-link>50 perguntas sobre o Brasil</a> e o <a href="/guias/quiz-para-criancas" data-link>quiz para crianças</a>, com perguntas separadas por idade.</p>`,
+    faq: [
+      ['Quantas perguntas de conhecimentos gerais usar num quiz?', 'De 15 a 20. Com cerca de um minuto por pergunta, contando leitura, revelação e ranking, o jogo dura de 15 a 20 minutos. Guarde o resto para a próxima rodada.'],
+      ['Como deixar o quiz justo para todo mundo?', 'Misture os assuntos, comece pelas fáceis e deixe as difíceis para o fim. Assim quem é bom em um tema não dispara logo no começo e todo mundo pontua.'],
+      ['Preciso digitar as 50 perguntas no editor?', 'Não. O botão desta página abre o editor com 10 delas, já com a resposta certa marcada. As outras você acrescenta uma a uma, só as que quiser usar.'],
+      ['Dá para usar estas perguntas na escola?', 'Sim. No modo Escola, o nome e o logo da escola aparecem no projetor. Para revisar matérias específicas, há perguntas separadas por disciplina nos guias.'],
+    ],
   },
   {
     slug: 'perguntas-de-verdadeiro-ou-falso',
-    titulo: '40 perguntas de verdadeiro ou falso para quiz',
-    resumo: 'Mitos e verdades sobre ciência, animais, corpo humano, história e geografia, com a explicação de cada resposta',
+    titulo: '50 perguntas de verdadeiro ou falso com respostas',
+    resumo: 'Mitos e verdades sobre ciência, animais, corpo humano, história, geografia e comida, com a resposta e uma explicação curta de cada afirmação',
     publico: 'perguntas',
     corpo: `
-<p>Pergunta de verdadeiro ou falso é rápida de ler, rápida de responder e perfeita para aquecer a turma. A graça está nos mitos: coisas que quase todo mundo acredita e que não são verdade. Aqui estão 40 afirmações prontas, com a resposta e uma explicação curta para você comentar na revelação.</p>
+<p>Pergunta de verdadeiro ou falso é rápida de ler, rápida de responder e perfeita para aquecer a turma. A graça está nos mitos: coisas que quase todo mundo acredita e que não são verdade. Aqui estão 50 afirmações prontas, com a resposta e uma explicação curta para você comentar na revelação.</p>
 <p>No Quiddo, escolha o tipo "Verdadeiro ou falso" no editor. A pergunta fica com duas respostas, A) Verdadeiro e B) Falso, e você só marca a certa.</p>
 <h2>Ciência e espaço</h2>
 <ol>
@@ -153,6 +161,19 @@ export const PERGUNTAS: Guia[] = [
 <li><strong>A linha do Equador passa pelo Brasil.</strong> <em>Verdadeiro.</em> Ela corta a cidade de Macapá, no Amapá.</li>
 <li><strong>Em ano bissexto, fevereiro tem 29 dias.</strong> <em>Verdadeiro.</em></li>
 </ol>
+<h2>Comida e dia a dia</h2>
+<ol start="41">
+<li><strong>Na botânica, o tomate é um fruto.</strong> <em>Verdadeiro.</em> Ele se forma da flor e guarda as sementes, como a laranja.</li>
+<li><strong>O amendoim é uma castanha.</strong> <em>Falso.</em> É uma leguminosa, da mesma família do feijão.</li>
+<li><strong>A bananeira é uma árvore.</strong> <em>Falso.</em> É uma planta herbácea gigante. O "tronco" é feito das bases das folhas.</li>
+<li><strong>O mel bem fechado pode durar anos sem estragar.</strong> <em>Verdadeiro.</em> Ele tem pouca água e muito açúcar, o que dificulta a vida de fungos e bactérias.</li>
+<li><strong>A cenoura sempre foi laranja.</strong> <em>Falso.</em> As primeiras cenouras cultivadas eram roxas ou amarelas.</li>
+<li><strong>O grão de café é a semente de um fruto.</strong> <em>Verdadeiro.</em> O fruto do cafeeiro é uma pequena cereja vermelha ou amarela.</li>
+<li><strong>A água ferve a 100 °C em qualquer lugar.</strong> <em>Falso.</em> Em lugares altos, onde a pressão do ar é menor, ela ferve abaixo de 100 °C.</li>
+<li><strong>O micro-ondas esquenta a comida de dentro para fora.</strong> <em>Falso.</em> As ondas aquecem as camadas de fora, e o calor chega ao centro aos poucos.</li>
+<li><strong>O Brasil é o maior produtor de café do mundo.</strong> <em>Verdadeiro.</em></li>
+<li><strong>Chiclete engolido fica sete anos no estômago.</strong> <em>Falso.</em> Ele passa pelo sistema digestivo e sai em poucos dias.</li>
+</ol>
 <h2>Dicas para o verdadeiro ou falso render</h2>
 <ul>
 <li><strong>Equilibre as respostas.</strong> Se quase todas forem "falso", a turma percebe o padrão e chuta. Nesta lista, metade é verdadeira, mais ou menos.</li>
@@ -161,7 +182,15 @@ export const PERGUNTAS: Guia[] = [
 <li><strong>Misture com múltipla escolha.</strong> Três ou quatro de verdadeiro ou falso no começo aquecem a sala. Depois, passe para as de quatro alternativas.</li>
 <li><strong>Evite a dupla negação.</strong> "Não é verdade que o morcego não enxerga" confunde todo mundo. Escreva a afirmação de forma direta.</li>
 </ul>
-<p>Pronto para jogar? Monte o quiz no Quiddo com estas afirmações, abra a sala e chame a turma pelo código de 4 letras.</p>`,
+<p>Pronto para jogar? O botão abaixo abre o editor com 10 destas afirmações, já no formato verdadeiro ou falso e com a resposta marcada. Abra a sala e chame a turma pelo código de 4 letras.</p>
+<p><a class="btn auto" href="/criar?modelo=verdadeiro-ou-falso" data-link>Criar meu quiz grátis</a></p>
+<p>Para misturar com múltipla escolha, use as <a href="/guias/perguntas-de-conhecimentos-gerais" data-link>50 perguntas de conhecimentos gerais</a>. Para abrir uma reunião, cinco afirmações sobre o time viram um bom <a href="/guias/dinamicas-de-quebra-gelo-para-reuniao" data-link>quebra-gelo</a>.</p>`,
+    faq: [
+      ['Como criar uma pergunta de verdadeiro ou falso no quiz?', 'No editor, toque em "Verdadeiro ou falso", escreva a afirmação e marque se ela é verdadeira ou falsa. As duas respostas já vêm prontas.'],
+      ['Quanto tempo dar para cada afirmação?', 'Num quiz só de verdadeiro ou falso, 10 segundos bastam. Se misturar com perguntas de quatro alternativas, use 15, porque o tempo vale para todas as perguntas do quiz.'],
+      ['Quantas perguntas de verdadeiro ou falso usar?', 'Três ou quatro no começo aquecem a sala antes das de múltipla escolha. Um quiz só de verdadeiro ou falso funciona bem com 15 a 20 afirmações.'],
+      ['Como evitar que a turma acerte no chute?', 'Equilibre verdadeiras e falsas, varie a ordem e use mitos que muita gente acredita. Assim o chute não compensa e a revelação rende conversa.'],
+    ],
   },
   {
     slug: 'quiz-de-natal-perguntas',
@@ -380,11 +409,11 @@ export const PERGUNTAS: Guia[] = [
   },
   {
     slug: 'perguntas-sobre-o-brasil',
-    titulo: '40 perguntas sobre o Brasil: história, geografia e cultura',
-    resumo: 'Capitais, estados, datas da história, símbolos nacionais, comidas típicas, festas e artistas, com alternativas e respostas',
+    titulo: '50 perguntas sobre o Brasil com respostas',
+    resumo: 'Capitais, estados, história do Brasil, símbolos nacionais, comidas típicas, festas e artistas, com alternativas e a resposta certa de cada pergunta',
     publico: 'perguntas',
     corpo: `
-<p>Quanto a turma sabe sobre o próprio país? Estas 40 perguntas passam pela geografia, pela história, pelos símbolos nacionais e pela cultura de cada região. Servem para a aula, para a confraternização ou para o encontro da família, e cada uma vem com a resposta certa.</p>
+<p>Quanto a turma sabe sobre o próprio país? Estas 50 perguntas passam pela geografia, pela história, pelos símbolos nacionais e pela cultura de cada região. Servem para a aula, para a confraternização ou para o encontro da família, e cada uma vem com a resposta certa.</p>
 <h2>Geografia</h2>
 <ol>
 <li><strong>Qual é o maior estado do Brasil em área?</strong> A) Pará B) Mato Grosso C) Amazonas D) Minas Gerais. <em>Resposta: C</em></li>
@@ -437,6 +466,19 @@ export const PERGUNTAS: Guia[] = [
 <li><strong>Qual é a maior cidade do Brasil em população?</strong> A) Rio de Janeiro B) São Paulo C) Brasília D) Salvador. <em>Resposta: B</em></li>
 <li><strong>Qual brasileiro voou com o 14-bis em Paris, em 1906?</strong> A) Bartolomeu de Gusmão B) Santos Dumont C) Augusto Severo D) Edu Chaves. <em>Resposta: B</em></li>
 </ol>
+<h2>Mais história do Brasil</h2>
+<ol start="41">
+<li><strong>Em que ano a esquadra de Pedro Álvares Cabral chegou ao Brasil?</strong> A) 1492 B) 1500 C) 1530 D) 1549. <em>Resposta: B</em></li>
+<li><strong>Qual foi o primeiro nome dado pelos portugueses à nova terra?</strong> A) Ilha de Vera Cruz B) Terra de Santa Cruz C) Terra Brasilis D) Nova Lusitânia. <em>Resposta: A</em></li>
+<li><strong>Que tratado de 1494 dividiu as terras descobertas entre Portugal e Espanha?</strong> A) Tordesilhas B) Madri C) Utrecht D) Versalhes. <em>Resposta: A</em></li>
+<li><strong>Quem foi o primeiro presidente do Brasil?</strong> A) Deodoro da Fonseca B) Floriano Peixoto C) Prudente de Morais D) Campos Sales. <em>Resposta: A</em></li>
+<li><strong>Quem foi o primeiro presidente civil do Brasil?</strong> A) Prudente de Morais B) Rui Barbosa C) Campos Sales D) Rodrigues Alves. <em>Resposta: A</em></li>
+<li><strong>Quem foi o último imperador do Brasil?</strong> A) D. Pedro I B) D. João VI C) D. Pedro II D) D. Miguel. <em>Resposta: C</em></li>
+<li><strong>Em que ano a escravidão foi abolida no Brasil?</strong> A) 1822 B) 1871 C) 1888 D) 1889. <em>Resposta: C</em></li>
+<li><strong>Em que século aconteceu a Guerra do Paraguai?</strong> A) XVII B) XVIII C) XIX D) XX. <em>Resposta: C</em> (de 1864 a 1870)</li>
+<li><strong>Em que ano começou a ditadura militar no Brasil?</strong> A) 1954 B) 1961 C) 1964 D) 1968. <em>Resposta: C</em></li>
+<li><strong>Como ficou conhecido o movimento de 1984 que pediu eleição direta para presidente?</strong> A) Diretas Já B) Caras-pintadas C) Tenentismo D) Cabanagem. <em>Resposta: A</em></li>
+</ol>
 <h2>Como aproveitar estas perguntas</h2>
 <ul>
 <li><strong>Na escola:</strong> use as de geografia e história como revisão antes da prova. O ranking depois de cada pergunta mantém a sala atenta.</li>
@@ -444,7 +486,14 @@ export const PERGUNTAS: Guia[] = [
 <li><strong>Em datas especiais:</strong> no 7 de setembro ou no 15 de novembro, monte uma rodada só de história.</li>
 <li><strong>Revise as alternativas.</strong> Se mudar as opções, mantenha todas do mesmo tipo: quatro estados, quatro capitais, quatro anos próximos.</li>
 </ul>
-<p>Crie o quiz no Quiddo, cole as perguntas, marque as certas e abra a sala para a turma entrar pelo celular.</p>`,
+<p>O botão abaixo abre o editor com 10 destas perguntas, de geografia, história, símbolos e cultura, já com a resposta certa marcada. Acrescente as que quiser e abra a sala para a turma entrar pelo celular.</p>
+<p><a class="btn auto" href="/criar?modelo=brasil" data-link>Criar meu quiz grátis</a></p>
+<p>Na escola, junte com as <a href="/guias/quiz-para-sala-de-aula-perguntas-por-materia" data-link>perguntas por matéria</a>. Para um quiz mais variado, misture com as <a href="/guias/perguntas-de-conhecimentos-gerais" data-link>50 perguntas de conhecimentos gerais</a>.</p>`,
+    faq: [
+      ['Para que idade servem estas perguntas sobre o Brasil?', 'As de símbolos nacionais e cultura funcionam bem a partir do fim do fundamental 1. As de história e as capitais menos conhecidas pedem mais estudo e rendem mais com adolescentes e adultos.'],
+      ['Dá para fazer um quiz só de história do Brasil?', 'Sim. Junte as 10 perguntas de história com as 10 da seção "Mais história do Brasil". São 20 perguntas, o bastante para uns 20 minutos de jogo.'],
+      ['Preciso digitar todas as perguntas no editor?', 'Não. O botão desta página abre o editor com 10 delas prontas. As outras você acrescenta uma a uma, só as que quiser usar.'],
+    ],
   },
   {
     slug: 'quiz-para-criancas',

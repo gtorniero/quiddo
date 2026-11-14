@@ -1,5 +1,5 @@
-// Guias do site: 34 artigos em cinco grupos. Os textos ficam em src/data/guias/*.ts,
-// com corpo em HTML simples (p, h2, ul, ol, li, strong, em).
+// Guias do site: 41 artigos em cinco grupos. Os textos ficam em src/data/guias/*.ts,
+// com corpo em HTML simples (p, h2, ul, ol, li, strong, em e links internos com data-link).
 import { CASAMENTO } from './guias/casamento';
 import { EMPRESAS } from './guias/empresas';
 import { FESTAS } from './guias/festas';
@@ -12,6 +12,8 @@ export interface Guia {
   resumo: string;
   publico: 'todos' | 'perguntas' | 'festas' | 'casamento' | 'empresas' | 'escola';
   corpo: string;
+  /** Perguntas frequentes (texto puro). Aparecem no fim do artigo e viram FAQPage nos dados estruturados. */
+  faq?: [pergunta: string, resposta: string][];
 }
 
 export const GUIAS: Guia[] = [...GERAIS, ...PERGUNTAS, ...FESTAS, ...CASAMENTO, ...EMPRESAS];

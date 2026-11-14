@@ -215,6 +215,86 @@ export const CASAMENTO: Guia[] = [
 <p>Na hora do jogo, a rapidez sempre conta: quem acerta leva de 500 a 1000 pontos, mais quanto mais rápido. No fim, o pódio com suspense e o sorteio de prêmios fecham a festa em grande estilo.</p>`,
   },
   {
+    slug: 'quiz-do-casal-no-natal',
+    titulo: 'Quiz do casal no Natal: 30 perguntas para a família',
+    resumo: 'Quem conhece melhor o casal? Perguntas sobre o ano dos dois, o Natal do casal e as manias de cada um, para a família jogar na ceia ou no noivado',
+    publico: 'casamento',
+    corpo: `
+<p>Primeiro Natal depois do noivado, do casamento ou da mudança para a casa nova? Um quiz sobre o casal é a brincadeira certa para a ceia. A família inteira responde pelo celular e o pódio mostra quem conhece mais os dois: a sogra, o irmão ou a melhor amiga. E o casal ainda ganha uma homenagem divertida.</p>
+<p>Aqui estão 30 perguntas em três rodadas. Usamos Bia e Caio como modelo: troque pelos nomes do casal direto no texto e ajuste as alternativas para a história real.</p>
+<h2>Como juntar as respostas sem estragar a surpresa</h2>
+<ul>
+<li><strong>Peça ajuda a alguém próximo:</strong> uma irmã, um padrinho ou o melhor amigo sabem muita coisa.</li>
+<li><strong>Ou pergunte ao casal:</strong> se a surpresa não importa, mande a lista para os dois responderem juntos. Assim eles também aprovam o que vai para a TV.</li>
+<li><strong>Confirme cada resposta:</strong> se duas pessoas lembram diferente, troque a pergunta.</li>
+<li><strong>Nada de constranger:</strong> sem perguntas íntimas, sobre ex ou sobre brigas sérias. A família toda está olhando.</li>
+</ul>
+<h2>Rodada 1: o ano do casal</h2>
+<ol>
+<li><strong>Em que mês foi o pedido de casamento?</strong> A) Março B) Junho C) Setembro D) Dezembro</li>
+<li><strong>Onde foi o pedido?</strong> A) Na praia B) Num restaurante C) Em casa D) Numa viagem</li>
+<li><strong>Para onde Bia e Caio viajaram nas férias?</strong> A) Bahia B) Serra Gaúcha C) Chile D) Minas Gerais</li>
+<li><strong>Qual foi a maior novidade dos dois em 2026?</strong> A) Casa nova B) Bicho novo C) Emprego novo D) Casamento</li>
+<li><strong>Qual foi o primeiro prato que eles fizeram na casa nova?</strong> A) Macarrão B) Strogonoff C) Ovo frito D) Pediram pizza</li>
+<li><strong>Qual série os dois maratonaram neste ano?</strong> (quatro séries)</li>
+<li><strong>A que show eles foram juntos?</strong> (quatro artistas)</li>
+<li><strong>Qual foi a discussão mais boba do ano?</strong> A) A temperatura do ar-condicionado B) O lado da cama C) De quem era a vez da louça D) O nome do bicho de estimação</li>
+</ol>
+<h2>Rodada 2: o Natal dos dois</h2>
+<ol start="9">
+<li><strong>Quem monta a árvore de Natal na casa deles?</strong> A) Bia B) Caio C) Os dois D) Ninguém, não tem árvore</li>
+<li><strong>Quem embrulha os presentes melhor?</strong> A) Bia B) Caio C) Ninguém, é tudo em sacola</li>
+<li><strong>Onde foi o primeiro Natal que passaram juntos?</strong> A) Com a família da Bia B) Com a família do Caio C) Só os dois D) Viajando</li>
+<li><strong>Qual foi o primeiro presente de Natal que o Caio deu para a Bia?</strong> A) Perfume B) Livro C) Bolsa D) Uma viagem</li>
+<li><strong>Qual prato o casal leva para a ceia?</strong> A) Farofa B) Salpicão C) Sobremesa D) Só o refrigerante</li>
+<li><strong>Quem chora em filme de Natal?</strong> A) Bia B) Caio C) Os dois D) Nenhum</li>
+<li><strong>Qual filme de Natal é tradição dos dois?</strong> (quatro filmes)</li>
+<li><strong>Quem tenta adivinhar o presente antes da hora?</strong> A) Bia B) Caio</li>
+<li><strong>Quem dorme primeiro na noite de Natal?</strong> A) Bia B) Caio</li>
+<li><strong>Qual tradição da família do Caio a Bia adotou?</strong> A) Abrir presente à meia-noite B) Rabanada no café da manhã C) Amigo secreto D) Missa do Galo</li>
+</ol>
+<h2>Rodada 3: quem conhece melhor</h2>
+<ol start="19">
+<li><strong>Como a Bia chama o Caio quando quer um favor?</strong> A) Amor B) Vida C) Caiozinho D) Pelo nome completo</li>
+<li><strong>Qual comida o Caio não come de jeito nenhum?</strong> A) Jiló B) Fígado C) Uva-passa D) Coentro</li>
+<li><strong>Onde eles se conheceram?</strong> A) Faculdade B) Trabalho C) Aplicativo D) Festa de amigos</li>
+<li><strong>Há quanto tempo estão juntos?</strong> A) 2 anos B) 4 anos C) 6 anos D) 8 anos</li>
+<li><strong>Quem é mais friorento?</strong> A) Bia B) Caio</li>
+<li><strong>Quem cozinha melhor?</strong> A) Bia B) Caio C) Os dois D) O delivery</li>
+<li><strong>Qual é a música do casal?</strong> (quatro músicas)</li>
+<li><strong>Qual destino está no topo da lista dos dois?</strong> A) Japão B) Portugal C) Patagônia D) Fernando de Noronha</li>
+<li><strong>Quem é mais organizado?</strong> A) Bia B) Caio</li>
+<li><strong>Qual sabor de sorvete a Bia sempre escolhe?</strong> A) Chocolate B) Pistache C) Morango D) Flocos</li>
+<li><strong>O que o casal faz num domingo perfeito?</strong> A) Almoço em família B) Praia C) Maratona de série D) Trilha</li>
+<li><strong>Quem disse "eu te amo" primeiro?</strong> A) Bia B) Caio</li>
+</ol>
+<p>Precisa de mais? Veja <a href="/guias/30-perguntas-sobre-o-casal" data-link>30 perguntas prontas sobre o casal</a>, com perguntas sobre o primeiro encontro e o futuro.</p>
+<h2>Dois jeitos de jogar</h2>
+<ul>
+<li><strong>A família adivinha:</strong> o casal assiste e confirma cada resposta na revelação. O pódio mostra quem conhece mais os dois.</li>
+<li><strong>O casal joga junto:</strong> os dois entram com o celular e disputam com a família. Se o casal não ficar no pódio, a ceia ganha assunto até a sobremesa.</li>
+</ul>
+<p>Dica: peça para cada um colocar no apelido de que lado é, como "Tia Rosa (Bia)" ou "Primo Davi (Caio)". A torcida entre as famílias se forma sozinha.</p>
+<h2>Como montar</h2>
+<ol>
+<li>Crie o quiz no modo Amigos & família e escolha o visual Amor: o relógio vira um coração e a cortina da troca de pergunta vira corações.</li>
+<li>Escolha de 15 a 20 perguntas, misturando as três rodadas.</li>
+<li>Use 20 segundos por pergunta. Dá para ler e rir das alternativas.</li>
+<li>Ligue "A última pergunta vale o dobro" e guarde para o fim a mais difícil, como o primeiro presente de Natal.</li>
+<li>Na ceia, ligue o computador na TV, mostre o código de 4 letras e o QR code e deixe a família entrar pelo celular, sem cadastro.</li>
+</ol>
+<p><a class="btn auto" href="/criar" data-link>Criar meu quiz grátis</a></p>
+<h2>Prêmio</h2>
+<p>Depois da última pergunta, o pódio aparece do 3º para o 1º lugar. O casal entrega o prêmio: um panetone, uma garrafa de vinho ou o direito de escolher o lugar à mesa. Depois, faça um sorteio entre todos para quem não pontuou também comemorar.</p>
+<p>O mesmo quiz funciona no noivado, no chá de casa nova e no <a href="/guias/quiz-para-cha-bar" data-link>chá bar</a>. Para o resto da família, veja o <a href="/guias/quiz-de-natal-e-fim-de-ano" data-link>quiz de Natal em família</a>.</p>`,
+    faq: [
+      ['Quem deve escrever as perguntas do quiz do casal?', 'Alguém próximo dos dois, como uma irmã ou um padrinho. Se a surpresa não importa, o próprio casal pode responder a lista. Em todo caso, o casal aprova o que vai aparecer na TV.'],
+      ['O casal também pode jogar?', 'Pode. Os dois entram com o celular, como qualquer convidado. Fica ainda mais divertido quando a sogra acerta mais que o próprio casal.'],
+      ['Qual modo e qual visual usar?', 'Amigos & família, com o visual Amor. O relógio do "Prepare-se" vira um coração e a troca de pergunta ganha uma cortina de corações.'],
+      ['Quantas pessoas podem jogar?', 'Até 10 na sala grátis. Família grande pode jogar em duplas ou usar um plano pago, com salas de até 200 pessoas.'],
+    ],
+  },
+  {
     slug: 'como-organizar-quiz-cha-bar-despedida',
     titulo: 'Como organizar o quiz no chá bar ou na despedida',
     resumo: 'Perguntas em segredo, hora certa, prendas, pódio e sorteio',

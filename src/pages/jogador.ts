@@ -32,6 +32,8 @@ export function page(code: string): Page {
 function mount(main: HTMLElement, code: string) {
   const measureState = gameMeasurement('player');
   let measuredJoinAttempt = false;
+  let erroMedido = false; // um erro de entrada por visita (a sala cheia tenta de novo sozinha)
+  let semResposta = 0;
   let seat = store.get<Seat | null>('jog:' + code, null);
   let sock: RoomSocket | null = null;
   let s: PlayerState | null = null;
@@ -106,7 +108,13 @@ function mount(main: HTMLElement, code: string) {
   }
 
   function connect() {
-    if (!measuredJoinAttempt) { measuredJoinAttempt = true; void track('join_room_start', {role:'player'}); }
+    if (!measuredJoinAttempt) {
+      measuredJoinAttempt = true;
+      void track('join_room_start', {role:'player'});
+      // sem resposta da sala em 12 s (rede ruim, Wi-Fi do evento): conta como erro de conexão, uma vez
+      clearTimeout(semResposta);
+      semResposta = window.setTimeout(() => { if (!s && !erroMedido) { erroMedido = true; void track('join_room_error', {role:'player',error_category:'connection'}); } }, 12_000);
+    }
     main.innerHTML = `<section class="panel center"><p class="muted dots">Entrando na sala ${code}</p></section>`;
     const me = seat!;
     sock = new RoomSocket({
@@ -120,8 +128,9 @@ function mount(main: HTMLElement, code: string) {
 
   function onMessage(m: ServerMsg) {
     if (m.type === 'error' || m.type === 'kicked' || m.type === 'closed') {
-      if (!s) void track('join_room_error', {role:'player',error_category:'rejected'});
       const c = m.type === 'error' ? m.code : m.type === 'closed' && m.motivo === 'inativa' ? 'inativa' : m.type;
+      // o motivo vai em categoria fixa (sala não encontrada, jogo começou, sala cheia…), nunca o código da sala
+      if (!s && !erroMedido) { erroMedido = true; void track('join_room_error', {role:'player',error_category:categoriaErroEntrada(c)}); }
       banner('');
       if (c === 'bad_nick') {
         return form('Escreva um apelido para aparecer no ranking.');
@@ -473,6 +482,7 @@ function mount(main: HTMLElement, code: string) {
   else form();
 
   return () => {
+    clearTimeout(semResposta);
     clearTimeout(destaqueTimer);
     if (sock) sock.stop();
     clearInterval(clock);
@@ -486,4 +496,5 @@ function mount(main: HTMLElement, code: string) {
   };
 }
 import { track } from '../lib/measurement';
+import { categoriaErroEntrada } from '../lib/measurement-policy';
 import { gameMeasurement } from '../lib/game-measurement';

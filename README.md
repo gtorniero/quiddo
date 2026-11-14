@@ -203,6 +203,18 @@ Com aceite, Google Analytics e o Pixel da Meta rodam no iframe `/medicao` (`publ
 
 Como o pixel roda no iframe, a Meta registra a URL `/medicao`; o caminho real vai em `page_path`. A Conversions API está em `worker/meta-capi.mjs` e `worker/meta-adapter.mjs` (ver `docs/META-CAPI.md`). As etiquetas UTM da primeira visita ficam no navegador (`qd_origem_v1`, 90 dias) e vão para a coluna `origem` da compra. Renovações pagas da assinatura ficam na tabela `qd_renovacoes`, só para relatório.
 
+**Equipe (tráfego interno):** abra qualquer página com `?btw_interno=1` para gravar o cookie `btw_interno=1` (1 ano, em `.quiddo.com.br`); `?btw_interno=0` apaga. Com ele, o aviso de cookies não aparece, o rodapé mostra "Medição desligada (equipe)", GA4 e pixel não carregam e a Conversions API não recebe consentimento (mesma regra do Retrozap). As salas abertas com o cookie ficam fora dos contadores de `/api/uso`.
+
+**Erro ao entrar na sala:** `join_room_error` leva o motivo em `error_category`, sempre de uma lista fechada (`room_not_found`, `game_started`, `room_full`, `removed`, `room_paused`, `room_closed`, `invalid_nick`, `connection` quando a sala não responde em 12 segundos), uma vez por visita.
+
+**Links que o jogo espalha:** `?de=cartao` (cartão de resultado) e `?de=jogador` (selo da sala grátis) viram `utm_source=quiddo`, `utm_medium=cartao|jogador`, `utm_campaign=jogo` no GA4 e na origem da compra. UTM de anúncio vence.
+
+**Compra que não chegou ao GA4:** se a página não podia medir na hora (iframe lento no celular, página sem caminho de medição), a compra confirmada fica guardada neste navegador por até 48 horas e vai na primeira página seguinte que mede, com o mesmo `transaction_id` (sem duplicar). A ponte espera até 8 segundos pela compra.
+
+**Cloudflare Web Analytics:** o iframe `/medicao.html` sai com `Cache-Control: ..., no-transform`, para o Cloudflare não injetar o beacon nele e não contar o iframe como página.
+
+**Dimensões no GA4 (painel):** os eventos já mandam `role`, `quiz_source`, `error_category`, `modo`, `plano` e `payment_type` (e `question_count` como número). Para aparecerem nos relatórios, registre cada um em Administrador → Definições personalizadas, com escopo de evento.
+
 ## Uso e limites do plano grátis
 
 `GET /api/uso` mostra, por dia (UTC), as salas abertas, os jogos começados, os jogadores e a maior sala dos últimos 14 dias. O plano grátis da Cloudflare dá cerca de 100 jogos de 15 minutos por dia; o campo `alerta` liga aos 70%. Um lembrete agendado confere isso todo dia e avisa quando for hora de assinar o plano de US$ 5.

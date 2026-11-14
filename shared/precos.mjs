@@ -4,9 +4,9 @@
 // mesmo valor: o id vai em STRIPE_PRECO_ID e nas variáveis STRIPE_PRECO_MENSAL_ID e STRIPE_PRECO_ANUAL_ID
 // do wrangler.jsonc (os testes conferem que os dois batem).
 // Preços de 14/11/2026 (aprovados pelo dono): Mensal R$ 12,90, Anual R$ 99 (equivale a R$ 8,25 por mês),
-// Passe 7 dias R$ 19,90. Regra da oferta da sala cheia: nunca mais barata que o Mensal (tests/precos.test.ts).
+// Passe 7 dias R$ 14,99 (ajuste do dono em 14/11). Regra da oferta da sala cheia: nunca mais barata que o Mensal (tests/precos.test.ts).
 export const PRECOS = Object.freeze({
-  semana: '19.90', // Passe 7 dias, avulso, no Pix ou no cartão
+  semana: '14.99', // Passe 7 dias, avulso, no Pix ou no cartão
   oferta: '12.90', // o mesmo Passe, só para o anfitrião da sala grátis cheia com gente esperando (= o Mensal)
   mensal: '12.90', // Assinatura Premium, cobrança mensal no cartão
   anual: '99.00', // Assinatura Premium, cobrança anual no cartão

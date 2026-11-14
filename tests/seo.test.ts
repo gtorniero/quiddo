@@ -58,7 +58,7 @@ describe('página de planos', () => {
       ['Grátis, salas de até 10 pessoas', '0.00', 'BRL'],
       ['Assinatura Premium Anual', '99.00', 'BRL'],
       ['Assinatura Premium Mensal', '12.90', 'BRL'],
-      ['Passe 7 dias', '19.90', 'BRL'],
+      ['Passe 7 dias', '14.99', 'BRL'],
     ]);
     const faq = faqJsonLd(perguntasPlanos(e));
     for (const q of faq.mainEntity) expect(html).toContain(`<summary>${q.name}</summary>`);

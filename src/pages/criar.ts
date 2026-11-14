@@ -1,5 +1,9 @@
 import { prepararBiblioteca, contaDosQuizzes, syncStatus, carregarQuiz, quizCurrentKey, localQuizzes, importarLocais, idsLocaisImportados, copyConflict } from '../lib/quiz-cloud';
-import { track, trackOnce } from '../lib/measurement';
+import { track, trackOnce, leadParaSala, leadEnviado } from '../lib/measurement';
+import { modeCategory } from '../lib/measurement-policy';
+import { PAGINAS } from '../lib/paginas-html';
+import { SITE } from '../lib/guias-html';
+import { metaContext } from '../lib/meta-consent';
 // /criar: editor do quiz e configuração do anfitrião (modo, visual, tempo, marca, perguntas) e abertura da sala.
 // O visual só aparece depois do modo e lista apenas os visuais daquele modo. Floresta é o padrão.
 import { logado } from '../lib/conta';
@@ -21,7 +25,7 @@ import { miniVisual } from '../lib/visuais-arte';
 import { type Cobranca, abrirPagamento, iaRetomar, acessoAte, cobranca, cobrancaValendo, confereVolta, meuAcesso, testeCobranca } from '../lib/pagamento';
 
 export function page(): Page {
-  return { title: 'Criar meu quiz', mount };
+  return { title: 'Criar meu quiz', fullTitle: PAGINAS['/criar'].titulo, description: PAGINAS['/criar'].descricao, canonical: `${SITE}/criar`, mount };
 }
 
 function mount(main: HTMLElement) {
@@ -381,11 +385,17 @@ function mountEditor(main: HTMLElement) {
     render();
     try {
       void track('create_room_start', {question_count: questions.length});
-      const r = await fetch('/api/salas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      // Lead (uma vez por navegador, só com aceite de anúncios): o servidor recebe o id aleatório e o consentimento.
+      const lead = await leadParaSala();
+      const meta = lead ? metaContext() : null;
+      const r = await fetch('/api/salas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lead && meta ? { ...body, lead: lead.id, meta } : body) });
       const d = (await r.json().catch(() => ({}))) as Partial<CreateRoomResult> & { erro?: string };
       if (!r.ok || !d.code || !d.hostKey) throw new Error(d.erro || 'Não deu para abrir a sala agora. Tente de novo.');
       store.set('host:' + d.code, d.hostKey);
-      await track('create_room', {question_count: questions.length});
+      // CreateRoom continua a cada sala aberta; o modo vira categoria (corporativo, familia ou escola).
+      const modo = modeCategory(q.tema);
+      const medido = await track('create_room', { question_count: questions.length, ...(modo ? { modo } : {}), ...(lead ? { lead_id: lead.eventId } : {}) });
+      if (lead && medido) leadEnviado(lead.id);
       navigate('/host/' + d.code);
     } catch (e) {
       void track('create_room_error', {error_category:e instanceof TypeError ? 'network' : 'rejected'});

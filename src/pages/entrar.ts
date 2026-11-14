@@ -6,7 +6,7 @@ import { navigate } from '../lib/nav';
 import { logado, sincronizaConta } from '../lib/conta';
 
 export function page(): Page {
-  return { title: 'Entrar', mount };
+  return { title: 'Entrar', noindex: true, mount };
 }
 
 async function post(url: string, corpo: unknown) {

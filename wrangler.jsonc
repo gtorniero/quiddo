@@ -42,6 +42,8 @@
       ]
     }
   },
+  // Conversions API da Meta, tudo no painel e desligado por padrão (docs/META-CAPI.md):
+  // META_CAPI_ENABLED, META_GRAPH_VERSION, META_EMAIL_MATCHING, META_CAPI_SUBSCRIBE, META_CAPI_LEAD (texto) e META_CAPI_TOKEN (secret).
   // COBRANCA fica no painel; um deploy nao deve sobrescrever a escolha de modo.
   // mantém variáveis criadas no painel
   "keep_vars": true,

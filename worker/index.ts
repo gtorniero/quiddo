@@ -3,7 +3,8 @@ export {PdfAccount} from './pdf-quiz/account.mjs';
 export {PdfBudget} from './pdf-quiz/budget.mjs';
 import {probeMeta} from './meta-probe.mjs';
 import {servicePayments} from './btw-payments.mjs';
-import {runMeta,metaRoute} from './meta-adapter.mjs';
+import {runMeta,metaRoute,captureLead} from './meta-adapter.mjs';
+import { naoIndexar } from '../shared/seo';
 // Worker: serve os arquivos do site e a API das salas.
 //   POST /api/salas              abre uma sala (corpo: CreateRoomBody) → { code, hostKey }
 //   GET  /api/salas/{CODIGO}/ws  WebSocket da sala (anfitrião e jogadores)
@@ -57,9 +58,10 @@ const app = {
     if (cob) return cob;
 
     if (parts[1] === 'salas' && parts.length === 2 && req.method === 'POST') {
-      let body;
+      let body, raw = null as { lead?: unknown; meta?: unknown } | null;
       try {
-        body = validateCreate(await req.json());
+        raw = (await req.json()) as typeof raw;
+        body = validateCreate(raw);
       } catch (e) {
         return json({ erro: e instanceof Error ? e.message : 'Pedido inválido.' }, 400);
       }
@@ -71,6 +73,8 @@ const app = {
         const stub = env.ROOMS.get(env.ROOMS.idFromName(code));
         if (await stub.create(code, hostKey, body, maxPlayers)) {
           ctx.waitUntil(anotaUso(env, { salas: 1 }));
+          // Lead pela Conversions API: só com as variáveis ligadas e consentimento de anúncios (meta-adapter).
+          if (raw?.lead) ctx.waitUntil(captureLead(env, raw.lead, raw.meta, body.theme));
           return json({ code, hostKey, maxPlayers } satisfies CreateRoomResult);
         }
       }
@@ -87,4 +91,4 @@ const app = {
   },
 } satisfies ExportedHandler<Env>;
 
-export default {...app,async fetch(...args:Parameters<typeof app.fetch>){if(new URL(args[0].url).pathname==='/api/btw/payments')return servicePayments(args[0],args[1]);const route=await metaRoute(args[0],args[1]);if(route)return route;const response=await app.fetch(...args);args[2].waitUntil(runMeta(args[1]));return response},async scheduled(_event:unknown,env:Env,ctx:ExecutionContext){ctx.waitUntil(Promise.all([runMeta(env),probeMeta(env,'quiddo')]))}};
+export default {...app,async fetch(...args:Parameters<typeof app.fetch>){if(new URL(args[0].url).pathname==='/api/btw/payments')return servicePayments(args[0],args[1]);const route=await metaRoute(args[0],args[1]);if(route)return route;let response=await app.fetch(...args);args[2].waitUntil(runMeta(args[1]));const path=new URL(args[0].url).pathname;if(!path.startsWith('/api/')&&naoIndexar(path)){response=new Response(response.body,response);response.headers.set('X-Robots-Tag','noindex');}return response},async scheduled(_event:unknown,env:Env,ctx:ExecutionContext){ctx.waitUntil(Promise.all([runMeta(env),probeMeta(env,'quiddo')]))}};

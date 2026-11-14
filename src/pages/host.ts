@@ -22,7 +22,7 @@ import type { RankRow } from '../../shared/protocol';
 const GIRO = ['-5deg', '4deg', '-2deg', '6deg', '-4deg', '2deg', '-6deg', '3deg'];
 
 export function page(code: string): Page {
-  return { title: `Sala ${code}`, wide: true, compact: true, mount: (main) => mount(main, code) };
+  return { title: `Sala ${code}`, wide: true, compact: true, noindex: true, mount: (main) => mount(main, code) };
 }
 
 function mount(main: HTMLElement, code: string) {

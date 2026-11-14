@@ -3,13 +3,21 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Quiddo · Quizz do seu jeito</title>
+    <title>Quiz ao vivo para grupos, grátis no celular · Quiddo</title>
     <meta name="description" content="Crie um quiz com as suas perguntas, abra uma sala e jogue ao vivo com todo mundo pelo celular. Ranking a cada pergunta, pódio e sorteio de prêmios." />
+    <link rel="canonical" href="https://www.quiddo.com.br/" />
     <meta property="og:site_name" content="Quiddo" />
     <meta property="og:locale" content="pt_BR" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Quiddo · Quizz do seu jeito" />
+    <meta property="og:title" content="Quiz ao vivo para grupos, grátis no celular · Quiddo" />
     <meta property="og:description" content="Crie um quiz com as suas perguntas, abra uma sala e jogue ao vivo com todo mundo pelo celular. Ranking a cada pergunta, pódio e sorteio de prêmios." />
+    <meta property="og:url" content="https://www.quiddo.com.br/" />
+    <meta property="og:image" content="https://www.quiddo.com.br/og-quiddo.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Quiddo: quiz ao vivo para grupos, jogado pelo celular" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://www.quiddo.com.br/og-quiddo.png" />
     <meta name="referrer" content="no-referrer" />
     <meta name="theme-color" content="#FFF6E6" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -29,8 +37,12 @@
     <a class="sr" href="#conteudo">Pular para o conteúdo</a>
     <header class="top" id="topo"></header>
     <main id="conteudo" tabindex="-1"></main>
+    <script>
+      // Conteúdo pré-renderizado (para buscadores) só aparece no endereço dele; nas outras rotas o app desenha a tela.
+      (function (m) { var p = location.pathname.replace(/\/+$/, '') || '/'; if (m && m.getAttribute('data-pre') !== p) m.innerHTML = ''; })(document.getElementById('conteudo'));
+    </script>
     <footer class="foot">
-      <span>© 2026 Quiddo · <a class="foot-link" href="/guias" data-link>Guias</a> · <a class="foot-link" href="/precos" data-link>Preços</a> · <a href="/privacidade" data-link>Privacidade</a> · <button type="button" id="privacy-preferences">Preferências de cookies</button></span>
+      <span>© 2026 Quiddo · <a class="foot-link" href="/guias" data-link>Guias</a> · <a class="foot-link" href="/precos" data-link>Preços</a> · <a href="/privacidade" data-link>Privacidade</a> · <button type="button" id="privacy-preferences">Medição desligada<span class="sr">: mudar a escolha de cookies</span></button></span>
       <a class="btw" href="https://www.beyondthework.com.br" target="_blank" rel="noopener" aria-label="Um projeto Beyond the Work">
         <svg class="btw-sym" viewBox="0 0 120 120" aria-hidden="true"><line x1="46" y1="34" x2="110" y2="34" stroke="currentColor" stroke-width="8" stroke-linecap="round" /><line x1="28" y1="60" x2="110" y2="60" stroke="currentColor" stroke-width="8" stroke-linecap="round" /><line x1="10" y1="86" x2="110" y2="86" stroke="currentColor" stroke-width="8" stroke-linecap="round" /></svg>
         <span class="btw-txt"><small>Um projeto</small><b>Beyond the Work</b></span>

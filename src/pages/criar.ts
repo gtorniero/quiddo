@@ -11,13 +11,14 @@ import { iaAcesso, openPdfQuiz, pdfButton, type PdfResult } from '../lib/pdf-qui
 import type { Page } from '../main';
 import type { CreateRoomBody, CreateRoomResult, Theme, Visual } from '../../shared/protocol';
 import { LIMITS, VISUAIS_DO_MODO, compactQuestion, isReady, marcaPropria, visualDoModo } from '../../shared/rules';
-import { CORES_MARCA, TEMAS } from '../data/pacotes';
+import { CORES_MARCA, TEMAS, pacote } from '../data/pacotes';
 import { MODELOS, type Modelo } from '../data/modelos';
 import { entryTemplate, eventPlan } from '../lib/offer-context';
 import { LETRAS, esc } from '../lib/dom';
 import { readFoto, readLogo } from '../lib/logo';
 import { navigate } from '../lib/nav';
 import { type Quiz, atual, excluir, exportar, importar, listar, novoQuiz, salvar } from '../lib/quiz';
+import { mandarParaComputador, receberDoCelular, textoDoLink, type Levado } from '../lib/levar';
 import { store } from '../lib/storage';
 import { THEME_ACC, applyTheme } from '../lib/theme';
 import { VISUAIS } from '../data/visuais';
@@ -26,6 +27,13 @@ import { type Cobranca, abrirPagamento, iaRetomar, acessoAte, cobranca, cobranca
 
 const CADEADO =
   '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="currentColor" stroke="none"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>';
+
+const TITULOS_PADRAO = ['Quiz da equipe', 'Quiz da turma', 'Quiz da galera'];
+/** O quiz ainda é o de exemplo, sem nada mexido (primeira visita ao editor). */
+function intocado(q: Quiz): boolean {
+  const base = pacote(q.tema);
+  return TITULOS_PADRAO.includes(q.titulo) && !q.logo && q.perguntas.length === base.length && q.perguntas.every((p, i) => p.t === base[i].t);
+}
 
 export function page(): Page {
   return { title: 'Criar meu quiz', fullTitle: PAGINAS['/criar'].titulo, description: PAGINAS['/criar'].descricao, canonical: `${SITE}/criar`, mount };
@@ -47,9 +55,11 @@ function mountEditor(main: HTMLElement) {
     iaAcesso().then((a) => {
       if (!vivo || (a === 'trancada') === iaTrancada) return;
       iaTrancada = a === 'trancada';
-      const b = main.querySelector<HTMLElement>('[data-act="pdf-ia"]');
-      if (b) b.outerHTML = pdfButton(iaTrancada);
+      trocaBotoesIa();
     });
+  /** O botão da IA aparece no "Como você quer começar?" (grande) e em "Meus quizzes": os dois mudam juntos. */
+  const trocaBotoesIa = () =>
+    main.querySelectorAll<HTMLElement>('[data-act="pdf-ia"]').forEach((b) => (b.outerHTML = b.classList.contains('ia-grande') ? iaGrande() : pdfButton(iaTrancada)));
   void confereIa();
   const abrirIa = () =>
     openPdfQuiz(async (resultado: PdfResult) => {
@@ -85,8 +95,7 @@ function mountEditor(main: HTMLElement) {
     const a = await iaAcesso();
     if (!vivo) return;
     iaTrancada = a === 'trancada';
-    const b = main.querySelector<HTMLElement>('[data-act="pdf-ia"]');
-    if (b) b.outerHTML = pdfButton(iaTrancada);
+    trocaBotoesIa();
     if (a === 'ok') { iaRetomar(null); abrirIa(); }
     else if (a === 'trancada' && r === 'login') vendeIa();
   };
@@ -127,8 +136,22 @@ function mountEditor(main: HTMLElement) {
     usarModelo(modeloUrl);
     history.replaceState(null, '', location.pathname);
   }
+  // primeira visita (só o quiz de exemplo, sem mexer) ou ?comecar=1 (fim do jogo, "Criar outro quiz"): "Como você quer começar?"
+  const params = new URLSearchParams(location.search);
+  const pediuComecar = params.get('comecar') === '1';
+  const levarId = params.get('levar') || '';
+  if (pediuComecar || levarId) history.replaceState(null, '', location.pathname);
+  let escolhendo = !revisao && !modeloUrl && !levarId && (pediuComecar || (listar().length <= 1 && intocado(q)));
+  if (pediuComecar && !intocado(q)) q = novoQuiz(q.tema);
+  let verTodosProntos = false;
+  let mostrarMeus = false; // "Meus quizzes" vira uma linha enquanto a pessoa escolhe como começar
+  let levado: Levado | null = null; // link para abrir este quiz no computador da TV
+  let levando = false;
+  let erroLevar = '';
+  let mostrarPessoas = true; // "Quantas pessoas vão jogar?" (dá para pular)
   let mostrarLocais = false;
   let msg = ''; // aviso geral (importação, espaço cheio)
+  let aviso = ''; // aviso bom (quiz recebido do celular)
   let erro = ''; // erro ao abrir a sala
   let abrindo = false;
   let saveTimer = 0;
@@ -180,7 +203,8 @@ function mountEditor(main: HTMLElement) {
     // e só destrava com o Passe ou o Premium
     let n = 0;
     const passo = (titulo: string, id: string) => `<h2 class="passo" id="${id}"><span aria-hidden="true">${++n}</span>${titulo}</h2>`;
-    main.innerHTML = [secMeus(), secNome(passo, temMarca), secTema(passo), secVisual(passo), secTempo(passo), secPerguntas(passo), secAbrir()].join('');
+    main.innerHTML = [escolhendo ? secComecar() : '', secMeus(), secNome(passo, temMarca), secTema(passo), secVisual(passo), secTempo(passo), secPerguntas(passo), secAbrir(), barraAbrir()].join('');
+    observaAbrir();
     window.scrollTo(0, y);
     if (focusSel) main.querySelector<HTMLElement>(focusSel)?.focus({ preventScroll: true });
   }
@@ -199,6 +223,9 @@ function mountEditor(main: HTMLElement) {
 
   function secMeus() {
     const todos = listar();
+    // enquanto escolhe como começar, "Meus quizzes" é uma linha só (abre a lista inteira)
+    if (escolhendo && !mostrarMeus)
+      return `<section class="panel meus-linha" aria-labelledby="h-meus"><h1 id="h-meus" class="sr">Criar meu quiz</h1><p><b>Meus quizzes (${todos.length})</b> · ${contaDosQuizzes() ? 'na sua conta' : 'neste navegador'}</p><button type="button" class="linkbtn" data-act="ver-meus" aria-expanded="false">Abrir</button><p class="sr" id="quiz-save-status" role="status" aria-live="polite"></p></section>`;
     const account = contaDosQuizzes();
     const migrated = idsLocaisImportados();
     const locals = localQuizzes().filter(x => !migrated[x.id]);
@@ -225,7 +252,7 @@ function mountEditor(main: HTMLElement) {
       <button class="btn sec small" data-act="copia-conflito"${status.conflict ? '' : ' hidden'}>Salvar minha edição como cópia</button>
       <button class="btn sec small" data-act="retry-save"${status.retry ? '' : ' hidden'}>Tentar salvar novamente</button>
       ${account && locals.length ? `<div class="quiz-migration"><button class="btn sec small" data-act="escolher-locais">Escolher quizzes deste navegador (${locals.length})</button>${mostrarLocais ? `<p class="small">Selecione os quizzes que são seus. Os originais continuam neste navegador.</p><div class="quiz-import-list">${locals.map(x => `<label><input type="checkbox" data-import-id="${esc(x.id)}"> ${esc(x.titulo || 'Sem título')} · ${x.perguntas.length} perguntas</label>`).join('')}</div><button class="btn sec small" data-act="importar-locais">Salvar selecionados na conta</button>` : ''}</div>` : ''}
-      <p class="err" role="status">${esc(msg)}</p>
+      <p class="err" role="status">${esc(msg)}</p>${aviso ? `<p class="aviso-ok" role="status">${esc(aviso)}</p>` : ''}
       <a class="btn sec small ir-abrir" href="#abrir-sala">Tudo pronto? Ir para “Abrir a sala” ↓</a>
     </section>`;
   }
@@ -316,7 +343,7 @@ function mountEditor(main: HTMLElement) {
     const n = q.perguntas.length;
     const cheio = n >= LIMITS.maxQuestions;
     return `<section class="panel" aria-labelledby="h-perg">${passo('Perguntas', 'h-perg')}
-      ${q.tema === 'festa' ? secModelos() : ''}
+      ${secModelos()}
       ${revisao ? `<div class="qd-pdf-review"><b>Revise seu rascunho de IA</b><p class="small">${q.perguntas.some(p => p.pdf) ? 'Confira as perguntas, as fontes e o gabarito.' : 'Confira as perguntas e o gabarito.'} A IA pode errar. Seu quiz anterior está preservado.</p><div class="btnrow"><button class="btn small auto" data-act="salvar-pdf">Salvar quiz</button><button class="btn sec small auto" data-act="voltar-pdf">Voltar ao quiz anterior</button></div><p class="err" data-pdf-erro role="status"></p></div>` : ''}
       <div class="add-topo" role="group" aria-labelledby="h-add-topo">
         <span class="add-topo-tit" id="h-add-topo"><span class="mais-ic" aria-hidden="true">+</span>Adicionar pergunta</span>
@@ -336,10 +363,57 @@ function mountEditor(main: HTMLElement) {
     </section>`;
   }
 
-  /** Quizzes prontos do modo Amigos & família: um toque carrega as 10 perguntas, e dá para editar tudo. */
+  /** Quizzes prontos de todos os modos: um toque carrega as 10 perguntas (e o modo do quiz), e dá para editar tudo. */
   function secModelos() {
-    return `<div class="modelos" role="group" aria-labelledby="h-modelos"><h3 id="h-modelos">Comece com um quiz pronto</h3><p class="small">10 perguntas prontas. Dá para editar, tirar ou acrescentar.</p>
-      <div class="modelos-lista">${MODELOS.filter((m) => !m.soLink).map((m) => `<button class="btn sec modelo" data-act="modelo" data-v="${m.id}"><b>${esc(m.nome)}</b><span>${esc(m.desc)}</span></button>`).join('')}</div></div>`;
+    return `<details class="modelos"><summary><b>Trocar por um quiz pronto</b> <span class="small">(${MODELOS.length} quizzes, 10 perguntas cada)</span></summary>
+      <div class="modelos-lista">${MODELOS.map(cartaoModelo).join('')}</div></details>`;
+  }
+
+  /** Cartão de um quiz pronto, com o modo dele. */
+  const cartaoModelo = (m: Modelo) =>
+    `<button class="btn sec modelo" data-act="modelo" data-v="${m.id}"><b>${esc(m.nome)}</b><span>${esc(m.desc)} · <b>${esc(TEMAS[m.tema ?? 'festa'].nome)}</b></span></button>`;
+
+  /** Botão grande da IA no "Como você quer começar?". */
+  const iaGrande = () => pdfButton(iaTrancada).replace('class="btn small qd-pdf-button"', 'class="btn qd-pdf-button ia-grande"');
+
+  /**
+   * "Como você quer começar?": quizzes prontos de todos os modos em cima; embaixo, com mais destaque,
+   * "Começar do zero" (em outra cor) e "Criar com IA".
+   */
+  function secComecar() {
+    const destaque = ['natal', 'confraternizacao', 'quebra-gelo', 'escola-fim-de-ano'];
+    const primeiros = destaque.map((id) => MODELOS.find((m) => m.id === id)).filter((m): m is Modelo => !!m);
+    const resto = MODELOS.filter((m) => !destaque.includes(m.id));
+    return `<section class="panel comecar" aria-labelledby="h-comecar">
+      <h2 id="h-comecar"><span class="comecar-ic" aria-hidden="true">✓</span>Como você quer começar?</h2>
+      <p class="small">Escolha um quiz pronto com 10 perguntas, troque o que quiser e abra a sala.</p>
+      <h3 class="comecar-sub">Quizzes prontos</h3>
+      <div class="modelos-lista prontos">${primeiros.map(cartaoModelo).join('')}${verTodosProntos ? resto.map(cartaoModelo).join('') : ''}</div>
+      ${verTodosProntos ? '' : `<button type="button" class="linkbtn" data-act="ver-prontos">Ver os ${MODELOS.length} quizzes prontos</button>`}
+      <div class="comecar-outros" role="group" aria-labelledby="h-comecar-outros">
+        <p class="comecar-ou" id="h-comecar-outros">Ou crie o seu</p>
+        <button type="button" class="btn comecar-zero" data-act="zero"><b>Começar do zero</b><span>Escreva as suas perguntas</span></button>
+        ${iaGrande()}
+        <p class="small comecar-ia-txt">Com IA: conte o tema ou envie um PDF e as perguntas ficam prontas em segundos.</p>
+      </div>
+    </section>`;
+  }
+
+  /** Celular: "Abrir a sala" sempre à vista, numa barra fixa embaixo (some quando o painel de abrir aparece). */
+  function barraAbrir() {
+    if (escolhendo) return '';
+    const n = prontas();
+    return `<div class="abrir-fixo" id="abrir-fixo"><button type="button" class="btn" data-act="ir-abrir"${n ? '' : ' disabled'}>${n ? `Abrir a sala com ${n} ${n === 1 ? 'pergunta' : 'perguntas'}` : 'Complete ao menos uma pergunta'}</button><p class="small">${contaDosQuizzes() ? 'Salvo na sua conta' : 'Salvo neste navegador'} · ${cob && cobrancaValendo(cob) && !meuAcesso() ? `grátis até ${cob.gratis} pessoas` : 'pronto para jogar'}</p></div>`;
+  }
+
+  let obsAbrir: IntersectionObserver | null = null;
+  function observaAbrir() {
+    obsAbrir?.disconnect();
+    const alvo = main.querySelector('#abrir-sala');
+    const barra = main.querySelector<HTMLElement>('#abrir-fixo');
+    if (!alvo || !barra || typeof IntersectionObserver === 'undefined') return;
+    obsAbrir = new IntersectionObserver(([e]) => barra.classList.toggle('escondida', e.isIntersecting), { rootMargin: '0px 0px -40px 0px' });
+    obsAbrir.observe(alvo);
   }
 
   const nomeTipo = (p: Quiz['perguntas'][number]) => (p.vf ? 'Verdadeiro ou falso' : p.tipo === 'opiniao' ? 'Enquete' : p.tipo === 'quem' ? 'Quem é mais provável' : 'Múltipla escolha');
@@ -382,9 +456,59 @@ function mountEditor(main: HTMLElement) {
 
   function secAbrir() {
     const n = prontas();
-    return `<section class="panel" id="abrir-sala"><button class="btn" data-act="abrir"${n && !abrindo ? '' : ' disabled'}>${abrindo ? 'Abrindo a sala…' : n ? `Abrir a sala com ${n} ${n === 1 ? 'pergunta' : 'perguntas'}` : 'Complete ao menos uma pergunta'}</button>
+    return `<section class="panel" id="abrir-sala" aria-label="Abrir a sala">${secPessoas()}<button class="btn" data-act="abrir"${n && !abrindo ? '' : ' disabled'}>${abrindo ? 'Abrindo a sala…' : n ? `Abrir a sala com ${n} ${n === 1 ? 'pergunta' : 'perguntas'}` : 'Complete ao menos uma pergunta'}</button>
       <p class="err" role="alert">${esc(erro)}</p>
-      <p class="small">Abra a sala no computador que vai para o telão ou o projetor. A turma joga pelo celular.</p>${secPlano()}</section>`;
+      <p class="small">${celular() ? 'Está no computador que vai para a TV? Abra a sala aqui. A turma joga pelo celular.' : 'Abra a sala no computador que vai para o telão ou o projetor. A turma joga pelo celular.'}</p>${secLevar()}${secPlano()}</section>`;
+  }
+
+  /** Celular ou tablet: aqui o quiz é preparado, mas a sala costuma abrir no computador da TV. */
+  const celular = () => matchMedia('(max-width: 760px), (pointer: coarse)').matches;
+
+  /** "Mandar para o computador": um link de 7 dias que abre este mesmo quiz no outro aparelho. */
+  function secLevar() {
+    if (!celular() && !levado) return '';
+    const n = prontas();
+    if (levado) {
+      const txt = textoDoLink(q.titulo, levado.url);
+      return `<div class="levar" id="levar" role="group" aria-labelledby="h-levar"><h3 id="h-levar">Link pronto para o computador</h3>
+        <p class="small">Abra no computador da TV. ${levado.semImagens ? 'As imagens ficaram de fora porque o quiz é grande: adicione de novo por lá. ' : ''}O link vale 7 dias.</p>
+        <p class="levar-url"><code>${esc(levado.url.replace(/^https?:\/\//, ''))}</code></p>
+        <div class="btnrow">
+          <a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">Mandar no WhatsApp</a>
+          <a class="btn sec" href="mailto:?subject=${encodeURIComponent('Quiz para abrir no computador')}&body=${encodeURIComponent(txt)}">Mandar por e-mail</a>
+          <button type="button" class="btn sec" data-act="copiar-levar">Copiar o link</button>
+        </div></div>`;
+    }
+    return `<div class="levar" id="levar" role="group" aria-labelledby="h-levar"><h3 id="h-levar">Vai apresentar no computador da TV?</h3>
+      <p class="small">Mande este quiz para lá. Chega um link no seu WhatsApp ou e-mail; abra no computador e ${n ? `as ${n} perguntas já estão lá` : 'o quiz já está lá'}, prontas para abrir a sala.</p>
+      <button type="button" class="btn sec" data-act="levar"${levando || !q.perguntas.length ? ' disabled' : ''}>${levando ? 'Preparando o link…' : 'Mandar para o computador'}</button>
+      <p class="err" role="alert">${esc(erroLevar)}</p>
+      ${contaDosQuizzes() ? '' : '<p class="small">Ou <a href="/entrar?volta=/criar">entre com o mesmo e-mail</a> nos dois aparelhos: os quizzes ficam na sua conta.</p>'}</div>`;
+  }
+
+  /** "Quantas pessoas vão jogar?": acima de 10, mostra o plano certo antes do evento (dá para pular). */
+  function secPessoas() {
+    if (!mostrarPessoas || !cob || !cobrancaValendo(cob)) return '';
+    const v = store.get<string>('pessoas:' + q.id, '');
+    if (v === 'pular') return '';
+    const ops: [string, string][] = [['ate10', `Até ${cob.gratis}`], ['11a30', '11 a 30'], ['31a100', '31 a 100'], ['100mais', 'Mais de 100']];
+    return `<fieldset class="quantas"><legend>Quantas pessoas vão jogar?</legend>
+      <div class="chips" role="group">${ops.map(([k, t]) => `<button type="button" data-act="pessoas" data-v="${k}" aria-pressed="${v === k}">${t}</button>`).join('')}</div>
+      ${v ? planoPessoas(v) : '<button type="button" class="linkbtn" data-act="pessoas" data-v="pular">Pular</button>'}</fieldset>`;
+  }
+
+  function planoPessoas(v: string) {
+    if (!cob) return '';
+    if (v === 'ate10') return `<p class="quantas-ok">A sala grátis dá conta: até ${cob.gratis} pessoas, sem pagar nada.</p>`;
+    if (salasLiberadas(cob)) return `<p class="quantas-ok">Tudo certo: suas salas vão até ${cob.pago} pessoas.</p>`;
+    const passe = cob.planos.find((p) => p.id === 'semana');
+    const anual = cob.planos.find((p) => p.id === 'anual');
+    const mensal = cob.planos.find((p) => p.id === 'mensal');
+    const porMes = anual ? (Number(anual.preco.replace(',', '.')) / 12).toFixed(2).replace('.', ',').replace(/,00$/, '') : mensal?.preco.replace(/,00$/, '');
+    const faixa = v === '11a30' ? '11 a 30 pessoas' : v === '31a100' ? '31 a 100 pessoas' : 'mais de 100 pessoas';
+    return `<div class="quantas-plano"><p><b>Para ${faixa}, a sala grátis não basta</b> (vai até ${cob.gratis}). Libere antes do evento, sem susto na hora:</p>
+      <ul>${passe ? `<li><b>Passe 7 dias</b>: R$ ${esc(passe.preco.replace(/,00$/, ''))}, pagamento único, bom para um evento.</li>` : ''}${porMes ? `<li><b>Assinatura Premium</b>: a partir de R$ ${esc(porMes)} por mês, para quem faz quiz sempre (com o quiz com IA).</li>` : ''}</ul>
+      <div class="btnrow"><button type="button" class="btn" data-act="liberar-pessoas">Liberar até ${cob.pago} pessoas</button><button type="button" class="linkbtn" data-act="pessoas" data-v="pular">Decidir depois</button></div></div>`;
   }
 
   /** Grátis até 10 pessoas por sala; quem pagou (código guardado neste navegador) abre salas de até 200. */
@@ -393,6 +517,9 @@ function mountEditor(main: HTMLElement) {
   }
   function plano() {
     if (!cobrancaValendo(cob) || !cob) return '';
+    const pessoas = store.get<string>('pessoas:' + q.id, '');
+    // quem já disse que vem mais de 10 pessoas vê o plano certo logo acima; aqui não repete
+    if (!meuAcesso() && ['11a30', '31a100', '100mais'].includes(pessoas)) return '';
     const marca = q.tema !== 'festa';
     if (meuAcesso())
       return `<p class="plano liberado"><span class="selo">Quiddo liberado</span> Salas de até ${cob.pago} pessoas${marca ? ' e a sua marca' : ''} neste navegador${acessoAte() ? `, até ${esc(acessoAte())}` : ''}. Código: <strong>${esc(meuAcesso())}</strong></p>`;
@@ -443,6 +570,30 @@ function mountEditor(main: HTMLElement) {
     }
   }
 
+  /** Guarda uma cópia por 7 dias e mostra o link para abrir no computador da TV. */
+  async function levar() {
+    if (levando) return;
+    persist(true);
+    levando = true;
+    erroLevar = '';
+    render('[data-act="levar"]');
+    try {
+      levado = await mandarParaComputador(q);
+      void track('quiz_handoff', { question_count: prontas() });
+      levando = false;
+      render('#h-levar');
+      main.querySelector<HTMLElement>('#h-levar')?.setAttribute('tabindex', '-1');
+      main.querySelector<HTMLElement>('#h-levar')?.focus();
+      // no celular, abre direto o compartilhar (WhatsApp, e-mail, AirDrop…)
+      const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
+      if (nav.share && celular()) nav.share({ title: 'Quiz para abrir no computador', text: textoDoLink(q.titulo, levado.url) }).catch(() => {});
+    } catch (e) {
+      levando = false;
+      erroLevar = e instanceof Error ? e.message : 'Não deu para preparar o link agora. Tente de novo.';
+      render('[data-act="levar"]');
+    }
+  }
+
   const onClick = async (e: Event) => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
     if (!b || (b as HTMLButtonElement).disabled) return;
@@ -450,11 +601,12 @@ function mountEditor(main: HTMLElement) {
     const v = b.dataset.v || '';
     const i = Number(b.dataset.i);
     const p = q.perguntas[i];
-    if (revisao && ['novo','abrirquiz','excluirquiz','modelo','abrir','importar-locais','copia-conflito'].includes(a)) {
+    if (revisao && ['novo','abrirquiz','excluirquiz','modelo','abrir','importar-locais','copia-conflito','zero'].includes(a)) {
       const aviso = main.querySelector('[data-pdf-erro]'); if (aviso) aviso.textContent = 'Salve o rascunho ou volte ao quiz anterior antes de continuar.';
       return focoPerguntas();
     }
     msg = '';
+    aviso = '';
     if (saveTimer) persist(true);
     switch (a) {
       case 'modelo': {
@@ -464,10 +616,52 @@ function mountEditor(main: HTMLElement) {
         const mexeu = q.perguntas.some((x) => x.t.trim() && !padrao.has(x.t));
         if (mexeu && !confirm(`Trocar as perguntas atuais pelas 10 do quiz "${m.nome}"?`)) return;
         usarModelo(m);
+        escolhendo = false;
         void track('quiz_template_apply', {source:'template'});
         persist(true);
-        return render('textarea[data-i="0"]');
+        render('textarea[data-i="0"]');
+        return main.querySelector('#h-perg')?.scrollIntoView({ block: 'start' });
       }
+      case 'zero':
+        // do zero: uma pergunta em branco (sem as de exemplo) e o foco no nome do quiz
+        q.perguntas = [{ t: '', o: ['', '', '', ''], c: 0, tl: q.tempo }];
+        q.dobroUltima = false;
+        escolhendo = false;
+        void track('quiz_create', {source:'manual'});
+        persist(true);
+        render('#titulo');
+        return main.querySelector('#h-nome')?.scrollIntoView({ block: 'start' });
+      case 'ver-prontos':
+        verTodosProntos = true;
+        return render(`[data-act="modelo"][data-v="${MODELOS.find((m) => !['natal', 'confraternizacao', 'quebra-gelo', 'escola-fim-de-ano'].includes(m.id))?.id}"]`);
+      case 'ver-meus':
+        mostrarMeus = true;
+        return render('#h-meus');
+      case 'ir-abrir': {
+        const alvo = main.querySelector<HTMLElement>('#abrir-sala');
+        alvo?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        main.querySelector<HTMLElement>('[data-act="abrir"]')?.focus({ preventScroll: true });
+        return;
+      }
+      case 'pessoas':
+        if (v === 'pular') {
+          store.set('pessoas:' + q.id, 'pular');
+          mostrarPessoas = false;
+          refreshPlano();
+          return render('[data-act="abrir"]');
+        }
+        store.set('pessoas:' + q.id, v);
+        return render(`[data-act="pessoas"][data-v="${v}"]`);
+      case 'liberar-pessoas':
+        abrirPagamento('/criar', () => render('[data-act="abrir"]'), 'semana');
+        return;
+      case 'levar':
+        return void levar();
+      case 'copiar-levar':
+        if (levado) {
+          navigator.clipboard?.writeText(levado.url).then(() => (b.textContent = 'Link copiado!'), () => prompt('Copie o link:', levado!.url));
+        }
+        return;
       case 'pdf-ia':
         if (revisao) return focoPerguntas();
         if (iaTrancada || (await iaAcesso()) === 'trancada') {
@@ -490,6 +684,7 @@ function mountEditor(main: HTMLElement) {
         q = revisao.anterior; revisao = null; if (reviewKey) store.del(reviewKey); localSaveFailed = false; store.set(quizCurrentKey(),q.id);
         return render('[data-act="pdf-ia"]');
       case 'novo':
+        levado = null;
         q = novoQuiz(q.tema);
         void track('quiz_create', {source:'manual'});
         persist(true);
@@ -649,8 +844,8 @@ function mountEditor(main: HTMLElement) {
     const n = prontas();
     const tag = main.querySelector('#h-perg-n');
     if (tag) tag.textContent = contagem();
-    const btn = main.querySelector<HTMLButtonElement>('[data-act="abrir"]');
-    if (btn && !abrindo) {
+    for (const btn of main.querySelectorAll<HTMLButtonElement>('[data-act="abrir"], [data-act="ir-abrir"]')) {
+      if (abrindo && btn.dataset.act === 'abrir') continue;
       btn.disabled = !n;
       btn.textContent = n ? `Abrir a sala com ${n} ${n === 1 ? 'pergunta' : 'perguntas'}` : 'Complete ao menos uma pergunta';
     }
@@ -746,6 +941,28 @@ function mountEditor(main: HTMLElement) {
   main.addEventListener('input', onInput);
   main.addEventListener('change', onChange);
   render();
+  // chegou pelo link mandado do celular (/criar?levar=...): o quiz entra como um quiz novo neste computador
+  if (levarId)
+    receberDoCelular(levarId).then(
+      async (recebido) => {
+        if (!vivo) return;
+        // o quiz de exemplo que o editor criou ao abrir não fica para trás
+        if (intocado(q)) await excluir(q.id).catch(() => {});
+        else persist(true);
+        q = recebido;
+        escolhendo = false;
+        persist(true);
+        void track('quiz_create', { source: 'import' });
+        aviso = 'Quiz recebido do celular. Confira e abra a sala.';
+        render();
+        main.querySelector('#abrir-sala')?.scrollIntoView({ block: 'center' });
+      },
+      (e) => {
+        if (!vivo) return;
+        msg = e instanceof Error ? e.message : 'Não deu para abrir o quiz do celular.';
+        render();
+      },
+    );
   testeCobranca();
   // a cobrança chega depois; só o quadro do plano (e a marca, se destravou) é redesenhado, para não tirar o foco de quem digita
   const refreshPlano = () => {
@@ -766,6 +983,7 @@ function mountEditor(main: HTMLElement) {
   confereVolta(refreshPlano).then(() => retomaIa());
   return () => {
     vivo = false;
+    obsAbrir?.disconnect();
     window.removeEventListener('pagehide', flushOnLeave);
     window.removeEventListener('beforeunload', flushOnLeave);
     window.removeEventListener('qd:quiz-sync', refreshSaveStatus);

@@ -10,6 +10,7 @@ import { naoIndexar } from '../shared/seo';
 //   GET  /api/salas/{CODIGO}/ws  WebSocket da sala (anfitrião e jogadores)
 //   GET  /api/salas/{CODIGO}/logo logo do anfitrião
 //   GET  /api/salas/{CODIGO}/img/{N} imagem da pergunta N
+//   POST /api/levar, GET /api/levar/{id}: manda o quiz do celular para o computador (worker/levar.ts)
 //   /api/cobranca, /api/pix, /api/pix/status, /api/cartao, /api/acesso: cobrança (worker/cobranca.ts)
 // O resto vai para os arquivos estáticos; rotas como /criar e /ABCD caem no index.html.
 import {servicePromos} from './promos-service';
@@ -21,6 +22,7 @@ import { anotaUso, rotaUso } from './uso';
 import { rotaLogin } from './login';
 import { canonicalResponse } from './canonical';
 import { rotaQuizzes } from './quizzes';
+import { rotaLevar } from './levar';
 import type { Env } from './room';
 
 export { Room } from './room';
@@ -50,6 +52,9 @@ const app = {
     if (login) return login;
     const quizzes = await rotaQuizzes(req, env, url.pathname);
     if (quizzes) return quizzes;
+    // quiz do celular para o computador da TV (link temporário, sem conta)
+    const levar = await rotaLevar(req, env, url.pathname);
+    if (levar) return levar;
     // cobrança: Pix, cartão/Apple Pay/Google Pay e conferência do código de acesso
     const cob = await rotaCobranca(req, env, url.pathname, async (sala, hostKey) => {
       const code = normalizeCode(sala);

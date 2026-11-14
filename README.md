@@ -23,7 +23,8 @@ Para testar com o celular na mesma rede Wi-Fi: `npm run dev -- --host` e abra no
 | Endereço | O que é |
 | --- | --- |
 | `/` | Home: o que é, como funciona, os três modos |
-| `/criar` | Editor do quiz: Meus quizzes, nome do quiz (em Corporativo e Escola, logo e cor da marca no Passe e no Premium; no grátis, um cadeado leva aos planos), modo (Corporativo, Amigos & família, Escola), visual do jogo, tempo de cada pergunta, perguntas (2 de modelo: verdadeiro ou falso e múltipla escolha), abrir a sala |
+| `/criar` | Editor do quiz. Na primeira visita (ou com `?comecar=1`, vindo do fim do jogo) abre em "Como você quer começar?": quizzes prontos de todos os modos em cima e, com mais destaque embaixo, "Começar do zero" e "Criar com IA". Depois: Meus quizzes, nome do quiz (em Corporativo e Escola, logo e cor da marca no Passe e no Premium; no grátis, um cadeado leva aos planos), modo (Corporativo, Amigos & família, Escola), visual, tempo, perguntas (com "Trocar por um quiz pronto"), "Quantas pessoas vão jogar?" e abrir a sala. No celular, "Abrir a sala" fica fixo embaixo e o painel tem "Mandar para o computador" |
+| `/criar?levar={id}` | Abre no computador da TV o quiz mandado do celular (cópia de 7 dias, `worker/levar.ts`) |
 | `/host/{CODIGO}` | Tela do anfitrião, para a TV ou o projetor |
 | `/{CODIGO}` | Entrada e tela do jogador |
 | `/jogar` | Digitar o código da sala |
@@ -32,6 +33,14 @@ Para testar com o celular na mesma rede Wi-Fi: `npm run dev -- --host` e abra no
 | `/guias` e `/guias/{slug}` | Guias. Os textos ficam em `src/data/guias/*.ts`. O `npm run build` gera HTML pronto de cada guia (`scripts/prerender.mjs`), mais `sitemap.xml` e `robots.txt`, para os buscadores lerem sem JavaScript |
 
 Na tela do anfitrião, a seta para a direita, Page Down ou espaço avançam o jogo. Isso faz o passador de slides funcionar.
+
+## Do celular para o computador da TV
+
+Quem prepara o quiz no celular toca em "Mandar para o computador" (painel "Abrir a sala"). O servidor guarda uma cópia do quiz por 7 dias na tabela `qd_levar` do D1 (`POST /api/levar`), com um id aleatório de 22 caracteres, e o celular manda o link `/criar?levar={id}` pelo WhatsApp, e-mail ou compartilhar. No computador, o link importa o quiz como um quiz novo (`GET /api/levar/{id}`). Não guarda e-mail nem nome; para limitar abusos (30 envios por hora), guarda só um resumo (hash) do endereço de internet que muda todo dia. Acima de 1,8 MB (limite de linha do D1), o quiz vai sem as imagens e o site avisa. Evento `quiz_handoff` na medição.
+
+## Quantas pessoas vão jogar
+
+No painel "Abrir a sala", a pergunta "Quantas pessoas vão jogar?" (até 10, 11 a 30, 31 a 100, mais de 100) é opcional e fica guardada só neste navegador, por quiz. Acima de 10, mostra antes do evento o Passe 7 dias (um evento) e a assinatura (quem faz quiz sempre), com os preços de `/api/cobranca`, e o botão "Liberar até 200 pessoas". Quem já tem plano vê "Tudo certo".
 
 ## Personagens
 

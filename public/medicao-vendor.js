@@ -14,7 +14,7 @@
   let metaLoaded = false;
   const metaCallbacks = [];
   const allowedPaths = new Set(['/', '/criar', '/jogar', '/entrar', '/precos', '/guias', '/privacidade']);
-  const events = new Set(['page_view','create_room','begin_checkout','purchase','view_item','navigation','quiz_create','quiz_template_apply','quiz_edit_start','quiz_save','quiz_save_error','create_room_start','create_room_error','join_room_start','join_room','join_room_error','game_start','answer_recorded','game_complete','view_offer','select_plan','checkout_error','access_granted','pdf_upload_start','pdf_upload_success','pdf_upload_error','ai_generation_start','ai_generation_success','ai_generation_error','ai_generation_pending','ai_review_open']);
+  const events = new Set(['page_view','create_room','begin_checkout','purchase','view_item','navigation','quiz_create','quiz_template_apply','quiz_edit_start','quiz_save','quiz_save_error','create_room_start','create_room_error','join_room_start','join_room','join_room_error','game_start','answer_recorded','game_complete','view_offer','select_plan','checkout_error','access_granted','pdf_upload_start','pdf_upload_success','pdf_upload_error','ai_generation_start','ai_generation_success','ai_generation_error','ai_generation_pending','ai_review_open','quiz_handoff']);
   // Funil de aquisição: visita, sala aberta, planos, checkout e compra. O resto é uso detalhado do produto.
   const funnelEvents = new Set(['page_view','create_room','view_item','begin_checkout','purchase']);
   const gameEvents = new Set(['join_room_start','join_room','join_room_error','game_start','answer_recorded','game_complete']);

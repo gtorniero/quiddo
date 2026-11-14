@@ -42,22 +42,23 @@ describe('página de planos', () => {
     expect(html).toContain('data-plano="anual"');
   });
   it('preços sem ambiguidade: Anual por ano (equivale por mês) e Mensal por mês', () => {
-    expect(html).toContain('R$ 156<small>/ano</small>');
-    expect(html).toContain('Equivale a R$ 13 por mês. No Mensal, R$ 15,99 por mês.');
-    expect(html).not.toContain('R$ 13<small>/mês</small>');
+    expect(html).toContain('R$ 99<small>/ano</small>');
+    expect(html).toContain('Equivale a R$ 8,25 por mês. No Mensal, R$ 12,90 por mês.');
+    expect(html).not.toContain('R$ 8,25<small>/mês</small>');
     const mensal = precosHtml({ ...e, periodo: 'mensal' });
-    expect(mensal).toContain('R$ 15,99<small>/mês</small>');
-    expect(mensal).toContain('No Anual, R$ 156 por ano (R$ 13 por mês).');
-    expect(html).toContain('Anual <small>-19%</small>');
+    expect(mensal).toContain('R$ 12,90<small>/mês</small>');
+    expect(mensal).toContain('No Anual, R$ 99 por ano (R$ 8,25 por mês).');
+    // 12 × R$ 12,90 = R$ 154,80; R$ 99 por ano sai 36% mais barato
+    expect(html).toContain('Anual <small>-36%</small>');
   });
   it('dados estruturados: ofertas em BRL e as mesmas perguntas visíveis', () => {
     const app = appJsonLd(e);
     expect(app['@type']).toBe('SoftwareApplication');
     expect(app.offers.map((o) => [o.name, o.price, o.priceCurrency])).toEqual([
       ['Grátis, salas de até 10 pessoas', '0.00', 'BRL'],
-      ['Assinatura Premium Anual', '156.00', 'BRL'],
-      ['Assinatura Premium Mensal', '15.99', 'BRL'],
-      ['Passe 7 dias', '12.99', 'BRL'],
+      ['Assinatura Premium Anual', '99.00', 'BRL'],
+      ['Assinatura Premium Mensal', '12.90', 'BRL'],
+      ['Passe 7 dias', '19.90', 'BRL'],
     ]);
     const faq = faqJsonLd(perguntasPlanos(e));
     for (const q of faq.mainEntity) expect(html).toContain(`<summary>${q.name}</summary>`);

@@ -110,11 +110,11 @@ Mesmo modelo do Retrozap. Os planos estão em `/precos`:
 | Plano | Preço | O que libera |
 | --- | --- | --- |
 | Grátis | R$ 0 | Salas de até 10 pessoas, todos os modos e visuais, com as cores do Quiddo e o nome do quiz |
-| Passe 7 dias (avulso) | R$ 12,99 (`PRECOS.semana`) | Salas de até 200 pessoas e a sua marca (logo e cor), jogos ilimitados por 7 dias; Pix ou cartão |
-| Assinatura Mensal | R$ 15,99/mês (`PRECOS.mensal`, id do Stripe em `STRIPE_PRECO_ID.mensal`) | Salas de até 200 e a sua marca, renova a cada mês; só cartão |
-| Assinatura Anual | R$ 156/ano, mostrado como R$ 156/ano com "equivale a R$ 13 por mês" (`PRECOS.anual`, id do Stripe em `STRIPE_PRECO_ID.anual`) | Os mesmos benefícios do Mensal, renova a cada ano; só cartão. Só aparece com o preço anual configurado |
+| Passe 7 dias (avulso) | R$ 19,90 (`PRECOS.semana`) | Salas de até 200 pessoas e a sua marca (logo e cor), jogos ilimitados por 7 dias; Pix ou cartão |
+| Assinatura Mensal | R$ 12,90/mês (`PRECOS.mensal`, id do Stripe em `STRIPE_PRECO_ID.mensal`) | Salas de até 200 e a sua marca, renova a cada mês; só cartão |
+| Assinatura Anual | R$ 99/ano, mostrado como R$ 99/ano com "equivale a R$ 8,25 por mês" (`PRECOS.anual`, id do Stripe em `STRIPE_PRECO_ID.anual`) | Os mesmos benefícios do Mensal, renova a cada ano; só cartão. Só aparece com o preço anual configurado |
 
-**Mudar preços:** todos os valores ficam em `shared/precos.mjs` (`PRECOS`): servidor, site, páginas pré-renderizadas e a conferência da assinatura do Quiz com IA leem daqui. Para Mensal e Anual, crie antes no Stripe um preço novo com o mesmo valor e troque o id em `STRIPE_PRECO_ID` (mesmo arquivo) e em `STRIPE_PRECO_MENSAL_ID`/`STRIPE_PRECO_ANUAL_ID` no `wrangler.jsonc`; o teste `tests/precos.test.ts` confere que os ids batem e que nenhum preço ficou escrito à mão no código. Os testes de cobrança (`billing-tests/`, `tests/seo.test.ts`) usam os valores atuais como exemplo e mudam junto. As antigas variáveis de painel `PRECO_*` não valem mais.
+**Mudar preços:** todos os valores ficam em `shared/precos.mjs` (`PRECOS`): servidor, site, páginas pré-renderizadas e a conferência da assinatura do Quiz com IA leem daqui. Para Mensal e Anual, crie antes no Stripe um preço novo com o mesmo valor e troque o id em `STRIPE_PRECO_ID` (mesmo arquivo) e em `STRIPE_PRECO_MENSAL_ID`/`STRIPE_PRECO_ANUAL_ID` no `wrangler.jsonc`; o teste `tests/precos.test.ts` confere que os ids batem e que nenhum preço ficou escrito à mão no código. Os testes de cobrança (`billing-tests/`, `tests-pdf/`) leem os valores de `PRECOS`; só `tests/seo.test.ts` tem os textos da página de planos escritos por extenso. As antigas variáveis de painel `PRECO_*` não valem mais.
 
 **Marca própria:** logo e cor da marca são do Passe 7 dias e da Assinatura Premium, só em Corporativo e Escola (`marcaPropria` em `shared/rules.ts`). O nome do quiz continua grátis. O servidor é quem decide: a sala guarda o logo e a cor que o editor manda, mas só mostra (e só serve `/api/salas/{CODIGO}/logo`) quando a sala está liberada (`marcaDaSala` em `shared/game.ts`). Se o anfitrião libera com a sala aberta, a marca aparece na hora. Salas grátis com marca salva abrem normalmente, com as cores do Quiddo.
 
@@ -124,7 +124,7 @@ Na assinatura, o período pago vale até o fim: cancelar só impede a próxima r
 
 **Janela de pagamento:** só os planos, o e-mail, os botões de pagar, "Continuar grátis, até 10 pessoas" (fecha a janela) e o link "Dúvidas? Veja as perguntas frequentes" (abre `/precos#perguntas` em outra aba). Regras de renovação e devolução ficam nas perguntas frequentes, não na janela.
 
-**Oferta da sala cheia:** quando alguém tenta entrar na sala grátis cheia, o celular dessa pessoa fica esperando (e entra sozinho quando liberar) e a tela do anfitrião mostra no topo quantos estão esperando, com o Passe 7 dias de R$ 12,99 por R$ 9,99 (`PRECOS.oferta`), só no Pix. O servidor confere na própria sala: chave do anfitrião, sala grátis e gente esperando.
+**Oferta da sala cheia:** quando alguém tenta entrar na sala grátis cheia, o celular dessa pessoa fica esperando (e entra sozinho quando liberar) e a tela do anfitrião mostra no topo quantos estão esperando, com o Passe 7 dias de R$ 19,90 por R$ 12,90 (`PRECOS.oferta`). Regra: a oferta nunca fica mais barata que a assinatura Mensal (`tests/precos.test.ts`); hoje é o mesmo valor do Mensal, no Pix e sem precisar de conta, para liberar na hora. O servidor confere na própria sala: chave do anfitrião, sala grátis e gente esperando.
 
 O quiz é criado e a sala abre de graça; o pagamento só aparece quando a pessoa quer mais de 10 (no editor, na sala de espera ou na página de preços). Mensal e Anual são assinaturas no cartão, com renovação automática e cancelamento em Minha conta; o Passe de 7 dias é avulso.
 
@@ -169,7 +169,7 @@ A pessoa digita o e-mail, recebe um código de 6 dígitos (vale 10 minutos) e en
 3. No Cloudflare, em **Workers & Pages → quiddo → Settings → Variables and Secrets**: `RESEND_KEY` como **Secret** e `EMAIL_DE` como texto, por exemplo `Quiddo <entrar@seudominio.com.br>`.
 4. Para o site e o cookie ficarem no seu domínio: **Settings → Domains & Routes → Add → Custom domain** (ex.: `quiddo.com.br`).
 
-**Ordem na página de planos e na janela de pagamento:** a Assinatura Premium vem primeiro (Anual marcado, Mensal ao lado), o Passe 7 dias aparece como alternativa avulsa e o Grátis fecha a lista. O preço sempre leva o período escrito: Anual R$ 156/ano (equivale a R$ 13/mês), Mensal R$ 15,99/mês. O texto dos planos fica em `src/lib/paginas-html.ts`, o mesmo do pré-render; os valores vêm de `shared/precos.mjs`.
+**Ordem na página de planos e na janela de pagamento:** a Assinatura Premium vem primeiro (Anual marcado, Mensal ao lado), o Passe 7 dias aparece como alternativa avulsa e o Grátis fecha a lista. O preço sempre leva o período escrito: Anual R$ 99/ano (equivale a R$ 8,25/mês), Mensal R$ 12,90/mês. O texto dos planos fica em `src/lib/paginas-html.ts`, o mesmo do pré-render; os valores vêm de `shared/precos.mjs`.
 
 ## Medição e anúncios
 

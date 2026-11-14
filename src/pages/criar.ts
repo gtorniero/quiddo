@@ -104,9 +104,10 @@ function mountEditor(main: HTMLElement) {
 
   /** Troca as perguntas pelas 10 de um quiz pronto (respostas embaralhadas, menos as de duas opções). */
   const usarModelo = (m: Modelo) => {
-    q.tema = 'festa';
+    q.tema = m.tema ?? 'festa';
     q.visual = visualDoModo(q.tema, q.visual);
     q.perguntas = m.perguntas.map((x) => {
+      if (x.vf) return { t: x.t, o: ['Verdadeiro', 'Falso'], c: x.c, tl: q.tempo, vf: true };
       if (x.o.length <= 2) return { t: x.t, o: [...x.o], c: x.c, tl: q.tempo };
       const idx = x.o.map((_, k) => k).sort(() => Math.random() - 0.5);
       return { t: x.t, o: idx.map((k) => x.o[k]), c: idx.indexOf(x.c), tl: q.tempo };
@@ -119,7 +120,7 @@ function mountEditor(main: HTMLElement) {
   // link direto para um quiz pronto (ex.: /criar?modelo=natal): começa um quiz novo com ele
   const modeloUrl = MODELOS.find((m) => m.id === entryTemplate(location.search));
   if (modeloUrl && !revisao) {
-    q = novoQuiz('festa');
+    q = novoQuiz(modeloUrl.tema ?? 'festa');
     usarModelo(modeloUrl);
     history.replaceState(null, '', location.pathname);
   }
@@ -308,7 +309,7 @@ function mountEditor(main: HTMLElement) {
   /** Quizzes prontos do modo Amigos & família: um toque carrega as 10 perguntas, e dá para editar tudo. */
   function secModelos() {
     return `<div class="modelos" role="group" aria-labelledby="h-modelos"><h3 id="h-modelos">Comece com um quiz pronto</h3><p class="small">10 perguntas prontas. Dá para editar, tirar ou acrescentar.</p>
-      <div class="modelos-lista">${MODELOS.map((m) => `<button class="btn sec modelo" data-act="modelo" data-v="${m.id}"><b>${esc(m.nome)}</b><span>${esc(m.desc)}</span></button>`).join('')}</div></div>`;
+      <div class="modelos-lista">${MODELOS.filter((m) => !m.soLink).map((m) => `<button class="btn sec modelo" data-act="modelo" data-v="${m.id}"><b>${esc(m.nome)}</b><span>${esc(m.desc)}</span></button>`).join('')}</div></div>`;
   }
 
   const nomeTipo = (p: Quiz['perguntas'][number]) => (p.vf ? 'Verdadeiro ou falso' : p.tipo === 'opiniao' ? 'Enquete' : p.tipo === 'quem' ? 'Quem é mais provável' : 'Múltipla escolha');

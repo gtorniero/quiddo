@@ -130,6 +130,8 @@ for (const g of guias) {
           publisher: { '@type': 'Organization', name: 'Quiddo', url: `${SITE}/`, logo: { '@type': 'ImageObject', url: `${SITE}/marca/quiddo-cor.svg` } },
         },
         migalha([['Quiddo', `${SITE}/`], ['Guias', urlLista], [g.titulo, url]]),
+        // só com as perguntas visíveis no fim do artigo (faqHtml usa os mesmos dados)
+        ...(g.faq?.length ? [pg.faqJsonLd(g.faq)] : []),
       ],
     }),
   );

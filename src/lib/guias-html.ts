@@ -77,11 +77,15 @@ export function listaHtml() {
   );
 }
 
+/** Perguntas frequentes visíveis no fim do artigo: as mesmas do FAQPage do pré-render. */
+export const faqHtml = (g: Guia) =>
+  g.faq?.length ? `<h2 id="perguntas-frequentes">Perguntas frequentes</h2>${g.faq.map(([q, r]) => `<h3>${esc(q)}</h3><p>${esc(r)}</p>`).join('')}` : '';
+
 export function artigoHtml(g: Guia) {
   const rel = relacionados(g);
   return (
     `<p><a href="/guias" data-link>← Todos os guias</a></p>` +
-    `<article class="panel prose"><h1>${esc(g.titulo)}</h1><p class="muted">${esc(g.resumo)}</p>${g.corpo}</article>` +
+    `<article class="panel prose"><h1>${esc(g.titulo)}</h1><p class="muted">${esc(g.resumo)}</p>${g.corpo}${faqHtml(g)}</article>` +
     (rel.length ? `<section class="panel"><h2>Leia também</h2><div class="guias">${rel.map(cartao).join('')}</div></section>` : '') +
     `<section class="panel"><h2>Pronto para testar?</h2><a class="btn" href="/criar" data-link>Criar meu quiz</a></section>`
   );

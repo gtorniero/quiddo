@@ -2,6 +2,8 @@ import test from 'node:test';import assert from 'node:assert/strict';import fs f
 const {Miniflare,convertV4MiniflareOptions}=await import(process.env.MINIFLARE_TEST_MODULE || 'miniflare');
 import {PDFDocument} from '../vendor/pdf-lib.js';
 import {fixture,renew} from './fixtures.mjs';
+import {PRECOS,centavos} from '../shared/precos.mjs';
+const ANUAL_CENTAVOS=centavos(PRECOS.anual);
 async function sample(pages){const doc=await PDFDocument.create();for(let n=0;n<pages;n++)doc.addPage().drawText('Fictional test page '+(n+1));return Buffer.from(await doc.save());}
 const pdf=await sample(52);const scan=await sample(8);
 const origin='http://localhost',gate=crypto.randomUUID()+crypto.randomUUID();
@@ -17,12 +19,12 @@ const status=cookie=>call('/api/pdf/status',{cookie});
 const generate=(cookie,id=crypto.randomUUID(),pages='2-51',bytes=pdf,extra={})=>call('/api/pdf/generate?pages='+encodeURIComponent(pages),{cookie,body:bytes,headers:{'content-type':'application/pdf','idempotency-key':id,...extra}});
 function record(name,details){evidence.cases.push({name,passed:true,...details});}
 function annualFixture(){
-  const annual=fixture(), annualPrice='price_1UXtqY134hMOoEZVGgIdzQ7a';
+  const annual=fixture(), annualPrice='price_1UbiSf134hMOoEZVBWt3slrl';
   const item=annual.billing.subscription.items.data[0],line=annual.billing.invoice.lines.data[0];
   annual.billing.expectedPrice=annualPrice;
-  item.price.id=annualPrice;item.price.unit_amount=15600;item.price.recurring.interval='year';
+  item.price.id=annualPrice;item.price.unit_amount=ANUAL_CENTAVOS;item.price.recurring.interval='year';
   item.current_period_end=item.current_period_start+365*86400;
-  annual.billing.invoice.amount_paid=15600;line.amount=15600;line.pricing.price_details.price=annualPrice;line.period.end=item.current_period_end;
+  annual.billing.invoice.amount_paid=ANUAL_CENTAVOS;line.amount=ANUAL_CENTAVOS;line.pricing.price_details.price=annualPrice;line.period.end=item.current_period_end;
   return annual;
 }
 

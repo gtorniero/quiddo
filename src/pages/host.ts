@@ -74,11 +74,12 @@ function mount(main: HTMLElement, code: string) {
     if (!cena) return;
     const todos = [...cena.querySelectorAll<SVGGElement>('.torcedor')];
     for (const id of ids) {
-      const g = todos.find((t) => t.dataset.pid === id) || todos[(id.length * 7 + toques) % Math.max(1, todos.length)];
-      if (!g) continue;
-      g.classList.remove('pula');
-      void g.getBoundingClientRect();
-      g.classList.add('pula');
+      const dele = todos.filter((t) => t.dataset.pid === id);
+      for (const g of dele.length ? dele : todos.slice(0, 1)) {
+        g.classList.remove('pula');
+        void g.getBoundingClientRect();
+        g.classList.add('pula');
+      }
     }
     toques += ids.length;
     let placa = main.querySelector<HTMLElement>('.toques-torcida');

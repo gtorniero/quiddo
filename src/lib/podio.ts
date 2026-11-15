@@ -270,7 +270,8 @@ function cenaEstadio(torcida: RankRow[] = []) {
   ).join('');
   const luzes = Array.from({ length: 22 }, (_, i) => `<circle class="luz-cel" style="animation-delay:-${(i * 0.37) % 2.4}s" cx="${(i * 113) % 1180 + 10}" cy="${140 + ((i * 41) % 80)}" r="3.4"/>`).join('');
   // fileira da frente: até 16 bichos de quem jogou; sem ninguém, cadeiras coloridas
-  const frente = torcida.slice(0, 16);
+  // 16 lugares: com pouca gente, os mesmos bichos se repetem para a arquibancada parecer cheia
+  const frente = torcida.length ? Array.from({ length: 16 }, (_, i) => torcida[i % Math.min(torcida.length, 16)]) : [];
   const passo = frente.length ? 1200 / frente.length : 0;
   const bichos = frente
     .map((r, i) => `<g class="torcedor" data-pid="${esc(r.id)}" style="animation-delay:-${(i * 0.23) % 1.4}s" transform="translate(${Math.round(passo * i + passo / 2 - 26)} ${i % 2 ? 252 : 244})">${avatarSvg(r.avatar, 52)}</g>`)

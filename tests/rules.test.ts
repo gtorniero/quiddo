@@ -48,7 +48,7 @@ describe('perguntas', () => {
     expect(escola.theme).toBe('escola');
     expect(escola.brand).toEqual({ name: 'Escola X', color: '#123456' });
     const festa = validateCreate({ theme: 'festa', questions: [{ t: 'a', o: ['1', '2'], c: 0, tl: 10 }], brand: { name: 'Bia', color: '#123456' }, logo: 'data:image/png;base64,AAAA' });
-    expect(festa.brand).toEqual({ name: '', color: '' });
+    expect(festa.brand).toEqual({ name: 'Bia', color: '' });
     expect(festa.logo).toBe('');
     expect(() => validateCreate({ questions: [] })).toThrow();
   });

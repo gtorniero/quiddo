@@ -730,6 +730,30 @@ input.code {
   line-height: 1.15;
 }
 
+/* na TV, o nome do quiz é o letreiro do programa: centralizado e grande */
+main.tv .brand {
+  justify-content: center;
+  padding: 10px 22px;
+}
+main.tv .brand b {
+  font-size: clamp(26px, 3.2vw, 44px);
+  text-align: center;
+}
+/* Futebol: o nome vira o placar do estádio */
+[data-visual='futebol'] .brand {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.07) 1px, rgba(255, 255, 255, 0) 1.6px) 0 0 / 6px 6px, linear-gradient(180deg, #12301f, #0a1f14 60%);
+  border-color: #0a1f14;
+  border-left-color: #ffd43b;
+  color: #ffd43b;
+}
+[data-visual='futebol'] .brand b {
+  font-family: var(--placar);
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 /* ---------- jogo ---------- */
 .bigcode {
   justify-self: start;
@@ -7072,4 +7096,9 @@ body:has(main.tv) .foot button {
   .cena-estadio .torcedor.pula > svg {
     animation: none;
   }
+}
+
+/* Futebol: o "Sair da sala" do celular fica sobre o gramado; texto claro para dar contraste */
+[data-visual='futebol'] p.center.small > .linkbtn {
+  color: #fff8ec;
 }

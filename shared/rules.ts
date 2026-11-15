@@ -148,9 +148,8 @@ export function validateCreate(body: unknown): CreateRoomBody {
   // logo fora do formato ou grande demais é ignorado: a sala abre sem ele (o editor já reduz a imagem).
   // Na sala grátis, logo e cor ficam guardados, mas só aparecem se o anfitrião liberar (shared/game.ts, marcaDaSala).
   let logo = typeof b.logo === 'string' && IMG_RE.test(b.logo) && b.logo.length <= LIMITS.logoBytes ? b.logo : '';
-  // Amigos & família não leva marca: nem nome, nem cor, nem logo
+  // Amigos & família não leva marca (cor e logo); o nome do quiz aparece, como em todos os modos
   if (theme === 'festa') {
-    brand.name = '';
     brand.color = '';
     logo = '';
   }

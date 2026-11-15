@@ -545,7 +545,7 @@ function mountEditor(main: HTMLElement) {
     const festa = q.tema === 'festa';
     // logo e cor salvos vão mesmo com cadeado: o servidor guarda e só mostra se a sala for liberada (Passe ou Premium),
     // inclusive quando o anfitrião libera com a sala aberta
-    const body: CreateRoomBody = { questions, theme: q.tema, visual: visualDoModo(q.tema, q.visual), brand: festa ? { name: '', color: '' } : { name: q.titulo.trim(), color: q.marca.color }, logo: festa ? '' : q.logo, acesso: meuAcesso() || undefined, testeCobranca: testeCobranca() || undefined };
+    const body: CreateRoomBody = { questions, theme: q.tema, visual: visualDoModo(q.tema, q.visual), brand: festa ? { name: q.titulo.trim(), color: '' } : { name: q.titulo.trim(), color: q.marca.color }, logo: festa ? '' : q.logo, acesso: meuAcesso() || undefined, testeCobranca: testeCobranca() || undefined };
     abrindo = true;
     erro = '';
     render();

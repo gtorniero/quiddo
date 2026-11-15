@@ -21,7 +21,18 @@ const coracao = (x: number, y: number, s: number, cor: string, rot = 0) =>
 const estrela = (x: number, y: number, s: number, cor: string) =>
   `<path transform="translate(${x} ${y}) scale(${s})" d="M0 -11 l3.2 6.8 7.6 1 -5.6 5.2 1.4 7.4 -6.6 -3.6 -6.6 3.6 1.4 -7.4 -5.6 -5.2 7.6 -1z" fill="${cor}" stroke="${INK}" stroke-width="${2 / s}" stroke-linejoin="round"/>`;
 
+/** Bola de futebol (gomos pretos), para o visual Futebol. */
+const bola = (x: number, y: number, r: number, rot = 0) =>
+  `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${r / 32})"><circle r="32" fill="#fff" stroke="${INK}" stroke-width="5"/><path d="M0 -13l12 9-5 14H-7l-5-14Z" fill="${INK}"/><path d="M0 -13V-30M12 -4l16-6M7 10l10 14M-7 10l-10 14M-12 -4l-16-6" stroke="${INK}" stroke-width="4"/></g>`;
+
+/** Apito de árbitro com cordão verde e amarelo. */
+const apito = (x: number, y: number, s: number, rot = 0) =>
+  `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s})"><path d="M76 20c14 8 16 30 2 44" fill="none" stroke="${INK}" stroke-width="9" stroke-linecap="round"/><path d="M76 20c14 8 16 30 2 44" fill="none" stroke="#FFD43B" stroke-width="5" stroke-linecap="round"/><path d="M0 0H50A22 22 0 1 1 28 22V12H0Q-4 12-4 8V4Q-4 0 0 0Z" fill="#D5DAE0" stroke="${INK}" stroke-width="5" stroke-linejoin="round"/><path d="M3 4H46" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M34 0h12l-3 7h-6Z" fill="${INK}"/><circle cx="48" cy="22" r="9" fill="#5A646E" stroke="${INK}" stroke-width="3"/><circle cx="46" cy="24" r="4" fill="#E8B923"/><circle cx="72" cy="14" r="6" fill="none" stroke="${INK}" stroke-width="4"/></g>`;
+
 const CONTAS: Record<Exclude<Visual, 'floresta'>, string> = {
+  // gramado redondo com o meio-campo, anel amarelo do placar, apito e bola em volta
+  futebol: `<defs><clipPath id="cf-campo"><circle cx="150" cy="150" r="132"/></clipPath></defs><circle cx="150" cy="150" r="136" fill="#0B5D2E" stroke="${INK}" stroke-width="8"/><g clip-path="url(#cf-campo)">${Array.from({ length: 6 }, (_, i) => `<rect x="${14 + i * 48}" y="0" width="24" height="300" fill="#12723A"/>`).join('')}<path d="M150 14V286" stroke="#fff" stroke-width="5" opacity=".7"/></g>${anel('#0A3D1F', '#FFD43B')}<circle cx="150" cy="150" r="88" fill="#1D4ED8" stroke="${INK}" stroke-width="7"/>${miolo()}
+    ${apito(196, 20, 1.1, 18)}${bola(46, 254, 30, -20)}`,
   // relógio de parede colorido, post-its colados em volta e a caneca de café soltando fumaça
   escritorio: `<circle cx="150" cy="150" r="136" fill="#FFC23D" stroke="${INK}" stroke-width="8"/>${anel('#FFE7A6', '#4C6FFF')}<circle cx="150" cy="150" r="88" fill="#FF5C8A" stroke="${INK}" stroke-width="7"/>${miolo()}
     ${postit(34, 40, 52, -12, '#7FE0B5')}${postit(262, 52, 46, 10, '#8FA6FF')}
@@ -62,6 +73,15 @@ function espalha(n: number, f: (x: number, y: number, i: number) => string) {
 }
 
 const CORTINAS: Record<Exclude<Visual, 'floresta'>, string> = {
+  // a bola atravessa o estádio: torcida em silhueta com luzes de celular, placa e gramado
+  futebol: `<rect width="1000" height="600" fill="#0B1420"/>
+    <g fill="#04080A">${Array.from({ length: 4 }, (_, l) => Array.from({ length: 38 }, (_, i) => `<circle cx="${i * 27 + (l % 2) * 13}" cy="${40 + l * 62}" r="13"/><ellipse cx="${i * 27 + (l % 2) * 13}" cy="${66 + l * 62}" rx="19" ry="14"/>`).join('')).join('')}</g>
+    <g fill="#fff">${Array.from({ length: 24 }, (_, i) => `<circle cx="${(i * 131) % 980 + 10}" cy="${(i * 53) % 250 + 20}" r="4"/>`).join('')}</g>
+    <rect y="290" width="1000" height="50" fill="#FFD43B" stroke="${INK}" stroke-width="5"/>
+    <g font-family="Bebas Neue, Impact, sans-serif" font-size="36" fill="${INK}" letter-spacing="4">${[20, 360, 700].map((x) => `<text x="${x}" y="328">ROLA A BOLA · QUIDDO</text>`).join('')}</g>
+    <rect y="340" width="1000" height="260" fill="#0B5D2E"/>${Array.from({ length: 13 }, (_, i) => `<rect x="${i * 80}" y="340" width="40" height="260" fill="#12723A"/>`).join('')}
+    <path d="M500 340V600" stroke="#fff" stroke-width="6" opacity=".7"/><ellipse cx="500" cy="470" rx="120" ry="70" fill="none" stroke="#fff" stroke-width="6" opacity=".7"/>
+    ${bola(500, 470, 70, 25)}`,
   escritorio: espalha(24, (x, y, i) => postit(x + 60, y + 60, 150, ((i * 37) % 30) - 15, ['#FFC23D', '#FF8FB0', '#8FA6FF', '#7FE0B5'][i % 4])),
   entretenimento: `<g stroke="${INK}" stroke-width="6">${Array.from({ length: 12 }, (_, i) => `<path d="M${i * 90 - 20} -20 q30 320 0 640 h90 q-30 -320 0 -640z" fill="${i % 2 ? '#A81B2E' : '#D7263D'}"/>`).join('')}</g>
     <g><rect x="-20" y="250" width="1100" height="100" fill="#1A1A1E" stroke="${INK}" stroke-width="6"/>${Array.from({ length: 28 }, (_, i) => `<rect x="${i * 40}" y="262" width="22" height="14" rx="3" fill="#F5F0E6"/><rect x="${i * 40}" y="324" width="22" height="14" rx="3" fill="#F5F0E6"/>`).join('')}</g>

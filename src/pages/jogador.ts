@@ -17,7 +17,7 @@ const LAPIS =
 import { avatarSvg, comMoldura } from '../lib/avatar-art';
 import { cartaoResultado, compartilharCartao, tituloCartao } from '../lib/cartao';
 import { simbolo } from '../lib/simbolos';
-import { FOGO, MOEDA, SUSPENSE_MS, tamanhoResposta, agendaPodio, novosNoPodio, answersStatic, aplaude, prepare, preparando, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick, top10 } from './jogo-comum';
+import { falaDoVisual, FOGO, MOEDA, SUSPENSE_MS, tamanhoResposta, agendaPodio, novosNoPodio, answersStatic, aplaude, prepare, preparando, brandBar, coins, confete, countUp, errorScreen, podiumTitle, questionHead, rankList, tick, top10 } from './jogo-comum';
 
 interface Seat {
   pid: string;
@@ -284,7 +284,7 @@ function mount(main: HTMLElement, code: string) {
         (o, k) =>
           `<button class="ans c${k}${soLetras ? ' so-letra' : tamanhoResposta(o)}${chosen != null && chosen !== k ? ' dim' : ''}${chosen === k ? ' mine' : ''}" data-act="ans" data-v="${k}" data-focus="a${k}"${chosen != null ? ' disabled' : ''}${
             chosen === k ? ' aria-pressed="true"' : ''
-          }${soLetras ? ` aria-label="${LETRAS[k]}: ${esc(o)}"` : ''}>${simbolo(k)}<span class="lt">${LETRAS[k]}</span>${soLetras ? '' : `<span>${esc(o)}</span><span></span>`}</button>`,
+          }${soLetras ? ` aria-label="${LETRAS[k]}: ${esc(o)}"` : ''}>${simbolo(k, 'sym', s.visual)}<span class="lt">${LETRAS[k]}</span>${soLetras ? '' : `<span>${esc(o)}</span><span></span>`}</button>`,
       )
       .join('');
     const dica =
@@ -313,7 +313,7 @@ function mount(main: HTMLElement, code: string) {
     // na última não mostra a posição: ela entregaria o pódio
     const ultima = s.qIndex >= s.total - 1;
     const fogo = ok && s.me.streak >= FOGO ? `<div class="fogo-selo">${comMoldura(avatarSvg(s.me.avatar, 56), 'fogo')}<span><b>${s.me.streak} acertos seguidos!</b> Você está pegando fogo.</span></div>` : '';
-    return `<section class="stage revelada">${questionHead(s)}<div class="verdict ${ok ? 'ok' : 'no'}" role="status">${answered ? (ok ? `Mandou bem! +${fmt(s.me.delta)}` : 'Quase!') : 'Não respondeu'}</div>
+    return `<section class="stage revelada">${questionHead(s)}<div class="verdict ${ok ? 'ok' : 'no'}" role="status">${answered ? (ok ? `${falaDoVisual(s).acerto} +${fmt(s.me.delta)}` : falaDoVisual(s).erro) : 'Não respondeu'}</div>
       <p class="hint minha-posicao">${ultima ? '<b>Olhe para a tela:</b> o pódio vem aí!' : `Você está em <b>${s.me.rank}º lugar</b>, com ${fmt(s.me.score)} pontos.${vizinhoTxt(s)}`}</p>${fogo}
       ${answersStatic(s, s.me.choice)}</section>`;
   }
@@ -329,7 +329,7 @@ function mount(main: HTMLElement, code: string) {
   function ranking(s: PlayerState) {
     const subiu = s.me.prevRank && s.me.prevRank > s.me.rank ? `<p class="subiu">▲ Subiu ${s.me.prevRank - s.me.rank} ${s.me.prevRank - s.me.rank === 1 ? 'posição' : 'posições'}</p>` : '';
     const mold = s.me.streak >= FOGO ? 'fogo' : s.me.rank === 1 && s.me.score > 0 ? 'lider' : null;
-    return `<section class="stage center"><div class="tag">Ranking</div><span class="eu-mold">${comMoldura(avatarSvg(s.me.avatar, 88), mold)}</span><div class="big">${s.me.rank}º</div>${subiu}<p class="muted">de ${s.playerCount}</p>
+    return `<section class="stage center"><div class="tag">${falaDoVisual(s).ranking}</div><span class="eu-mold">${comMoldura(avatarSvg(s.me.avatar, 88), mold)}</span><div class="big">${s.me.rank}º</div>${subiu}<p class="muted">de ${s.playerCount}</p>
       <p class="placar"><b class="meus-pts">${fmt(s.me.score)}</b> pontos${s.me.delta ? ` <span class="ganho">${MOEDA}+${fmt(s.me.delta)}</span>` : ''}</p></section>
       <section class="panel"><div class="tag">Os primeiros</div>${rankList(s.ranking, s.me.id)}</section>`;
   }
@@ -344,6 +344,7 @@ function mount(main: HTMLElement, code: string) {
     const meu =
       passo >= 4
         ? `${palmas}<div class="big">${s.me.rank}º lugar</div><p class="muted">${fmt(s.me.score)} pontos</p>
+          ${s.visual === 'futebol' ? '<button type="button" class="torcer" data-act="torcer"><svg viewBox="0 0 84 72" aria-hidden="true" focusable="false"><path d="M8 28h14l40-20v56L22 44H8Z" fill="#fff" stroke="#0a1f14" stroke-width="5" stroke-linejoin="round"/><path d="M70 22c6 6 6 22 0 28" stroke="#0a1f14" stroke-width="5" fill="none" stroke-linecap="round"/></svg>Torcer!</button><p class="small">Cada toque faz o seu bicho pular na arquibancada da TV.</p>' : ''}
           <div class="cartao-acoes"><button type="button" class="btn" data-act="cartao" data-focus="cartao"><span aria-hidden="true">↗</span> Compartilhar meu resultado</button>
           <p class="small">Gera uma imagem para o Status ou os Stories, com o pódio e a sua posição.</p></div>`
         : '<p class="muted">Olhe para a tela…</p>';
@@ -455,6 +456,14 @@ function mount(main: HTMLElement, code: string) {
       return;
     }
     if (b.dataset.act === 'cartao') return void cartao(b);
+    if (b.dataset.act === 'torcer') {
+      sock?.send({ type: 'torcer' });
+      navigator.vibrate?.(12);
+      b.classList.remove('vai');
+      void b.offsetWidth;
+      b.classList.add('vai');
+      return;
+    }
     if (b.dataset.act === 'sair') {
       if (confirm('Sair da sala? Você perde a vaga nesta rodada.')) sair();
       return;

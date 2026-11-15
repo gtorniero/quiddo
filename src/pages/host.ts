@@ -16,7 +16,7 @@ import { abrirPagamento, cobranca, confereVolta, meuAcesso } from '../lib/pagame
 import { logado } from '../lib/conta';
 import { eventPlan } from '../lib/offer-context';
 import { LIMITS } from '../../shared/rules';
-import { SUSPENSE_MS, agendaPodio, graficoVotos, novosNoPodio, animateRank, answersStatic, prepare, preparando, brandBar, confete, cortina, errorScreen, fogoFaixa, fotoCabeca, podiumTitle, questionHead, rankColunas, rankList, rankPista, revelacaoTv, tick, top10 } from './jogo-comum';
+import { falaDoVisual, SUSPENSE_MS, agendaPodio, graficoVotos, novosNoPodio, animateRank, answersStatic, prepare, preparando, brandBar, confete, cortina, errorScreen, fogoFaixa, fotoCabeca, podiumTitle, questionHead, rankColunas, rankList, rankPista, revelacaoTv, tick, top10 } from './jogo-comum';
 import type { RankRow } from '../../shared/protocol';
 
 /** Rotação das figurinhas na sala de espera: o jeito solto do logo. */
@@ -67,6 +67,30 @@ function mount(main: HTMLElement, code: string) {
   });
   const send = (m: ClientMsg) => sock.send(m);
 
+  /** "Torcer!" dos celulares no pódio do Futebol: o bicho de quem tocou pula na arquibancada e o placar conta. */
+  let toques = 0;
+  function torcida(ids: string[]) {
+    const cena = main.querySelector('.cena-estadio');
+    if (!cena) return;
+    const todos = [...cena.querySelectorAll<SVGGElement>('.torcedor')];
+    for (const id of ids) {
+      const g = todos.find((t) => t.dataset.pid === id) || todos[(id.length * 7 + toques) % Math.max(1, todos.length)];
+      if (!g) continue;
+      g.classList.remove('pula');
+      void g.getBoundingClientRect();
+      g.classList.add('pula');
+    }
+    toques += ids.length;
+    let placa = main.querySelector<HTMLElement>('.toques-torcida');
+    if (!placa) {
+      placa = document.createElement('p');
+      placa.className = 'toques-torcida';
+      placa.setAttribute('aria-live', 'off');
+      cena.appendChild(placa);
+    }
+    placa.textContent = `${toques} ${toques === 1 ? 'toque' : 'toques'} de torcida`;
+  }
+
   function onMessage(m: ServerMsg) {
     if (m.type === 'error' && m.code === 'acesso_invalido') {
       avisoEntrada('Esse código de acesso não vale');
@@ -84,6 +108,7 @@ function mount(main: HTMLElement, code: string) {
       if (fatal === 'inativa') main.querySelector<HTMLElement>('[data-act="reabrir"]')?.focus();
       return;
     }
+    if (m.type === 'torcida') return torcida(m.ids);
     if (m.type !== 'state' || m.role !== 'host') return;
     const prev = s;
     s = m;
@@ -295,7 +320,7 @@ function mount(main: HTMLElement, code: string) {
     const rapido = s.acertaram[0]?.id || '';
     const colunas = s.qIndex % 2 === 1 && s.ranking.length > 1;
     const placar = !s.ranking.length ? '<p class="small">Ninguém jogando ainda.</p>' : colunas ? rankColunas(s.ranking, rapido) + `<div class="sr">${rankList(s.ranking)}</div>` : rankPista(s.ranking, rapido);
-    return `<section class="stage"><div class="tag">${colunas ? 'Como está a disputa' : 'Ranking'} depois da pergunta ${s.qIndex + 1} de ${s.total}</div>${fogoFaixa(s.ranking)}${placar}</section><section class="panel"><div class="btnrow"><button class="btn" data-act="next" data-focus="go">${last ? 'Ver o pódio' : 'Próxima pergunta'}</button></div><p class="encerrar"><button class="linkbtn" data-act="close" data-focus="close">Encerrar jogo</button></p></section>`;
+    return `<section class="stage"><div class="tag">${colunas ? 'Como está a disputa' : falaDoVisual(s).ranking} depois da pergunta ${s.qIndex + 1} de ${s.total}</div>${fogoFaixa(s.ranking)}${placar}</section><section class="panel"><div class="btnrow"><button class="btn" data-act="next" data-focus="go">${last ? 'Ver o pódio' : 'Próxima pergunta'}</button></div><p class="encerrar"><button class="linkbtn" data-act="close" data-focus="close">Encerrar jogo</button></p></section>`;
   }
 
   function final(s: HostState) {

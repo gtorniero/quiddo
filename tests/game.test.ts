@@ -441,3 +441,15 @@ describe('marca própria: logo e cor só no Passe e no Premium', () => {
     expect(() => G.hostView(quebrada, T0)).not.toThrow();
   });
 });
+
+describe('torcer no pódio', () => {
+  it('só vale no pódio, para quem está na sala, e no máximo 4 por segundo', () => {
+    G.join(room, 'p1', 'Ana', T0);
+    expect(G.podeTorcer(room, 'p1', undefined, T0)).toBe(false);
+    room.phase = 'final';
+    expect(G.podeTorcer(room, 'p1', undefined, T0)).toBe(true);
+    expect(G.podeTorcer(room, 'zz', undefined, T0)).toBe(false);
+    expect(G.podeTorcer(room, 'p1', T0, T0 + G.TORCER_MS - 1)).toBe(false);
+    expect(G.podeTorcer(room, 'p1', T0, T0 + G.TORCER_MS)).toBe(true);
+  });
+});

@@ -29,6 +29,10 @@ const ANSWER_FLUSH_MS = 150; // agrupa as atualizações de "X de Y responderam"
 export class Room extends DurableObject<Env> {
   private room: G.Room | null = null;
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
+  // "Torcer!" do pódio: último toque de cada jogador e a fila que vai para a TV (só em memória)
+  private torcidaUlt = new Map<string, number>();
+  private torcidaFila: string[] = [];
+  private torcidaTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -197,6 +201,14 @@ export class Room extends DurableObject<Env> {
     }
 
     if (att.role === 'player' && att.pid) {
+      if (msg.type === 'torcer') {
+        if (!G.podeTorcer(room, att.pid, this.torcidaUlt.get(att.pid), now)) return;
+        this.torcidaUlt.set(att.pid, now);
+        this.torcidaFila.push(att.pid);
+        // junta os toques e manda para a TV de 200 em 200 ms (sem salvar nada: é só festa)
+        if (!this.torcidaTimer) this.torcidaTimer = setTimeout(() => this.enviaTorcida(), 200);
+        return;
+      }
       if (msg.type === 'avatar') {
         if (G.setAvatar(room, att.pid, msg.avatar)) this.changed(true);
         return;
@@ -301,6 +313,16 @@ export class Room extends DurableObject<Env> {
       return this.changed(true);
     }
     this.changed(false);
+  }
+
+  private enviaTorcida() {
+    this.torcidaTimer = null;
+    const ids = [...new Set(this.torcidaFila)].slice(0, 200);
+    this.torcidaFila = [];
+    if (!ids.length) return;
+    for (const s of this.ctx.getWebSockets()) {
+      if ((s.deserializeAttachment() as Attachment | null)?.role === 'host') this.send(s, { type: 'torcida', ids });
+    }
   }
 
   private dropPlayer(pid: string) {

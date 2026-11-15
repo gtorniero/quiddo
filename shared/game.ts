@@ -499,6 +499,15 @@ export function hostView(room: Room, now: number, rk: RankRow[] = ranking(room))
 }
 
 /** Troca o personagem de quem já está na sala (o lápis no celular). Mantém o visual único na sala. */
+/** Intervalo mínimo entre dois toques de "Torcer!" do mesmo jogador (protege a TV de 200 celulares de uma vez). */
+export const TORCER_MS = 250;
+
+/** O jogador pode torcer agora? Só no pódio, só quem está na sala e no máximo 4 toques por segundo. */
+export function podeTorcer(room: Room, playerId: string, ultimo: number | undefined, now: number): boolean {
+  if (room.phase !== 'final' || !room.players[playerId]) return false;
+  return ultimo === undefined || now - ultimo >= TORCER_MS;
+}
+
 export function setAvatar(room: Room, playerId: string, raw: unknown): boolean {
   const p = room.players[playerId];
   if (!p) return false;

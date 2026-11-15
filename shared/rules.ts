@@ -84,9 +84,31 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 /** Visuais de cada modo, na ordem do editor. Floresta vem primeiro e é o padrão. */
 export const VISUAIS_DO_MODO: Record<Theme, Visual[]> = {
   corp: ['floresta', 'escritorio', 'entretenimento'],
-  festa: ['floresta', 'entretenimento', 'espaco', 'amor'],
+  festa: ['floresta', 'futebol', 'entretenimento', 'espaco', 'amor'],
   escola: ['floresta', 'sala', 'album', 'espaco', 'entretenimento'],
 };
+
+export type Fase = 'grupos' | 'oitavas' | 'quartas' | 'semi' | 'final';
+export const FASE_NOME: Record<Fase, string> = { grupos: 'Fase de grupos', oitavas: 'Oitavas de final', quartas: 'Quartas de final', semi: 'Semifinal', final: 'Final' };
+export const FASES: Fase[] = ['grupos', 'oitavas', 'quartas', 'semi', 'final'];
+
+/**
+ * Fase do campeonato da pergunta i (0 = primeira) num quiz de `total` perguntas, no visual Futebol.
+ * A última é sempre a Final. As outras: ~40% grupos, ~20% oitavas, ~20% quartas e a semi com o resto.
+ * Com menos de 6 perguntas não há oitavas; com 3 ou menos, só a última vira Final. Ninguém é eliminado.
+ */
+export function faseDaPergunta(i: number, total: number): Fase {
+  if (total <= 0 || i >= total - 1) return 'final';
+  if (total <= 3) return 'grupos';
+  const resto = total - 1;
+  const grupos = Math.max(1, Math.round(resto * 0.4));
+  const oitavas = total < 6 ? 0 : Math.max(1, Math.round(resto * 0.2));
+  const quartas = Math.max(1, Math.round(resto * 0.2));
+  if (i < grupos) return 'grupos';
+  if (i < grupos + oitavas) return 'oitavas';
+  if (i < grupos + oitavas + quartas) return 'quartas';
+  return 'semi';
+}
 
 /** O visual pedido, se ele existe no modo; senão, Floresta. */
 export function visualDoModo(theme: Theme, v: unknown): Visual {

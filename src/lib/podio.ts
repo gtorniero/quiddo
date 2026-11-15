@@ -45,11 +45,11 @@ function bandeirinhas(y: number, cores: string[]) {
 
 /** Cenas do pódio. Cada visual tem a sua; na Floresta (o padrão), Corporativo tem palco próprio e
  *  Amigos & família e Escola revezam entre a mata à noite, a chuva de ipê e a praia no fim de tarde. */
-export type Cena = 'corp' | 'mata' | 'ipe' | 'praia' | 'album' | 'escritorio' | 'cinema' | 'sala' | 'lua' | 'amor';
+export type Cena = 'corp' | 'mata' | 'ipe' | 'praia' | 'album' | 'escritorio' | 'cinema' | 'sala' | 'lua' | 'amor' | 'estadio';
 
 const FESTA: Cena[] = ['mata', 'ipe', 'praia'];
 
-const DO_VISUAL: Record<Exclude<Visual, 'floresta'>, Cena> = { escritorio: 'escritorio', entretenimento: 'cinema', sala: 'sala', album: 'album', espaco: 'lua', amor: 'amor' };
+const DO_VISUAL: Record<Exclude<Visual, 'floresta'>, Cena> = { escritorio: 'escritorio', entretenimento: 'cinema', sala: 'sala', album: 'album', espaco: 'lua', amor: 'amor', futebol: 'estadio' };
 
 /** A cena sai do visual e do código da sala: a TV e todos os celulares mostram a mesma, e cada sala nova pode trocar. */
 export function cenaDoPodio(tema: Theme, code: string, visual: Visual = 'floresta'): Cena {
@@ -256,8 +256,53 @@ function cenaAmor() {
   </svg>`;
 }
 
-function cenario(cena: Cena): string {
-  return { corp: cenaCorp, mata: cenaMata, ipe: cenaIpe, praia: cenaPraia, album: cenaAlbum, escritorio: cenaEscritorio, cinema: cenaCinema, sala: cenaSala, lua: cenaLua, amor: cenaAmor }[cena]();
+/**
+ * Futebol: noite de final. Refletores acesos, torcida em silhueta com luzes de celular e fumaça verde e
+ * amarela, os bichos de quem jogou na fileira da frente, placa de publicidade e o gramado listrado.
+ */
+function cenaEstadio(torcida: RankRow[] = []) {
+  const silhuetas = Array.from({ length: 3 }, (_, lin) =>
+    Array.from({ length: 44 }, (_, i) => {
+      const x = i * 28 + (lin % 2) * 14 - 10;
+      const y = 150 + lin * 30;
+      return `<circle cx="${x}" cy="${y}" r="10"/><ellipse cx="${x}" cy="${y + 20}" rx="15" ry="11"/>`;
+    }).join(''),
+  ).join('');
+  const luzes = Array.from({ length: 22 }, (_, i) => `<circle class="luz-cel" style="animation-delay:-${(i * 0.37) % 2.4}s" cx="${(i * 113) % 1180 + 10}" cy="${140 + ((i * 41) % 80)}" r="3.4"/>`).join('');
+  // fileira da frente: até 16 bichos de quem jogou; sem ninguém, cadeiras coloridas
+  // 16 lugares: com pouca gente, os mesmos bichos se repetem para a arquibancada parecer cheia
+  const frente = torcida.length ? Array.from({ length: 16 }, (_, i) => torcida[i % Math.min(torcida.length, 16)]) : [];
+  const passo = frente.length ? 1200 / frente.length : 0;
+  const bichos = frente
+    .map((r, i) => `<g class="torcedor" data-pid="${esc(r.id)}" style="animation-delay:-${(i * 0.23) % 1.4}s" transform="translate(${Math.round(passo * i + passo / 2 - 26)} ${i % 2 ? 252 : 244})">${avatarSvg(r.avatar, 52)}</g>`)
+    .join('');
+  const torre = (x: number) =>
+    `<g transform="translate(${x} 0)"><path d="M-6 150 V600 M6 150 V600" stroke="#1E2B25" stroke-width="6"/><rect x="-70" y="40" width="140" height="70" rx="6" fill="#16201C" stroke="${INK}" stroke-width="4"/>${Array.from({ length: 10 }, (_, i) => `<circle cx="${-52 + (i % 5) * 26}" cy="${60 + Math.floor(i / 5) * 28}" r="9" fill="#FFF3B0"/>`).join('')}</g>`;
+  return `<svg class="cenario" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="pe-ceu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#070D16"/><stop offset="1" stop-color="#1A2A3A"/></linearGradient>
+      <radialGradient id="pe-luz" cx="0.5" cy="0" r="1"><stop offset="0" stop-color="#FFF3B0" stop-opacity=".45"/><stop offset="1" stop-color="#FFF3B0" stop-opacity="0"/></radialGradient>
+      <filter id="pe-fumaca" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+      <pattern id="pe-grama" width="160" height="40" patternUnits="userSpaceOnUse"><rect width="80" height="40" fill="#0B5D2E"/><rect x="80" width="80" height="40" fill="#12723A"/><path d="M0 4h160M0 14h160M0 24h160M0 34h160" stroke="#FFFFFF" stroke-opacity=".04"/></pattern>
+    </defs>
+    <rect width="1200" height="600" fill="url(#pe-ceu)"/>
+    <g class="refletor">${torre(110)}${torre(1090)}</g>
+    <path class="feixe" d="M60 110 L-60 600 H520Z" fill="url(#pe-luz)"/><path class="feixe f2" d="M1140 110 L680 600 H1260Z" fill="url(#pe-luz)"/>
+    <g filter="url(#pe-fumaca)"><ellipse class="fumaca" cx="120" cy="170" rx="190" ry="90" fill="#15803D" opacity=".7"/><ellipse class="fumaca f2" cx="1080" cy="160" rx="200" ry="90" fill="#FFD43B" opacity=".6"/><ellipse class="fumaca" cx="600" cy="150" rx="160" ry="60" fill="#1D4ED8" opacity=".45"/></g>
+    <g fill="#04080A">${silhuetas}</g>
+    <g fill="#FFFFFF">${luzes}</g>
+    <rect y="240" width="1200" height="66" fill="#2C3B34"/><path d="M0 240 H1200" stroke="#5A7064" stroke-width="5"/>
+    ${bichos}
+    <rect y="306" width="1200" height="34" fill="#FFD43B" stroke="${INK}" stroke-width="3"/>
+    <g font-family="Bebas Neue, Impact, sans-serif" font-size="26" fill="${INK}" letter-spacing="3">${[30, 330, 630, 930].map((x) => `<text x="${x}" y="332">QUIDDO · GRANDE FINAL</text>`).join('')}</g>
+    <rect y="340" width="1200" height="260" fill="url(#pe-grama)"/>
+    <path d="M0 430 H1200" stroke="#FFFFFF" stroke-opacity=".5" stroke-width="4"/><ellipse cx="600" cy="490" rx="170" ry="40" fill="none" stroke="#FFFFFF" stroke-opacity=".5" stroke-width="4"/>
+  </svg>`;
+}
+
+function cenario(cena: Cena, torcida: RankRow[] = []): string {
+  if (cena === 'estadio') return cenaEstadio(torcida);
+  return { corp: cenaCorp, mata: cenaMata, ipe: cenaIpe, praia: cenaPraia, album: cenaAlbum, escritorio: cenaEscritorio, cinema: cenaCinema, sala: cenaSala, lua: cenaLua, amor: cenaAmor }[cena as Exclude<Cena, 'estadio'>]();
 }
 
 /** Coisas caindo (ou voando) sem parar atrás dos degraus: vaga-lumes na mata, flores no ipê,
@@ -271,6 +316,7 @@ function chuva(cena: Cena): string {
     cinema: ['#F5B800', '#F5F0E6', '#D7263D'],
     sala: ['#FFE066', '#F2F2EA', '#FF8FB1', '#8FB2F2'],
     amor: ['#E5383B', '#FF8FB1', '#FFFFFF', '#B3262A'],
+    estadio: ['#FFD43B', '#15803D', '#1D4ED8', '#FFFFFF'],
   };
   const cores = CORES[cena] || ['#FFC83D', '#FFB000', '#FFE08A'];
   const n = cena === 'corp' || cena === 'cinema' ? 26 : cena === 'mata' ? 22 : 36;
@@ -334,7 +380,7 @@ export function palco(rows: RankRow[], tema: Theme, step = 4, novo: number | num
     .filter(Boolean)
     .join('. ');
   const frente = cena === 'mata' ? folhasMata() : '';
-  const SELO: Partial<Record<Cena, string>> = { album: 'Nota 10', sala: 'Nota 10', cinema: 'Estreia', escritorio: 'Top do mês', lua: 'Na Lua!', amor: 'Amor!' };
+  const SELO: Partial<Record<Cena, string>> = { album: 'Nota 10', sala: 'Nota 10', cinema: 'Estreia', escritorio: 'Top do mês', lua: 'Na Lua!', amor: 'Amor!', estadio: 'Campeão!' };
   const carimbo = SELO[cena] && step >= 4 ? `<div class="carimbo" aria-hidden="true">${SELO[cena]}</div>` : '';
-  return `<div class="palco palco-${visual === 'floresta' ? tema : 'visual'} cena-${cena}${step >= 4 ? ' completo' : ''}" role="img" aria-label="${esc(leitura || 'Pódio ainda escondido')}">${cenario(cena)}${chuva(cena)}<div class="degraus">${degraus}</div>${frente}${carimbo}</div>`;
+  return `<div class="palco palco-${visual === 'floresta' ? tema : 'visual'} cena-${cena}${step >= 4 ? ' completo' : ''}" role="img" aria-label="${esc(leitura || 'Pódio ainda escondido')}">${cenario(cena, rows)}${chuva(cena)}<div class="degraus">${degraus}</div>${frente}${carimbo}</div>`;
 }

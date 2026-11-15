@@ -117,7 +117,8 @@ function mountEditor(main: HTMLElement) {
   /** Troca as perguntas pelas 10 de um quiz pronto (respostas embaralhadas, menos as de duas opções). */
   const usarModelo = (m: Modelo) => {
     q.tema = m.tema ?? 'festa';
-    q.visual = visualDoModo(q.tema, q.visual);
+    // quiz de futebol já abre no visual Futebol (dá para trocar depois)
+    q.visual = m.id === 'futebol' && q.tema === 'festa' ? 'futebol' : visualDoModo(q.tema, q.visual);
     q.perguntas = m.perguntas.map((x) => {
       if (x.vf) return { t: x.t, o: ['Verdadeiro', 'Falso'], c: x.c, tl: q.tempo, vf: true };
       if (x.o.length <= 2) return { t: x.t, o: [...x.o], c: x.c, tl: q.tempo };

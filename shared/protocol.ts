@@ -3,7 +3,7 @@
 
 export type Theme = 'corp' | 'festa' | 'escola';
 /** Visual (template) dentro do modo. Floresta é o padrão de todos e o visual de sempre do Quiddo. */
-export type Visual = 'floresta' | 'escritorio' | 'entretenimento' | 'sala' | 'album' | 'espaco' | 'amor';
+export type Visual = 'floresta' | 'escritorio' | 'entretenimento' | 'sala' | 'album' | 'espaco' | 'amor' | 'futebol';
 export type Phase = 'lobby' | 'question' | 'reveal' | 'ranking' | 'final';
 export type DrawMode = 'all' | 'scored';
 
@@ -59,6 +59,7 @@ export type ClientMsg =
   | { type: 'restart' }
   | { type: 'close' }
   | { type: 'liberar'; codigo: string }
+  | { type: 'torcer' } // jogador, no pódio: um toque de torcida (a TV faz o bicho dele pular)
   | { type: 'ping' };
 
 // ---------- servidor → navegador ----------
@@ -156,4 +157,5 @@ export type ServerMsg =
   | { type: 'error'; code: ErrorCode }
   | { type: 'kicked' }
   | { type: 'closed'; motivo?: 'inativa' }
-  | { type: 'pong'; serverNow: number };
+  | { type: 'pong'; serverNow: number }
+  | { type: 'torcida'; ids: string[] }; // só para a TV: quem torceu nos últimos instantes

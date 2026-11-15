@@ -4849,6 +4849,138 @@ svg.av.vivo .corpo {
   color: #0b1033;
 }
 
+/* ---------- Futebol: estádio, torcida e taça ---------- */
+[data-visual='futebol'] {
+  --bg: #eef5ea;
+  --fg: #0a1f14;
+  --fg2: #34463b;
+  --line: #0a1f14;
+  --soft-line: #c8dccb;
+  --acc: #15803d;
+  --acc-ink: #ffffff;
+  --acc-text: #0b5d2e;
+  --acc-soft: #e2f2e5;
+  --mata: #0b5d2e;
+  --a1: #15803d;
+  --a2: #ffd43b;
+  --a3: #1d4ed8;
+  --a4: #ffffff;
+  --a1-ink: #ffffff;
+  --a2-ink: #0a1f14;
+  --a3-ink: #ffffff;
+  --a4-ink: #0a1f14;
+  --sh: 0 6px 0 #0a1f14;
+  --sh-sm: 0 4px 0 #0a1f14;
+  --placar: 'Bebas Neue', Impact, 'Arial Narrow', sans-serif;
+}
+/* celular: gramado listrado com fibra e a luz do refletor */
+[data-visual='futebol'] body {
+  background-color: #0b5d2e;
+  background-image: radial-gradient(ellipse at 50% -10%, rgba(255, 243, 176, 0.22), rgba(255, 243, 176, 0) 55%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0 1px, rgba(255, 255, 255, 0) 1px 4px),
+    repeating-linear-gradient(90deg, #0b5d2e 0 48px, #12723a 48px 96px);
+  background-attachment: fixed;
+}
+/* TV: estádio à noite, torcida em silhueta com luzes de celular no alto e gramado embaixo */
+[data-visual='futebol'] body:has(main.tv) {
+  background-color: #0b1420;
+  background-image: radial-gradient(ellipse at 12% 0%, rgba(255, 243, 176, 0.3), rgba(255, 243, 176, 0) 38%),
+    radial-gradient(ellipse at 88% 0%, rgba(255, 243, 176, 0.3), rgba(255, 243, 176, 0) 38%),
+    radial-gradient(circle, #fff 1.6px, rgba(255, 255, 255, 0.4) 2.6px, transparent 5px),
+    radial-gradient(circle at 50% 35%, #04080a 9px, transparent 10px),
+    radial-gradient(ellipse 14px 10px at 50% 100%, #04080a 98%, transparent 100%),
+    linear-gradient(180deg, #0b1420 0, #1a2a3a 24%, transparent 24.1%),
+    repeating-linear-gradient(90deg, #0b5d2e 0 80px, #12723a 80px 160px);
+  background-size: 100% 100%, 100% 100%, 173px 61px, 28px 40px, 28px 40px, 100% 100%, 100% 100%;
+  background-repeat: no-repeat, no-repeat, repeat-x, repeat-x, repeat-x, no-repeat, no-repeat;
+  background-position: 0 0, 0 0, 31px 12px, 0 6px, 0 6px, 0 0, 0 0;
+  background-attachment: fixed;
+}
+[data-visual='futebol'] .pill:not(.dobro) {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.07) 1px, rgba(255, 255, 255, 0) 1.6px) 0 0 / 6px 6px, #0a1f14;
+  color: #fff8ec;
+  border-color: #0a1f14;
+}
+[data-visual='futebol'] .pill.fase b {
+  font-family: var(--placar);
+  font-weight: 400;
+  font-size: 1.25em;
+  letter-spacing: 0.04em;
+  color: #ffd43b;
+}
+[data-visual='futebol'] .pill.fase-final {
+  background: #ffd43b;
+  color: #0a1f14;
+}
+[data-visual='futebol'] .pill.fase-final b {
+  color: #0a1f14;
+}
+[data-visual='futebol'] .prep-n.bora {
+  font-family: var(--placar);
+  font-weight: 400;
+}
+[data-visual='futebol'] .verdict.ok,
+[data-visual='futebol'] .verdict.no {
+  font-family: var(--placar);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  font-size: clamp(40px, 12vw, 64px);
+}
+[data-visual='futebol'] .verdict.ok {
+  background: #ffd43b;
+  color: #0a1f14;
+}
+[data-visual='futebol'] .verdict.no {
+  background: #34463b;
+  color: #ffffff;
+}
+/* pódio no estádio: luzes de celular piscando, feixes, fumaça e a torcida pulando */
+.cena-estadio .luz-cel {
+  animation: luz-cel 2.4s ease-in-out infinite;
+}
+.cena-estadio .feixe {
+  transform-origin: 60px 110px;
+  animation: feixe 7s ease-in-out infinite alternate;
+}
+.cena-estadio .feixe.f2 {
+  transform-origin: 1140px 110px;
+  animation-direction: alternate-reverse;
+}
+.cena-estadio .fumaca {
+  animation: fumaca 9s ease-in-out infinite alternate;
+}
+.cena-estadio .torcedor > svg {
+  animation: torcedor 1.4s ease-in-out infinite;
+}
+@keyframes luz-cel {
+  50% {
+    opacity: 0.25;
+  }
+}
+@keyframes feixe {
+  to {
+    transform: rotate(6deg);
+  }
+}
+@keyframes fumaca {
+  to {
+    transform: translateX(40px) scale(1.1);
+  }
+}
+@keyframes torcedor {
+  50% {
+    transform: translateY(-8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cena-estadio .luz-cel,
+  .cena-estadio .feixe,
+  .cena-estadio .fumaca,
+  .cena-estadio .torcedor > svg {
+    animation: none;
+  }
+}
+
 /* ---------- Amor: corações por todo lado ---------- */
 [data-visual='amor'] {
   --bg: #ffe3ea;
@@ -6875,4 +7007,69 @@ body:has(main.tv) .foot button {
 }
 .pagar-sala .selo {
   justify-self: start;
+}
+
+/* Futebol: botão "Torcer!" do celular e a torcida pulando na TV */
+.torcer {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 168px;
+  height: 168px;
+  margin: 8px auto 0;
+  border-radius: 50%;
+  border: 5px solid var(--fg);
+  background: #ffd43b;
+  color: #0a1f14;
+  font: 900 22px var(--text);
+  box-shadow: 0 8px 0 var(--fg);
+  cursor: pointer;
+}
+.torcer svg {
+  width: 64px;
+  height: 56px;
+}
+.torcer:focus-visible {
+  outline: 4px solid var(--fg);
+  outline-offset: 4px;
+}
+.torcer:active {
+  transform: translateY(5px);
+  box-shadow: 0 3px 0 var(--fg);
+}
+.torcer.vai svg {
+  animation: torcer-vai 0.3s ease-out;
+}
+.cena-estadio .torcedor.pula > svg {
+  animation: torcedor-pula 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.cena-estadio .toques-torcida {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: 12px;
+  background: rgba(10, 31, 20, 0.88);
+  color: #fff8ec;
+  font-weight: 800;
+  z-index: 5;
+}
+@keyframes torcer-vai {
+  50% {
+    transform: scale(1.25) rotate(-8deg);
+  }
+}
+@keyframes torcedor-pula {
+  40% {
+    transform: translateY(-26px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .torcer.vai svg,
+  .cena-estadio .torcedor.pula > svg {
+    animation: none;
+  }
 }

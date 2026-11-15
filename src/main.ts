@@ -6,7 +6,8 @@ import * as privacidade from './pages/privacidade';
 import { lembraOrigem } from './lib/origem';
 
 // o endereço provisório da Cloudflare leva para o domínio oficial, no mesmo caminho
-if (location.hostname.endsWith('.workers.dev')) location.replace(`https://www.quiddo.com.br${location.pathname}${location.search}`);
+// só o endereço antigo vai para o oficial; as prévias das branches (outro-nome-quiddo.….workers.dev) ficam onde estão
+if (location.hostname === 'quiddo.guitorniero.workers.dev') location.replace(`https://www.quiddo.com.br${location.pathname}${location.search}`);
 import { CODE_RE, normalizeCode } from '../shared/rules';
 import { header, banner } from './lib/layout';
 import { applyTheme } from './lib/theme';

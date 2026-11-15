@@ -1,6 +1,7 @@
 // Pedaços de tela usados pelo anfitrião e pelo jogador.
 import type { Acerto, BaseState, RankRow, Visual } from '../../shared/protocol';
 import { CONTAGEM_MS } from '../../shared/game';
+import { FASE_NOME, faseDaPergunta } from '../../shared/rules';
 import { LETRAS, esc, fmt } from '../lib/dom';
 import { avatarSvg, comMoldura } from '../lib/avatar-art';
 import type { Moldura } from '../lib/avatar-art';
@@ -27,6 +28,20 @@ const CARIMBO_X2 = '<div class="x2" aria-hidden="true"><span>×2</span></div>';
  * Tela do "Prepare-se": a pergunta aparece e o olho do tucano conta 3, 2, 1 antes das respostas.
  * Na última pergunta, "Última pergunta!" cai do alto e, na TV, os 3 primeiros aparecem nervosos (`top3`).
  */
+/** "Pergunta 3 de 10"; no visual Futebol vem com a fase do campeonato ("Quartas de final · Pergunta 7 de 10"). */
+export function pillPergunta(s: BaseState) {
+  const n = `Pergunta ${s.qIndex + 1} de ${s.total}`;
+  if (s.visual !== 'futebol') return `<span class="pill">${n}</span>`;
+  const f = faseDaPergunta(s.qIndex, s.total);
+  return `<span class="pill fase fase-${f}"><b>${FASE_NOME[f]}</b> · ${n}</span>`;
+}
+
+/** Palavras do visual: o que o celular diz no acerto e no erro, e o nome do ranking. */
+export const falaDoVisual = (s: BaseState) => {
+  const v = VISUAIS[s.visual || 'floresta'];
+  return { acerto: v.acerto || 'Mandou bem!', erro: v.erro || 'Quase!', ranking: v.ranking || 'Ranking' };
+};
+
 export function prepare(s: BaseState, top3: RankRow[] = []) {
   const q = s.question!;
   const ultima = s.total > 1 && s.qIndex === s.total - 1;
@@ -41,7 +56,7 @@ export function prepare(s: BaseState, top3: RankRow[] = []) {
   const v = s.visual || 'floresta';
   const conta = v === 'floresta' ? OLHO_CONTA : contaVisual(v);
   const nervosos = ultima && top3.length ? `<div class="nervosos" aria-hidden="true">${top3.map((r) => `<span class="nervoso">${avatarSvg(r.avatar, 72)}<small>${r.rank}º ${esc(r.nick)}</small></span>`).join('')}</div>` : '';
-  return `<section class="stage center prep${q.dobro && !ultima ? ' treme-tela' : ''}${ultima ? ' final-clima' : ''}"><span class="pill">Pergunta ${s.qIndex + 1} de ${s.total}</span>${titulo}<div class="qt">${esc(q.t)}</div>${conta}<p class="prep-txt" id="prep-txt" role="status">Leia a pergunta</p>${nervosos}</section>`;
+  return `<section class="stage center prep${q.dobro && !ultima ? ' treme-tela' : ''}${ultima ? ' final-clima' : ''}">${pillPergunta(s)}${titulo}<div class="qt">${esc(q.t)}</div>${conta}<p class="prep-txt" id="prep-txt" role="status">Leia a pergunta</p>${nervosos}</section>`;
 }
 
 /** Cabeçalho da pergunta com cronômetro e barra. Os ids são atualizados pelo relógio da página. */
@@ -50,7 +65,7 @@ export function questionHead(s: BaseState, semPergunta = false) {
   const q = s.question!;
   // pergunta comprida ganha letra menor, para as respostas caberem na TV
   const tam = q.t.length > 140 ? ' qt-longa' : q.t.length > 80 ? ' qt-media' : '';
-  return `<div class="meta"><span class="pill">Pergunta ${s.qIndex + 1} de ${s.total}</span>${q.dobro ? '<span class="pill dobro">Vale o dobro</span>' : ''}${
+  return `<div class="meta">${pillPergunta(s)}${q.dobro ? '<span class="pill dobro">Vale o dobro</span>' : ''}${
     s.phase === 'question' ? `<span class="timer" aria-hidden="true">${OLHO}<b id="tempo">${q.tl}</b></span>` : ''
   }</div>${s.phase === 'question' ? '<div class="bar" aria-hidden="true"><i id="barra"></i></div>' : ''}${semPergunta ? '' : `<div class="qt${tam}">${esc(q.t)}</div>`}${
     q.img ? `<img class="qimg" src="/api/salas/${s.code}/img/${s.qIndex}?v=${q.img}" alt="Imagem da pergunta">` : ''
@@ -104,7 +119,7 @@ export function answersStatic(s: BaseState, mine: number | null = null) {
     .map((o, k) => {
       const cls = `ans c${k}${tamanhoResposta(o)}` + (rev ? (k === s.correct ? ' ok' : ' dim') : '') + (mine === k && !rev ? ' mine' : '');
       const n = rev && s.counts ? `<span class="n" aria-label="${s.counts[k]} ${s.counts[k] === 1 ? 'pessoa' : 'pessoas'}">${s.counts[k]}</span>` : '<span></span>';
-      return `<div class="${cls}">${simbolo(k)}<span class="lt">${LETRAS[k]}</span><span>${esc(o)}${rev && k === s.correct ? '<span class="sr"> (resposta certa)</span>' : ''}</span>${n}</div>`;
+      return `<div class="${cls}">${simbolo(k, 'sym', s.visual)}<span class="lt">${LETRAS[k]}</span><span>${esc(o)}${rev && k === s.correct ? '<span class="sr"> (resposta certa)</span>' : ''}</span>${n}</div>`;
     })
     .join('')}</div>`;
 }
@@ -126,7 +141,7 @@ function opiniaoResultado(s: BaseState, mine: number | null) {
       const avs = q.oa || [];
       return `<div class="quem-sala" aria-hidden="true">${avs.slice(0, 40).map((a) => avatarSvg(a, 48)).join('')}${avs.length > 40 ? `<span>+${avs.length - 40}</span>` : ''}</div>`;
     }
-    return `<div class="answers">${q.o.map((o, k) => `<div class="ans c${k}${tamanhoResposta(o)}">${simbolo(k)}<span class="lt">${LETRAS[k]}</span><span>${esc(o)}</span><span></span></div>`).join('')}</div>`;
+    return `<div class="answers">${q.o.map((o, k) => `<div class="ans c${k}${tamanhoResposta(o)}">${simbolo(k, 'sym', s.visual)}<span class="lt">${LETRAS[k]}</span><span>${esc(o)}</span><span></span></div>`).join('')}</div>`;
   }
   const total = counts.reduce((a, b) => a + b, 0) || 1;
   let idx = q.o.map((_, k) => k);
@@ -213,7 +228,7 @@ export function graficoVotos(s: BaseState, destaque = true) {
   return `<div class="votos-grafico${destaque ? ' destaque' : ''}" style="--n:${q.o.length}" role="img" aria-label="${esc(leitura)}">${q.o
     .map(
       (o, k) =>
-        `<div class="g-col${!destaque ? '' : certa(k) ? ' certa' : ' errada'}" style="--h:${Math.round((counts[k] / max) * 100)}%;--i:${k}"><b class="g-n">${counts[k]}</b><span class="g-barra c${k}">${simbolo(k)}${certa(k) ? '<span class="g-ok" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' : ''}</span><span class="g-rot"><span class="lt c${k}">${LETRAS[k]}</span><span class="g-txt">${esc(o)}</span></span></div>`,
+        `<div class="g-col${!destaque ? '' : certa(k) ? ' certa' : ' errada'}" style="--h:${Math.round((counts[k] / max) * 100)}%;--i:${k}"><b class="g-n">${counts[k]}</b><span class="g-barra c${k}">${simbolo(k, 'sym', s.visual)}${certa(k) ? '<span class="g-ok" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' : ''}</span><span class="g-rot"><span class="lt c${k}">${LETRAS[k]}</span><span class="g-txt">${esc(o)}</span></span></div>`,
     )
     .join('')}</div>`;
 }

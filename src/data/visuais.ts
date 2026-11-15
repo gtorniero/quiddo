@@ -9,6 +9,9 @@ export interface VisualInfo {
   prep: string; // frase do "Prepare-se"
   vai: string; // palavra que aparece no lugar do número no fim da contagem
   campeao: string; // título do pódio: "{nome} venceu!" etc. ({n} = apelido)
+  acerto?: string; // celular, quando acerta (padrão "Mandou bem!")
+  erro?: string; // celular, quando erra (padrão "Quase!")
+  ranking?: string; // nome do ranking (padrão "Ranking")
 }
 
 export const VISUAIS: Record<Visual, VisualInfo> = {
@@ -59,6 +62,17 @@ export const VISUAIS: Record<Visual, VisualInfo> = {
     prep: 'Contagem regressiva!',
     vai: 'Decolar!',
     campeao: '{n} chegou primeiro à Lua!',
+  },
+  futebol: {
+    nome: 'Futebol',
+    desc: 'Estádio, torcida e taça: cada pergunta é uma fase até a final',
+    cores: ['#0B5D2E', '#FFD43B', '#1D4ED8', '#FFFFFF'],
+    prep: 'Apito inicial!',
+    vai: 'Rola a bola!',
+    campeao: '{n} levantou a taça!',
+    acerto: 'GOL!',
+    erro: 'Na trave!',
+    ranking: 'Tabela',
   },
   amor: {
     nome: 'Amor',

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CODE_RE, VISUAIS_DO_MODO, compactQuestion, marcaPropria, normalizeCode, points, randomCode, validateCreate, visualDoModo } from '../shared/rules';
+import { CODE_RE, VISUAIS_DO_MODO, compactQuestion, faseDaPergunta, marcaPropria, normalizeCode, points, randomCode, validateCreate, visualDoModo } from '../shared/rules';
 
 describe('pontos', () => {
   it('vale 1000 na hora e 500 no último instante', () => {
@@ -123,5 +123,36 @@ describe('marca própria', () => {
     expect(validateCreate({ theme: 'corp', questions: q, brand: { name: 'Feira', color: '' }, logo: 'data:image/svg+xml;base64,AAAA' }).logo).toBe('');
     expect(validateCreate({ theme: 'corp', questions: q, brand: { name: 'Feira', color: '' }, logo: 'data:image/png;base64,' + 'A'.repeat(500_000) }).logo).toBe('');
     expect(validateCreate({ theme: 'corp', questions: q, brand: { name: 'Feira', color: '' }, logo: 42 }).logo).toBe('');
+  });
+});
+
+describe('fases do visual Futebol', () => {
+  const fases = (n: number) => Array.from({ length: n }, (_, i) => faseDaPergunta(i, n));
+  it('10 perguntas: grupos 1–4, oitavas 5–6, quartas 7–8, semi 9 e final 10', () => {
+    expect(fases(10)).toEqual(['grupos', 'grupos', 'grupos', 'grupos', 'oitavas', 'oitavas', 'quartas', 'quartas', 'semi', 'final']);
+  });
+  it('a final é sempre só a última', () => {
+    for (const n of [1, 2, 3, 5, 7, 15, 20, 30, 50]) {
+      const f = fases(n);
+      expect(f[n - 1]).toBe('final');
+      expect(f.filter((x) => x === 'final')).toHaveLength(1);
+    }
+  });
+  it('quiz curto pula fases; as fases nunca andam para trás', () => {
+    expect(fases(5)).toEqual(['grupos', 'grupos', 'quartas', 'semi', 'final']);
+    expect(fases(3)).toEqual(['grupos', 'grupos', 'final']);
+    const ordem = ['grupos', 'oitavas', 'quartas', 'semi', 'final'];
+    for (const n of [4, 6, 9, 12, 20, 30]) {
+      const f = fases(n).map((x) => ordem.indexOf(x));
+      expect(f).toEqual([...f].sort((a, b) => a - b));
+    }
+  });
+  it('20 perguntas: 8 de grupos, 4 de oitavas, 4 de quartas, 3 de semi', () => {
+    const f = fases(20);
+    expect(['grupos', 'oitavas', 'quartas', 'semi', 'final'].map((x) => f.filter((y) => y === x).length)).toEqual([8, 4, 4, 3, 1]);
+  });
+  it('Futebol fica só em Amigos & família', () => {
+    expect(visualDoModo('festa', 'futebol')).toBe('futebol');
+    expect(visualDoModo('corp', 'futebol')).toBe('floresta');
   });
 });

@@ -176,8 +176,8 @@ export function precosHtml(e: PrecosEstado) {
     : '';
   const preco =
     per === 'anual'
-      ? `<p class="pc-preco">R$ ${esc(a)}<small>/ano</small></p><p class="pc-sub">Equivale a R$ ${esc(anualPorMes(e))} por mês. No Mensal, R$ ${esc(m)} por mês.</p>`
-      : `<p class="pc-preco">R$ ${esc(m)}<small>/mês</small></p><p class="pc-sub">Cobrança mensal.${e.temAnual ? ` No Anual, R$ ${esc(a)} por ano (R$ ${esc(anualPorMes(e))} por mês).` : ''}</p>`;
+      ? `<span class="pc-oferta">Oferta de lançamento</span><p class="pc-preco">R$ ${esc(a)}<small>/ano</small></p><p class="pc-sub">Equivale a R$ ${esc(anualPorMes(e))} por mês. No Mensal, R$ ${esc(m)} por mês.</p>`
+      : `<span class="pc-oferta">Oferta de lançamento</span><p class="pc-preco">R$ ${esc(m)}<small>/mês</small></p><p class="pc-sub">Cobrança mensal.${e.temAnual ? ` No Anual, R$ ${esc(a)} por ano (R$ ${esc(anualPorMes(e))} por mês).` : ''}</p>`;
   return `<section class="precos" aria-label="Planos">
         <article class="pc pc-destaque">
           <span class="selo">Mais vantagem</span>
@@ -193,6 +193,7 @@ export function precosHtml(e: PrecosEstado) {
           <span class="selo selo-avulso">Avulso</span>
           <h2>Passe 7 dias</h2>
           ${pessoas(200)}
+          <span class="pc-oferta">Oferta de lançamento</span>
           <p class="pc-preco">R$ ${esc(s)}</p>
           <p class="pc-sub">Pagamento único, sem renovação.</p>
           <ul><li>${OK}Jogos ilimitados por 7 dias</li><li>${OK}Sua marca: logo e cor</li><li>${OK}Para um evento, sem assinatura</li><li>${OK}Pix ou cartão</li></ul>
@@ -211,7 +212,8 @@ export function precosHtml(e: PrecosEstado) {
         <p class="small">Vendido por Beyond the Work · CNPJ 69.746.447/0001-00.</p>
       </section>`;
 }
-export const precosTopo = () => `<section class="hero"><h1>Planos</h1><p>Comece grátis. Para mais de 10 pessoas ou para usar a sua marca, assine o Premium ou use o Passe 7 dias.</p></section>`;
+export const precosTopo = () => `<section class="hero"><h1>Planos</h1><p>Comece grátis. Para mais de 10 pessoas ou para usar a sua marca, assine o Premium ou use o Passe 7 dias.</p></section>
+      <p class="oferta-faixa" role="note"><strong>Oferta especial de lançamento</strong><span>Estes preços valem por tempo limitado e vão subir em breve.</span></p>`;
 
 // ---------- privacidade ----------
 

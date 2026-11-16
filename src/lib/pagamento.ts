@@ -206,7 +206,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
         (p) => `<label class="pg-plano${p.id === 'anual' ? ' melhor' : ''}"><input type="radio" name="pg-plano" value="${p.id}"${p.id === escolhido ? ' checked' : ''}>
           <span class="pg-plano-nome">${p.id === 'anual' || p.id === 'mensal' ? `Assinatura ${esc(p.nome.toLowerCase())}` : esc(p.nome)}</span>
           <span class="pg-plano-preco">R$ ${esc(p.preco.replace(/,00$/, ''))}${p.id === 'mensal' ? '<small>/mês</small>' : p.id === 'anual' ? '<small>/ano</small>' : ''}</span>
-          <span class="pg-plano-txt">${
+          <span class="pg-plano-txt"><small class="pg-lanc">Preço de lançamento</small> ${
             p.id === 'anual'
               ? `<small class="pg-vantagem">mais vantagem</small> Cobrança anual. Equivale a R$ ${esc((Number(p.preco.replace(',', '.')) / 12).toFixed(2).replace('.', ',').replace(/,00$/, ''))} por mês.`
               : p.id === 'mensal'
@@ -242,6 +242,7 @@ export async function abrirPagamento(volta: string, aoPagar: (codigo: string) =>
     }
     d.innerHTML = `${fechar}${topo}
       <form class="pg-form" data-pg-form novalidate>
+        <p class="pg-lancamento"><strong>Oferta especial de lançamento</strong> · preços por tempo limitado</p>
         <fieldset class="pg-planos"><legend>Escolha o plano</legend>${opcoes}</fieldset>
         <p class="small">Mensal e Anual são a mesma assinatura, com os mesmos benefícios.</p>
         ${

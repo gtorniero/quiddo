@@ -7102,3 +7102,62 @@ body:has(main.tv) .foot button {
 [data-visual='futebol'] p.center.small > .linkbtn {
   color: #fff8ec;
 }
+
+/* Oferta especial de lançamento: faixa no topo dos planos, selo em cada preço e no pop-up de pagamento */
+.oferta-faixa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 14px;
+  margin: 0 auto;
+  padding: 12px 18px;
+  max-width: 980px;
+  border: var(--bw) solid var(--line);
+  border-radius: 18px;
+  background: #c92a2a;
+  color: #ffffff;
+  box-shadow: var(--sh-sm);
+  text-align: center;
+  font-weight: 800;
+}
+.oferta-faixa strong {
+  font-family: var(--disp);
+  font-weight: 900;
+  font-size: clamp(20px, 4vw, 26px);
+}
+.pc-oferta {
+  justify-self: start;
+  align-self: start;
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #c92a2a;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+.pg-lancamento {
+  margin: 4px 0 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #c92a2a;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 15px;
+  text-align: center;
+}
+.pg-plano-txt small.pg-lanc {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #c92a2a;
+  color: #ffffff;
+  font: 900 11px var(--text);
+  text-transform: uppercase;
+}

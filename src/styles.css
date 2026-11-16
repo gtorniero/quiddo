@@ -7161,3 +7161,29 @@ body:has(main.tv) .foot button {
   font: 900 11px var(--text);
   text-transform: uppercase;
 }
+
+/* imagem da pergunta na leitura: centralizada, abaixo do texto */
+.prep .qimg-prep {
+  width: auto;
+  max-width: min(100%, 760px);
+  max-height: 34vh;
+  margin: 14px auto 6px;
+}
+main:not(.tv) .prep .qimg-prep {
+  max-height: 28vh;
+}
+/* com imagem, o olho da contagem encolhe para o botão de mostrar as respostas caber na tela */
+.tv .prep .qimg-prep {
+  max-height: 30vh;
+  margin: 4px auto 0;
+}
+.tv .prep:has(.qimg-prep) .olho-conta {
+  width: clamp(84px, 12vh, 120px);
+}
+.tv .prep:has(.qimg-prep) .prep-n {
+  font-size: clamp(48px, 8vh, 80px);
+}
+.tv .prep:has(.qimg-prep) .prep-txt {
+  margin: 0;
+  font-size: clamp(20px, 3vh, 28px);
+}

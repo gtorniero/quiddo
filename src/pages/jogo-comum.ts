@@ -42,6 +42,9 @@ export const falaDoVisual = (s: BaseState) => {
   return { acerto: v.acerto || 'Mandou bem!', erro: v.erro || 'Quase!', ranking: v.ranking || 'Ranking' };
 };
 
+/** Endereço da imagem da pergunta atual (mesmo endereço na leitura e nas respostas, para o navegador reaproveitar). */
+const imgDaPergunta = (s: BaseState) => `/api/salas/${s.code}/img/${s.qIndex}?v=${s.question!.img}`;
+
 export function prepare(s: BaseState, top3: RankRow[] = []) {
   const q = s.question!;
   const ultima = s.total > 1 && s.qIndex === s.total - 1;
@@ -55,8 +58,10 @@ export function prepare(s: BaseState, top3: RankRow[] = []) {
         : '';
   const v = s.visual || 'floresta';
   const conta = v === 'floresta' ? OLHO_CONTA : contaVisual(v);
+  // a imagem faz parte da pergunta: aparece já na leitura, não só nas respostas
+  const img = q.img ? `<img class="qimg qimg-prep" src="${imgDaPergunta(s)}" alt="Imagem da pergunta">` : '';
   const nervosos = ultima && top3.length ? `<div class="nervosos" aria-hidden="true">${top3.map((r) => `<span class="nervoso">${avatarSvg(r.avatar, 72)}<small>${r.rank}º ${esc(r.nick)}</small></span>`).join('')}</div>` : '';
-  return `<section class="stage center prep${q.dobro && !ultima ? ' treme-tela' : ''}${ultima ? ' final-clima' : ''}">${pillPergunta(s)}${titulo}<div class="qt">${esc(q.t)}</div>${conta}<p class="prep-txt" id="prep-txt" role="status">Leia a pergunta</p>${nervosos}</section>`;
+  return `<section class="stage center prep${q.dobro && !ultima ? ' treme-tela' : ''}${ultima ? ' final-clima' : ''}">${pillPergunta(s)}${titulo}<div class="qt">${esc(q.t)}</div>${img}${conta}<p class="prep-txt" id="prep-txt" role="status">Leia a pergunta</p>${nervosos}</section>`;
 }
 
 /** Cabeçalho da pergunta com cronômetro e barra. Os ids são atualizados pelo relógio da página. */
@@ -68,7 +73,7 @@ export function questionHead(s: BaseState, semPergunta = false) {
   return `<div class="meta">${pillPergunta(s)}${q.dobro ? '<span class="pill dobro">Vale o dobro</span>' : ''}${
     s.phase === 'question' ? `<span class="timer" aria-hidden="true">${OLHO}<b id="tempo">${q.tl}</b></span>` : ''
   }</div>${s.phase === 'question' ? '<div class="bar" aria-hidden="true"><i id="barra"></i></div>' : ''}${semPergunta ? '' : `<div class="qt${tam}">${esc(q.t)}</div>`}${
-    q.img ? `<img class="qimg" src="/api/salas/${s.code}/img/${s.qIndex}?v=${q.img}" alt="Imagem da pergunta">` : ''
+    q.img ? `<img class="qimg" src="${imgDaPergunta(s)}" alt="Imagem da pergunta">` : ''
   }`;
 }
 

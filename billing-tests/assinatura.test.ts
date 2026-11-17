@@ -269,7 +269,9 @@ describe('Quiddo Stripe mensal', () => {
  });
  it('forged signature and wrong mode never change entitlement', async () => {
   await seedPurchase(); expect((await webhook('checkout.session.completed', session, false, false))!.status).toBe(401);
-  expect((await webhook('checkout.session.completed', session, true))!.status).toBe(400);
+  // evento do outro ambiente: só confirma o recebimento (o Stripe para de repetir), sem liberar nada
+  const outro = (await webhook('checkout.session.completed', session, true))!;
+  expect(outro.status).toBe(200); expect(await outro.json()).toMatchObject({ ignorado: 'outro_ambiente' });
   expect(read('SELECT status,codigo FROM compras')).toMatchObject({ status: 'pendente', codigo: null });
  });
  it('wrong product, amount, mode or customer cannot unlock a subscription', async () => {

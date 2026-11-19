@@ -217,10 +217,24 @@ export async function registrarRenovacao(env: CobrancaEnv, invoice: StripeClient
   return !!r.meta?.changes;
 }
 /** Assinaturas exigem webhook assinado: renovacao, falha e cancelamento independem da pagina de retorno. */
+/** O corpo diz livemode diferente do ambiente do site? (só para ignorar, nunca para agir) */
+export function eventoDeOutroAmbiente(raw: string, ambiente: 'teste' | 'ligada'): boolean {
+  try {
+    const livemode = (JSON.parse(raw) as { livemode?: unknown })?.livemode;
+    return typeof livemode === 'boolean' && livemode !== (ambiente === 'ligada');
+  } catch {
+    return false;
+  }
+}
+
 export async function webhookStripe(req: Request, env: CobrancaEnv, confirmarAvulso: (ref: string) => Promise<unknown>): Promise<Response> {
   if (!env.DB || !env.STRIPE_WEBHOOK_SECRET || !stripeAmbiente(env)) return json({ erro: 'indisponivel' }, 503);
   if (!req.headers.get('stripe-signature')) return json({ erro: 'assinatura' }, 401);
   const raw = await req.text(); if (raw.length > 1024 * 1024) return json({ erro: 'tamanho' }, 413);
+  // evento do outro ambiente (ex.: o endpoint do modo de teste apontando para o site de verdade):
+  // a assinatura é de outro segredo, então só confirmamos o recebimento, sem fazer nada com ele.
+  // Assim o Stripe para de repetir e de mandar e-mail de falha. Nada aqui é lido como confiável.
+  if (eventoDeOutroAmbiente(raw, stripeAmbiente(env)!)) return json({ ok: true, ignorado: 'outro_ambiente' });
   const stripe = client(env); let event: StripeClient.Event;
   try { event = await stripe.webhooks.constructEventAsync(raw, req.headers.get('stripe-signature')!, env.STRIPE_WEBHOOK_SECRET, 300, StripeClient.createSubtleCryptoProvider()); }
   catch { return json({ erro: 'assinatura' }, 401); }
